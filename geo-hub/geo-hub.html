@@ -1,0 +1,1056 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="theme-color" content="#f8f9fc">
+<title>GeoHub · 地理知识库 v2</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  html, body { overscroll-behavior: none; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    background: #f8f9fc; color: #1e293b;
+    min-height: 100vh; overflow-x: hidden;
+    padding: 16px env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app { max-width: 480px; margin: 0 auto; padding: 0 16px 100px; }
+
+  /* Header */
+  .head { margin-bottom: 20px; margin-top: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #64748b; text-decoration: none; font-size: 14px;
+    margin-bottom: 12px; cursor: pointer;
+    min-height: 44px; padding: 0 4px; margin-top: 0px; }
+  .head h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .head .subtitle { font-size: 13px; color: #94a3b8; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0; padding: 8px 18px; border-radius: 20px;
+    border: none; background: #e2e8f0; color: #64748b;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+  }
+
+  /* Sub-tabs (category pills) */
+  .sub-tabs {
+    display: flex; gap: 6px; margin-bottom: 16px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 16px;
+    border: 1px solid #e2e8f0; background: #fff;
+    color: #475569; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .sub-tab:active { transform: scale(0.96); }
+  .sub-tab.active {
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 6px rgba(16,185,129,0.25);
+  }
+
+  /* Section */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Search */
+  .search-box {
+    width: 100%; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid #e2e8f0; background: #fff;
+    font-size: 14px; margin-bottom: 16px; outline: none;
+    font-family: inherit;
+  }
+  .search-box:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+
+  /* Knowledge Cards */
+  .geo-card {
+    background: #fff; border-radius: 14px; padding: 16px;
+    margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    border-left: 4px solid #10b981;
+  }
+  .geo-card h4 {
+    font-size: 15px; margin-bottom: 8px; color: #1e293b;
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  }
+  .geo-card h4 .toggle-icon {
+    font-size: 12px; color: #94a3b8; transition: transform 0.3s;
+  }
+  .geo-card h4 .toggle-icon.open { transform: rotate(180deg); }
+  .geo-card .card-body {
+    display: none; font-size: 13px; color: #64748b;
+    line-height: 1.7; padding-top: 8px;
+  }
+  .geo-card .card-body.open { display: block; }
+  .geo-card .card-body ul {
+    padding-left: 18px; margin-top: 6px;
+  }
+  .geo-card .card-body li { margin-bottom: 4px; }
+  .geo-card .card-body strong { color: #1e293b; }
+  .geo-card .card-body .tag {
+    display: inline-block; padding: 1px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 500; margin-right: 4px; margin-bottom: 4px;
+  }
+  .tag-green { background: #d1fae5; color: #065f46; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+  .tag-orange { background: #ffedd5; color: #9a3412; }
+  .tag-purple { background: #f3e8ff; color: #6b21a8; }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .tag-cyan { background: #cffafe; color: #155e75; }
+
+  /* Table inside cards */
+  .geo-table {
+    width: 100%; border-collapse: collapse; margin-top: 8px;
+    font-size: 12px;
+  }
+  .geo-table th {
+    background: #f1f5f9; padding: 6px 8px; text-align: left;
+    font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0;
+  }
+  .geo-table td {
+    padding: 5px 8px; border-bottom: 1px solid #f1f5f9; color: #64748b;
+  }
+  .geo-table tr:nth-child(even) td { background: #f8fafc; }
+
+  /* Quiz */
+  .quiz-card {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  }
+  .quiz-card h3 { font-size: 16px; margin-bottom: 12px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-option {
+    background: #fff; border: 2px solid transparent;
+    border-radius: 10px; padding: 12px; font-size: 14px;
+    cursor: pointer; transition: all 0.2s; text-align: left;
+    font-family: inherit;
+  }
+  .quiz-option:hover { border-color: #10b981; }
+  .quiz-option.correct { background: #d1fae5; border-color: #10b981; }
+  .quiz-option.wrong { background: #fee2e2; border-color: #ef4444; }
+  .quiz-progress {
+    font-size: 12px; color: #475569; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .quiz-score { font-weight: 700; color: #10b981; }
+
+  /* Search results */
+  .search-results {
+    background: #fff; border-radius: 14px; padding: 16px;
+    margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .search-results h4 { font-size: 14px; color: #475569; margin-bottom: 10px; }
+  .search-results .result-item {
+    padding: 8px 0; border-bottom: 1px solid #f1f5f9;
+    font-size: 13px; color: #64748b; line-height: 1.5;
+  }
+  .search-results .result-item:last-child { border-bottom: none; }
+  .search-results .highlight { background: #fef08a; padding: 0 2px; border-radius: 2px; }
+
+  /* Fact grid */
+  .fact-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .fact-card {
+    background: #fff; border-radius: 12px; padding: 14px;
+    text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .fact-card .icon { font-size: 28px; margin-bottom: 6px; }
+  .fact-card h4 { font-size: 13px; margin-bottom: 2px; }
+  .fact-card p { font-size: 11px; color: #94a3b8; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .app { padding: 0 10px 100px; }
+    .head h1 { font-size: 17px; }
+    .head .subtitle { font-size: 12px; }
+    .tab { padding: 6px 12px; font-size: 13px; }
+    .search-box { padding: 10px 12px; font-size: 14px; }
+    .geo-card { padding: 12px; margin-bottom: 8px; }
+    .geo-card h4 { font-size: 13px; }
+    .geo-card .card-body { font-size: 12px; }
+    .geo-table { font-size: 11px; }
+    .geo-table th { padding: 5px 6px; }
+    .geo-table td { padding: 4px 6px; }
+    .sub-tab { padding: 5px 10px; font-size: 11px; }
+    .quiz-card { padding: 14px; }
+    .quiz-card h3 { font-size: 14px; }
+    .quiz-option { padding: 10px; font-size: 13px; }
+    .fact-grid { gap: 6px; }
+    .fact-card { padding: 10px; }
+    .fact-card .icon { font-size: 17px; }
+    .fact-card h4 { font-size: 12px; }
+  }
+
+  @media (min-width: 520px) {
+    .app { padding: 0 24px 100px; }
+  }
+
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <a class="back-btn" href="../index-v2.html">← 返回</a>
+    <h1>🌍 GeoHub</h1>
+    <div class="subtitle">中国地理 · 世界地理 · 知识速查</div>
+  </div>
+
+  <!-- Top Tabs: Knowledge / Quiz -->
+  <div class="tabs top-tabs">
+    <button class="tab active" data-tab="knowledge">📖 知识卡片</button>
+    <button class="tab" data-tab="quiz">🎯 地理问答</button>
+  </div>
+
+  <!-- ==================== KNOWLEDGE SECTION ==================== -->
+  <div class="section active" id="knowledge">
+    <input type="text" class="search-box" id="geoSearch" placeholder="搜索地理知识点...（省份、国家、河流等）">
+
+    <!-- Quick facts -->
+    <div class="fact-grid">
+      <div class="fact-card"><div class="icon">🇨🇳</div><h4>中国地理</h4><p>34个省级行政区</p></div>
+      <div class="fact-card"><div class="icon">🌍</div><h4>世界地理</h4><p>七大洲四大洋</p></div>
+      <div class="fact-card"><div class="icon">🏔️</div><h4>地形地貌</h4><p>三大阶梯分界线</p></div>
+      <div class="fact-card"><div class="icon">🌊</div><h4>河流湖泊</h4><p>长江黄河珠江</p></div>
+    </div>
+
+    <!-- Search Results (hidden by default) -->
+    <div class="search-results hidden" id="searchResults">
+      <h4>搜索结果</h4>
+      <div id="searchResultsList"></div>
+    </div>
+
+    <!-- China Geography -->
+    <div id="chinaSection">
+      <div class="sub-tabs" id="chinaTabs">
+        <button class="sub-tab active" data-cat="province">省份速查</button>
+        <button class="sub-tab" data-cat="terrain">地形地貌</button>
+        <button class="sub-tab" data-cat="river">河流湖泊</button>
+        <button class="sub-tab" data-cat="climate">气候分区</button>
+        <button class="sub-tab" data-cat="resource">资源矿产</button>
+        <button class="sub-tab" data-cat="traffic">交通干线</button>
+        <button class="sub-tab" data-cat="agriculture">农业分区</button>
+      </div>
+      <div id="chinaContent"></div>
+    </div>
+
+    <!-- World Geography -->
+    <div id="worldSection" class="hidden">
+      <div class="sub-tabs" id="worldTabs">
+        <button class="sub-tab active" data-cat="continent">七大洲</button>
+        <button class="sub-tab" data-cat="ocean">四大洋</button>
+        <button class="sub-tab" data-cat="country">主要国家</button>
+        <button class="sub-tab" data-cat="worldclimate">气候类型</button>
+        <button class="sub-tab" data-cat="current">洋流与风向</button>
+      </div>
+      <div id="worldContent"></div>
+    </div>
+
+    <!-- China/World toggle tabs -->
+    <div class="tabs" id="geoTabs" style="margin-top:16px">
+      <button class="tab active" data-geo="china">🇨🇳 中国地理</button>
+      <button class="tab" data-geo="world">🌍 世界地理</button>
+    </div>
+  </div>
+
+  <!-- ==================== QUIZ SECTION ==================== -->
+  <div class="section" id="quiz">
+    <div class="quiz-card">
+      <h3>🎯 地理知识问答</h3>
+      <div class="quiz-progress">
+        <span id="quizCounter">第 1 题</span>
+        <span class="quiz-score" id="quizScore">正确: 0</span>
+      </div>
+      <p style="font-size:14px;margin-bottom:12px;line-height:1.6" id="quizQ"></p>
+      <div class="quiz-options" id="quizOpts"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== Tabs ====================
+document.querySelectorAll('.top-tabs .tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.top-tabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ==================== China/World toggle ====================
+document.querySelectorAll('#geoTabs .tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('#geoTabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('chinaSection').classList.toggle('hidden', tab.dataset.geo !== 'china');
+    document.getElementById('worldSection').classList.toggle('hidden', tab.dataset.geo !== 'world');
+  });
+});
+
+// ==================== Sub-tabs ====================
+function setupSubTabs(tabContainerId, contentId, dataMap) {
+  var container = document.getElementById(tabContainerId);
+  container.addEventListener('click', function(e) {
+    var btn = e.target.closest('.sub-tab');
+    if (!btn) return;
+    container.querySelectorAll('.sub-tab').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    renderCards(contentId, dataMap[btn.dataset.cat] || []);
+  });
+}
+
+// ==================== Card Rendering ====================
+function renderCards(containerId, cards) {
+  var container = document.getElementById(containerId);
+  container.innerHTML = '';
+  cards.forEach(function(card) {
+    var div = document.createElement('div');
+    div.className = 'geo-card';
+    div.setAttribute('data-search', card.title + ' ' + card.body);
+    div.innerHTML =
+      '<h4>' + card.title + ' <span class="toggle-icon">▼</span></h4>' +
+      '<div class="card-body">' + card.body + '</div>';
+    div.querySelector('h4').addEventListener('click', function() {
+      var body = div.querySelector('.card-body');
+      var icon = div.querySelector('.toggle-icon');
+      body.classList.toggle('open');
+      icon.classList.toggle('open');
+    });
+    container.appendChild(div);
+  });
+}
+
+// ==================== CHINA DATA ====================
+var chinaData = {
+  province: [
+    { title: '华北地区（5个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>北京市</td><td>京</td><td>北京</td><td>首都，政治文化中心</td></tr>' +
+      '<tr><td>天津市</td><td>津</td><td>天津</td><td>直辖市，港口城市</td></tr>' +
+      '<tr><td>河北省</td><td>冀</td><td>石家庄</td><td>环抱京津，雄安新区</td></tr>' +
+      '<tr><td>山西省</td><td>晋</td><td>太原</td><td>煤炭之乡，太行山以东</td></tr>' +
+      '<tr><td>内蒙古自治区</td><td>蒙</td><td>呼和浩特</td><td>高原牧场，稀土资源丰富</td></tr>' +
+      '</table>' },
+    { title: '东北地区（3个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>辽宁省</td><td>辽</td><td>沈阳</td><td>重工业基地，辽东半岛</td></tr>' +
+      '<tr><td>吉林省</td><td>吉</td><td>长春</td><td>汽车工业，长白山</td></tr>' +
+      '<tr><td>黑龙江省</td><td>黑</td><td>哈尔滨</td><td>最北省份，大庆油田</td></tr>' +
+      '</table>' },
+    { title: '华东地区（7个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>上海市</td><td>沪</td><td>上海</td><td>直辖市，国际金融中心</td></tr>' +
+      '<tr><td>江苏省</td><td>苏</td><td>南京</td><td>鱼米之乡，经济强省</td></tr>' +
+      '<tr><td>浙江省</td><td>浙</td><td>杭州</td><td>西湖、互联网经济发达</td></tr>' +
+      '<tr><td>安徽省</td><td>皖</td><td>合肥</td><td>黄山、徽文化</td></tr>' +
+      '<tr><td>福建省</td><td>闽</td><td>福州</td><td>武夷山、海上丝绸之路起点</td></tr>' +
+      '<tr><td>江西省</td><td>赣</td><td>南昌</td><td>鄱阳湖、红色革命根据地</td></tr>' +
+      '<tr><td>山东省</td><td>鲁</td><td>济南</td><td>泰山、孔孟之乡</td></tr>' +
+      '</table>' },
+    { title: '华中地区（3个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>河南省</td><td>豫</td><td>郑州</td><td>中原文化，少林寺</td></tr>' +
+      '<tr><td>湖北省</td><td>鄂</td><td>武汉</td><td>九省通衢，三峡工程</td></tr>' +
+      '<tr><td>湖南省</td><td>湘</td><td>长沙</td><td>洞庭湖、张家界</td></tr>' +
+      '</table>' },
+    { title: '华南地区（3个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>广东省</td><td>粤</td><td>广州</td><td>改革开放前沿，经济第一大省</td></tr>' +
+      '<tr><td>广西壮族自治区</td><td>桂</td><td>南宁</td><td>桂林山水、北部湾</td></tr>' +
+      '<tr><td>海南省</td><td>琼</td><td>海口</td><td>中国最大自贸港，热带岛屿</td></tr>' +
+      '</table>' },
+    { title: '西南地区（5个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>重庆市</td><td>渝</td><td>重庆</td><td>直辖市，山城，火锅之都</td></tr>' +
+      '<tr><td>四川省</td><td>川/蜀</td><td>成都</td><td>天府之国，大熊猫故乡</td></tr>' +
+      '<tr><td>贵州省</td><td>贵/黔</td><td>贵阳</td><td>喀斯特地貌，多彩贵州</td></tr>' +
+      '<tr><td>云南省</td><td>云/滇</td><td>昆明</td><td>春城，少数民族最多，丽江</td></tr>' +
+      '<tr><td>西藏自治区</td><td>藏</td><td>拉萨</td><td>世界屋脊，布达拉宫</td></tr>' +
+      '</table>' },
+    { title: '西北地区（5个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>省会</th><th>特色</th></tr>' +
+      '<tr><td>陕西省</td><td>陕/秦</td><td>西安</td><td>古都长安，兵马俑</td></tr>' +
+      '<tr><td>甘肃省</td><td>甘/陇</td><td>兰州</td><td>丝绸之路，莫高窟</td></tr>' +
+      '<tr><td>青海省</td><td>青</td><td>西宁</td><td>青海湖，三江源头</td></tr>' +
+      '<tr><td>宁夏回族自治区</td><td>宁</td><td>银川</td><td>塞上江南，黄河灌溉</td></tr>' +
+      '<tr><td>新疆维吾尔自治区</td><td>新</td><td>乌鲁木齐</td><td>面积最大省区，瓜果之乡</td></tr>' +
+      '</table>' },
+    { title: '港澳台地区（3个）', body:
+      '<table class="geo-table"><tr><th>省份</th><th>简称</th><th>行政中心</th><th>特色</th></tr>' +
+      '<tr><td>香港特别行政区</td><td>港</td><td>香港</td><td>国际金融中心，购物天堂</td></tr>' +
+      '<tr><td>澳门特别行政区</td><td>澳</td><td>澳门</td><td>中西文化交汇，博彩旅游</td></tr>' +
+      '<tr><td>台湾省</td><td>台</td><td>台北</td><td>宝岛，日月潭，阿里山</td></tr>' +
+      '</table><p style="margin-top:8px;color:#94a3b8;font-size:12px">中国共有23个省、5个自治区、4个直辖市、2个特别行政区，共34个省级行政区。</p>' }
+  ],
+  terrain: [
+    { title: '中国地势三大阶梯', body:
+      '<ul><li><strong>第一阶梯（4000m以上）：</strong>青藏高原、昆仑山脉—祁连山脉—横断山脉一线以西</li>' +
+      '<li><strong>第二阶梯（1000~2000m）：</strong>内蒙古高原、黄土高原、云贵高原；塔里木盆地、准噶尔盆地、四川盆地</li>' +
+      '<li><strong>第三阶梯（500m以下）：</strong>东北平原、华北平原、长江中下游平原；东南丘陵、山东丘陵、辽东丘陵</li></ul>' +
+      '<p style="margin-top:6px">地势特征：<strong>西高东低，呈阶梯状分布</strong>。有利于海洋湿润气流深入内陆形成降水，大河向东流入大海。</p>' },
+    { title: '四大高原', body:
+      '<ul><li><strong>青藏高原</strong>：世界屋脊，中国面积最大、海拔最高，雪山冰川广布</li>' +
+      '<li><strong>内蒙古高原</strong>：中国第二大高原，地势平坦开阔，草原广布</li>' +
+      '<li><strong>黄土高原</strong>：世界黄土分布最广，千沟万壑，水土流失严重</li>' +
+      '<li><strong>云贵高原</strong>：喀斯特地貌显著，石林溶洞，地表崎岖不平</li></ul>' },
+    { title: '四大盆地', body:
+      '<ul><li><strong>塔里木盆地</strong>：中国面积最大盆地，内有塔克拉玛干沙漠（中国最大沙漠），边缘有绿洲</li>' +
+      '<li><strong>准噶尔盆地</strong>：中国第二大盆地，有风蚀地貌</li>' +
+      '<li><strong>柴达木盆地</strong>：海拔最高盆地，"聚宝盆"，富盐类矿产</li>' +
+      '<li><strong>四川盆地</strong>："天府之国"，紫色土壤，物产丰富，纬度最低</li></ul>' },
+    { title: '三大平原', body:
+      '<ul><li><strong>东北平原</strong>：中国面积最大平原，黑土肥沃，"北大仓"</li>' +
+      '<li><strong>华北平原</strong>：又称黄淮海平原，由黄河淮河海河冲积而成</li>' +
+      '<li><strong>长江中下游平原</strong>："鱼米之乡"，河湖密布，地势低平</li></ul>' },
+    { title: '主要山脉', body:
+      '<ul><li><strong>东西走向：</strong>天山—阴山、昆仑山—秦岭（南北方分界线）、南岭</li>' +
+      '<li><strong>东北—西南走向：</strong>大兴安岭—太行山—巫山—雪峰山、长白山—武夷山、台湾山脉</li>' +
+      '<li><strong>南北走向：</strong>贺兰山、六盘山、横断山脉</li>' +
+      '<li><strong>西北—东南走向：</strong>阿尔泰山、祁连山</li>' +
+      '<li><strong>弧形山脉：</strong>喜马拉雅山脉（世界最高），珠穆朗玛峰8848.86m</li></ul>' },
+    { title: '重要地理分界线', body:
+      '<ul><li><strong>秦岭—淮河一线：</strong>南方与北方分界线，1月0℃等温线，800mm等降水量线</li>' +
+      '<li><strong>大兴安岭—太行山—巫山—雪峰山：</strong>第二、三阶梯分界线</li>' +
+      '<li><strong>昆仑山—祁连山—横断山脉：</strong>第一、二阶梯分界线</li>' +
+      '<li><strong>黑河—腾冲线（胡焕庸线）：</strong>人口密度分界线</li></ul>' }
+  ],
+  river: [
+    { title: '长江', body:
+      '<ul><li>中国最长河流，全长约<strong>6300km</strong>，世界第三长河</li>' +
+      '<li>发源于<strong>青藏高原唐古拉山脉</strong>，注入东海</li>' +
+      '<li>上中下游分界：<strong>宜昌（湖北）</strong>、<strong>湖口（江西）</strong></li>' +
+      '<li>主要支流：岷江、嘉陵江、汉江、赣江等</li>' +
+      '<li>上游水能资源丰富（三峡、葛洲坝），中下游航运价值高（"黄金水道"）</li>' +
+      '<li>流域面积180万km²，占全国总面积的约18.8%</li></ul>' },
+    { title: '黄河', body:
+      '<ul><li>中国第二长河，全长约<strong>5464km</strong>，世界第六长河</li>' +
+      '<li>发源于<strong>青藏高原巴颜喀拉山脉</strong>，注入渤海</li>' +
+      '<li>上中下游分界：<strong>河口（内蒙古）</strong>、<strong>桃花峪（河南）</strong></li>' +
+      '<li>主要支流：汾河、渭河、洮河等</li>' +
+      '<li>世界含沙量最大的河流，黄土高原水土流失是主因</li>' +
+      '<li>"地上河"出现在下游河段（河南、山东），河床高于地面</li></ul>' },
+    { title: '珠江', body:
+      '<ul><li>中国第三大河，由<strong>西江、北江、东江</strong>汇合而成</li>' +
+      '<li>全长约<strong>2320km</strong>（以西江源头计），注入南海</li>' +
+      '<li>流经云南、贵州、广西、广东等省区</li>' +
+      '<li>水能资源丰富，航运便利</li></ul>' },
+    { title: '其他主要河流', body:
+      '<ul><li><strong>黑龙江</strong>：中俄界河，中国四大河流之一，全长4478km</li>' +
+      '<li><strong>淮河</strong>：秦岭淮河南北分界线，流入洪泽湖后经长江入海</li>' +
+      '<li><strong>海河</strong>：华北平原主要河流，注入渤海</li>' +
+      '<li><strong>辽河</strong>：东北地区南部大河，注入渤海</li>' +
+      '<li><strong>塔里木河</strong>：中国最长的内流河，位于新疆塔里木盆地</li>' +
+      '<li><strong>怒江</strong>：流经云南，出境后称萨尔温江，注入安达曼海</li>' +
+      '<li><strong>雅鲁藏布江</strong>：西藏最大河流，出境后称布拉马普特拉河，大拐弯处水能丰富</li>' +
+      '<li><strong>额尔齐斯河</strong>：唯一注入北冰洋的中国河流</li></ul>' },
+    { title: '主要湖泊', body:
+      '<ul><li><strong>鄱阳湖（江西）</strong>：中国第一大淡水湖</li>' +
+      '<li><strong>洞庭湖（湖南）</strong>：中国第二大淡水湖</li>' +
+      '<li><strong>太湖（江苏）</strong>：中国第三大淡水湖</li>' +
+      '<li><strong>洪泽湖（江苏）</strong>：中国第四大淡水湖</li>' +
+      '<li><strong>巢湖（安徽）</strong>：中国第五大淡水湖</li>' +
+      '<li><strong>青海湖（青海）</strong>：中国最大湖泊（咸水湖），也是最大内陆湖</li>' +
+      '<li><strong>纳木错（西藏）</strong>：西藏最大湖泊，海拔最高大湖</li></ul>' }
+  ],
+  climate: [
+    { title: '温度带划分', body:
+      '<ul><li><strong>热带：</strong>海南全省、台湾南部、西双版纳、雷州半岛</li>' +
+      '<li><strong>亚热带：</strong>秦岭—淮河以南大部分地区</li>' +
+      '<li><strong>暖温带：</strong>华北平原、黄土高原南部</li>' +
+      '<li><strong>中温带：</strong>东北平原、内蒙古大部分</li>' +
+      '<li><strong>寒温带：</strong>黑龙江北部（大兴安岭北部）</li>' +
+      '<li><strong>高原气候区：</strong>青藏高原大部分地区</li></ul>' },
+    { title: '干湿地区划分', body:
+      '<ul><li><strong>湿润区：</strong>年降水量>800mm，秦岭—淮河以南、东北东部</li>' +
+      '<li><strong>半湿润区：</strong>年降水量400~800mm，华北平原、东北大部分</li>' +
+      '<li><strong>半干旱区：</strong>年降水量200~400mm，内蒙古大部、西北东部</li>' +
+      '<li><strong>干旱区：</strong>年降水量<200mm，西北内陆、青藏高原西北部</li></ul>' },
+    { title: '季风区与非季风区', body:
+      '<ul><li><strong>季风区：</strong>大兴安岭—阴山—贺兰山—巴颜喀拉山—冈底斯山一线以东以南</li>' +
+      '<li><strong>非季风区：</strong>该线以西以北，受大陆气团控制，降水稀少</li>' +
+      '<li>夏季风：来自太平洋（东南季风）和印度洋（西南季风），带来丰沛降水</li>' +
+      '<li>冬季风：来自西伯利亚和蒙古高原（西北季风），寒冷干燥</li>' +
+      '<li>中国气候特征：<strong>季风气候显著，气候复杂多样</strong></li></ul>' },
+    { title: '特殊气候现象', body:
+      '<ul><li><strong>梅雨：</strong>每年6月中旬至7月中旬，江淮地区连续阴雨天气</li>' +
+      '<li><strong>伏旱：</strong>7~8月，长江中下游地区受副热带高压控制，高温少雨</li>' +
+      '<li><strong>台风：</strong>夏秋季节影响东南沿海，带来狂风暴雨</li>' +
+      '<li><strong>寒潮：</strong>冬半年强冷空气南下，剧烈降温伴有大风霜冻</li>' +
+      '<li><strong>沙尘暴：</strong>春季多见于西北、华北地区</li></ul>' }
+  ],
+  resource: [
+    { title: '煤炭资源', body:
+      '<ul><li>中国煤炭资源丰富，储量居世界前列</li>' +
+      '<li><strong>主要分布区：</strong>山西（大同、阳泉）、陕西（神府）、内蒙古（准格尔、东胜）、河南（平顶山）、山东（枣庄）、贵州（六盘水）、安徽（淮北）</li>' +
+      '<li><strong>分布特征：</strong>北方多南方少（"北煤南运"）</li></ul>' },
+    { title: '石油天然气', body:
+      '<ul><li><strong>石油：</strong>大庆油田（黑龙江）、胜利油田（山东）、辽河油田（辽宁）、中原油田（河南）、克拉玛依油田（新疆）、长庆油田（陕西甘肃）</li>' +
+      '<li><strong>天然气：</strong>四川盆地（自贡、泸州）、塔里木盆地、陕甘宁盆地、青海柴达木</li>' +
+      '<li><strong>分布特征：</strong>石油主要分布在东北和西北</li></ul>' },
+    { title: '稀土资源', body:
+      '<ul><li>中国稀土储量居世界<strong>第一</strong>，占全球约40%</li>' +
+      '<li><strong>白云鄂博矿区（内蒙古包头）</strong>：世界最大稀土矿</li>' +
+      '<li><strong>江西赣南</strong>：离子型稀土矿，重稀土资源丰富</li>' +
+      '<li><strong>四川冕宁</strong>：氟碳铈矿</li>' +
+      '<li><strong>山东微山</strong>：轻稀土资源</li>' +
+      '<li>稀土被称为"工业维生素"，在高科技领域用途广泛</li></ul>' },
+    { title: '其他矿产资源', body:
+      '<ul><li><strong>铁矿：</strong>辽宁鞍山—本溪（"钢都"）、河北迁安、海南石碌、内蒙古白云鄂博、四川攀枝花</li>' +
+      '<li><strong>有色金属铜：</strong>江西德兴、云南东川、甘肃白银</li>' +
+      '<li><strong>铝土矿：</strong>广西平果、贵州修文、河南巩义</li>' +
+      '<li><strong>锡矿：</strong>云南个旧（"锡都"）</li>' +
+      '<li><strong>钨矿：</strong>江西大余（"钨都"），中国钨储量世界第一</li>' +
+      '<li><strong>锑矿：</strong>湖南锡矿山（"锑都"）</li>' +
+      '<li><strong>磷矿：</strong>贵州开阳、云南昆阳、湖北宜昌</li></ul>' },
+    { title: '土地与水资源', body:
+      '<ul><li><strong>耕地：</strong>总量大但人均少，主要分布在东部季风区平原和盆地</li>' +
+      '<li><strong>林地：</strong>东北林区（大兴安岭、长白山）、西南林区（横断山区）、东南林区</li>' +
+      '<li><strong>草地：</strong>内蒙古、新疆、青海、西藏四大牧区</li>' +
+      '<li><strong>水资源：</strong>总量丰富但时空分布不均，南多北少、夏秋多冬春少</li>' +
+      '<li><strong>南水北调工程：</strong>东线（扬州）、中线（丹江口）、西线（通天河）</li></ul>' }
+  ],
+  traffic: [
+    { title: '铁路干线', body:
+      '<ul><li><strong>纵向干线：</strong></li>' +
+      '<li>· 京哈线：北京—哈尔滨（东北主干线）</li>' +
+      '<li>· 京沪线：北京—上海（东部沿海大动脉）</li>' +
+      '<li>· 京广线：北京—广州（南北交通命脉）</li>' +
+      '<li>· 京九线：北京—香港九龙（缓解京广压力）</li>' +
+      '<li>· 焦柳线：焦作—柳州（西部纵向干线）</li>' +
+      '<li><strong>横向干线：</strong></li>' +
+      '<li>· 陇海—兰新线：连云港—乌鲁木齐（第二亚欧大陆桥中国段）</li>' +
+      '<li>· 沪昆线：上海—昆明（东西最长干线）</li>' +
+      '<li>· 京包—包兰线：北京—兰州（华北至西北）</li></ul>' },
+    { title: '重要交通枢纽', body:
+      '<ul><li><strong>郑州：</strong>京广线与陇海线交汇，"铁路心脏"</li>' +
+      '<li><strong>武汉：</strong>京广线与长江交汇，"九省通衢"，水铁联运</li>' +
+      '<li><strong>徐州：</strong>京沪线与陇海线交汇</li>' +
+      '<li><strong>兰州：</strong>陇海线与包兰线交汇，西北门户</li>' +
+      '<li><strong>株洲：</strong>京广线与沪昆线交汇</li>' +
+      '<li><strong>成都：</strong>西南铁路中心，成渝、宝成、成昆线交汇</li></ul>' },
+    { title: '高速公路与港口', body:
+      '<ul><li><strong>高速公路：</strong>总里程超17万公里，世界第一</li>' +
+      '<li><strong>主要高速：京港澳高速（G4）、沈海高速（G15）、连霍高速（G30）、沪昆高速（G60）</li>' +
+      '<li><strong>主要港口：</strong>上海港（集装箱吞吐量世界第一）、宁波—舟山港（货物吞吐量世界第一）、天津港、广州港、深圳港、青岛港、大连港</li>' +
+      '<li><strong>内河航运：</strong>长江航运价值最高（"黄金水道"），珠江、京杭大运河</li></ul>' },
+    { title: '航空与管道运输', body:
+      '<ul><li><strong>航空枢纽：</strong>北京首都/大兴、上海浦东/虹桥、广州白云、成都天府/双流、深圳宝安、昆明长水、西安咸阳</li>' +
+      '<li><strong>管道运输：</strong>西气东输（新疆→上海）、东油西送、中俄原油管道、川气东送</li>' +
+      '<li><strong>西气东输线路：</strong>一线（新疆轮南→上海）、二线（新疆霍尔果斯→广州）、三线（新疆→福建）</li></ul>' }
+  ],
+  agriculture: [
+    { title: '中国农业分区', body:
+      '<ul><li><strong>东北区：</strong>商品粮基地（玉米、大豆、水稻），机械化程度高</li>' +
+      '<li><strong>华北区：</strong>冬小麦、玉米、棉花（冀鲁豫）</li>' +
+      '<li><strong>长江中下游区：</strong>"鱼米之乡"（水稻、油菜、柑橘、淡水鱼）</li>' +
+      '<li><strong>华南区：</strong>热带作物基地（甘蔗、橡胶、香蕉、菠萝）</li>' +
+      '<li><strong>西南区：</strong>梯田农业（水稻、玉米、烟草、茶叶）</li>' +
+      '<li><strong>西北区：</strong>绿洲农业（棉花、小麦、瓜果），灌溉农业</li>' +
+      '<li><strong>青藏区：</strong>高寒农牧业（青稞、牦牛、藏绵羊）</li></ul>' },
+    { title: '主要粮食作物分布', body:
+      '<ul><li><strong>水稻：</strong>南方为主，秦岭—淮河以南集中产区（湖南、湖北、江西、广西、黑龙江也种植粳稻）</li>' +
+      '<li><strong>小麦：</strong>北方为主，冬小麦（华北平原、长江中下游）和春小麦（东北、西北）</li>' +
+      '<li><strong>玉米：</strong>东北和华北为主，黑龙江、吉林、山东、河南产量最高</li>' +
+      '<li><strong>大豆：</strong>东北为主，黑龙江是中国大豆主产区</li></ul>' },
+    { title: '主要经济作物分布', body:
+      '<ul><li><strong>棉花：</strong>新疆（长绒棉）、华北平原、长江中下游（黄河流域和长江流域棉区）</li>' +
+      '<li><strong>油菜：</strong>长江流域（四川、湖北、湖南、安徽、江西），中国最大油菜产区</li>' +
+      '<li><strong>甘蔗：</strong>广西（全国70%以上）、广东、云南、海南</li>' +
+      '<li><strong>甜菜：</strong>黑龙江、吉林、内蒙古、新疆</li>' +
+      '<li><strong>茶叶：</strong>南方丘陵山区（福建、云南、浙江、安徽、湖南）</li>' +
+      '<li><strong>橡胶：</strong>海南、云南西双版纳、广东雷州半岛</li>' +
+      '<li><strong>水果：</strong>苹果（山东、陕西）、柑橘（广西、湖南）、香蕉（海南、广东）</li></ul>' },
+    { title: '九大商品粮基地', body:
+      '<ul><li>① <strong>三江平原</strong>（黑龙江）</li>' +
+      '<li>② <strong>松嫩平原</strong>（黑龙江、吉林）</li>' +
+      '<li>③ <strong>江淮地区</strong>（江苏、安徽）</li>' +
+      '<li>④ <strong>太湖平原</strong>（江苏、浙江）</li>' +
+      '<li>⑤ <strong>鄱阳湖平原</strong>（江西）</li>' +
+      '<li>⑥ <strong>洞庭湖平原</strong>（湖南）</li>' +
+      '<li>⑦ <strong>江汉平原</strong>（湖北）</li>' +
+      '<li>⑧ <strong>成都平原</strong>（四川）</li>' +
+      '<li>⑨ <strong>珠江三角洲</strong>（广东）</li></ul>' }
+  ]
+};
+
+// ==================== WORLD DATA ====================
+var worldData = {
+  continent: [
+    { title: '亚洲（Asia）', body:
+      '<ul><li><strong>面积：</strong>约4400万km²，最大洲</li>' +
+      '<li><strong>人口：</strong>约47亿，最多</li>' +
+      '<li>跨纬度最广、东西距离最长的大洲</li>' +
+      '<li>地形以高原山地为主，地势中部高四周低</li>' +
+      '<li>有世界最高峰珠穆朗玛峰，最低点死海</li></ul>' },
+    { title: '非洲（Africa）', body:
+      '<ul><li><strong>面积：</strong>约3020万km²，第二大洲</li>' +
+      '<li><strong>人口：</strong>约14亿</li>' +
+      '<li>被称为"高原大陆"，地形以高原为主</li>' +
+      '<li>世界最大沙漠——撒哈拉沙漠</li>' +
+      '<li>世界最长河流——尼罗河（6670km）</li>' +
+      '<li>东非大裂谷——"地球的伤疤"</li></ul>' },
+    { title: '北美洲（North America）', body:
+      '<ul><li><strong>面积：</strong>约2420万km²</li>' +
+      '<li><strong>人口：</strong>约5.8亿</li>' +
+      '<li>地形呈纵向三大地形区：西部山地、中部平原、东部低矮高地</li>' +
+      '<li>有世界最大淡水湖群——五大湖</li>' +
+      '<li>有世界最长山系——科迪勒拉山系北段</li></ul>' },
+    { title: '南美洲（South America）', body:
+      '<ul><li><strong>面积：</strong>约1784万km²</li>' +
+      '<li><strong>人口：</strong>约4.3亿</li>' +
+      '<li>世界最大平原——亚马孙平原</li>' +
+      '<li>世界最大高原——巴西高原</li>' +
+      '<li>世界最长山脉——安第斯山脉</li>' +
+      '<li>世界最大热带雨林——亚马孙热带雨林</li>' +
+      '<li>世界流量最大河流——亚马孙河</li></ul>' },
+    { title: '南极洲（Antarctica）', body:
+      '<ul><li><strong>面积：</strong>约1400万km²</li>' +
+      '<li><strong>人口：</strong>无常住居民，仅有科考人员</li>' +
+      '<li>跨经度最多的大洲</li>' +
+      '<li>世界平均海拔最高的大洲（约2350m）</li>' +
+      '<li>被称为"冰雪高原"，淡水储量占全球约70%</li>' +
+      '<li>极昼极夜现象明显</li></ul>' },
+    { title: '欧洲（Europe）', body:
+      '<ul><li><strong>面积：</strong>约1016万km²</li>' +
+      '<li><strong>人口：</strong>约7.5亿</li>' +
+      '<li>海岸线最曲折，半岛和岛屿众多</li>' +
+      '<li>地形以平原为主，阿尔卑斯山脉横贯南部</li>' +
+      '<li>温带海洋性气候为主，深受大西洋影响</li>' +
+      '<li>莱茵河、多瑙河是重要国际河流</li></ul>' },
+    { title: '大洋洲（Oceania）', body:
+      '<ul><li><strong>面积：</strong>约897万km²，最小洲</li>' +
+      '<li><strong>人口：</strong>约4500万</li>' +
+      '<li>由澳大利亚大陆和太平洋上众多岛屿组成</li>' +
+      '<li>包括澳大利亚、新西兰、巴布亚新几内亚等</li>' +
+      '<li>独占一个大陆的国家——澳大利亚</li></ul>' }
+  ],
+  ocean: [
+    { title: '太平洋（Pacific Ocean）', body:
+      '<ul><li><strong>面积：</strong>约1.8亿km²，最大最深</li>' +
+      '<li><strong>平均深度：</strong>约3957m</li>' +
+      '<li><strong>最深处：</strong>马里亚纳海沟（11034m），世界最深</li>' +
+      '<li>占地球海洋面积约49%，几乎占地球表面三分之一</li>' +
+      '<li>环太平洋火山地震带</li></ul>' },
+    { title: '大西洋（Atlantic Ocean）', body:
+      '<ul><li><strong>面积：</strong>约9430万km²，第二大洋</li>' +
+      '<li><strong>平均深度：</strong>约3627m</li>' +
+      '<li>呈"S"形，连接南北美洲与欧洲、非洲</li>' +
+      '<li>航运最繁忙的大洋</li></ul>' },
+    { title: '印度洋（Indian Ocean）', body:
+      '<ul><li><strong>面积：</strong>约7056万km²，第三大洋</li>' +
+      '<li><strong>平均深度：</strong>约3711m</li>' +
+      '<li>大部分位于南半球，热带海洋面积广大</li>' +
+      '<li>石油资源丰富（波斯湾地区）</li>' +
+      '<li>北部的季风洋流流向随季节变化</li></ul>' },
+    { title: '北冰洋（Arctic Ocean）', body:
+      '<ul><li><strong>面积：</strong>约1406万km²，最小最浅</li>' +
+      '<li><strong>平均深度：</strong>约1205m</li>' +
+      '<li>大部分海域常年冰封</li>' +
+      '<li>有极昼极夜现象</li>' +
+      '<li>海岸线曲折，多海峡</li>' +
+      '<li>随着全球变暖，北极航道价值日益突出</li></ul>' }
+  ],
+  country: [
+    { title: '中国', body:
+      '<ul><li><strong>首都：</strong>北京</li><li><strong>位置：</strong>东亚，太平洋西岸</li>' +
+      '<li>面积约960万km²，世界第三大国家（陆地面积）</li>' +
+      '<li>人口约14亿，世界第一人口大国</li>' +
+      '<li>社会主义国家，统一多民族国家（56个民族）</li>' +
+      '<li>世界工厂，第二大经济体</li></ul>' },
+    { title: '美国', body:
+      '<ul><li><strong>首都：</strong>华盛顿（Washington D.C.）</li><li><strong>位置：</strong>北美洲中部</li>' +
+      '<li>面积约937万km²，世界第四</li>' +
+      '<li>人口约3.3亿</li>' +
+      '<li>联邦制共和国，世界第一经济体</li>' +
+      '<li>以高新技术产业和现代农业著称</li>' +
+      '<li>主要城市：纽约、洛杉矶、芝加哥</li></ul>' },
+    { title: '俄罗斯', body:
+      '<ul><li><strong>首都：</strong>莫斯科（Moscow）</li><li><strong>位置：</strong>地跨欧亚两洲</li>' +
+      '<li>面积约1709万km²，世界最大国家</li>' +
+      '<li>人口约1.44亿</li>' +
+      '<li>世界上东西跨度最大的国家</li>' +
+      '<li>自然资源丰富（石油、天然气、森林）</li>' +
+      '<li>西伯利亚地区冬季严寒漫长</li></ul>' },
+    { title: '日本', body:
+      '<ul><li><strong>首都：</strong>东京（Tokyo）</li><li><strong>位置：</strong>太平洋西北部，岛国</li>' +
+      '<li>领土由北海道、本州、四国、九州四大岛及附近小岛组成</li>' +
+      '<li>面积约37.8万km²，人口约1.26亿</li>' +
+      '<li>多火山地震（位于环太平洋火山地震带），富士山最高（3776m）</li>' +
+      '<li>发达经济体，工业集中在太平洋沿岸</li></ul>' },
+    { title: '印度', body:
+      '<ul><li><strong>首都：</strong>新德里（New Delhi）</li><li><strong>位置：</strong>南亚次大陆</li>' +
+      '<li>面积约298万km²，人口约14亿（世界第一）</li>' +
+      '<li>热带季风气候为主</li>' +
+      '<li>泰姬陵、恒河是文化标志</li>' +
+      '<li>IT产业和软件服务业发达</li></ul>' },
+    { title: '巴西', body:
+      '<ul><li><strong>首都：</strong>巴西利亚（Brasília）</li><li><strong>位置：</strong>南美洲东部</li>' +
+      '<li>面积约851万km²，南美最大国家，世界第五</li>' +
+      '<li>人口约2.15亿</li>' +
+      '<li>亚马孙雨林覆盖面积约60%国土</li>' +
+      '<li>咖啡、甘蔗、大豆产量世界领先</li>' +
+      '<li>足球王国，里约热内卢、圣保罗是主要城市</li></ul>' },
+    { title: '英国', body:
+      '<ul><li><strong>首都：</strong>伦敦（London）</li><li><strong>位置：</strong>欧洲西部，大不列颠岛</li>' +
+      '<li>面积约24.4万km²，人口约6700万</li>' +
+      '<li>岛国，温带海洋性气候，终年温和湿润</li>' +
+      '<li>工业革命发源地</li>' +
+      '<li>泰晤士河流经伦敦</li></ul>' },
+    { title: '法国', body:
+      '<ul><li><strong>首都：</strong>巴黎（Paris）</li><li><strong>位置：</strong>欧洲西部</li>' +
+      '<li>面积约64.3万km²（含海外领地），人口约6700万</li>' +
+      '<li>地势东南高西北低</li>' +
+      '<li>农业和旅游业发达，埃菲尔铁塔、卢浮宫</li>' +
+      '<li>塞纳河流经巴黎</li></ul>' },
+    { title: '德国', body:
+      '<ul><li><strong>首都：</strong>柏林（Berlin）</li><li><strong>位置：</strong>欧洲中部</li>' +
+      '<li>面积约35.7万km²，人口约8300万</li>' +
+      '<li>欧洲最大经济体</li>' +
+      '<li>以制造业著称，汽车、机械工业发达</li>' +
+      '<li>莱茵河流经西部，是欧洲重要航运水道</li></ul>' },
+    { title: '澳大利亚', body:
+      '<ul><li><strong>首都：</strong>堪培拉（Canberra）</li><li><strong>位置：</strong>大洋洲</li>' +
+      '<li>面积约769万km²，世界第六大国家</li>' +
+      '<li>人口约2600万</li>' +
+      '<li>独占一个大陆，被称为"骑在羊背上的国家"和"坐在矿车上的国家"</li>' +
+      '<li>特有的动物：袋鼠、考拉、鸭嘴兽</li>' +
+      '<li>大堡礁——世界最大珊瑚礁</li>' +
+      '<li>中部有大自流盆地</li></ul>' },
+    { title: '加拿大', body:
+      '<ul><li><strong>首都：</strong>渥太华（Ottawa）</li><li><strong>位置：</strong>北美洲北部</li>' +
+      '<li>面积约998万km²，世界第二大</li>' +
+      '<li>人口约3800万</li>' +
+      '<li>世界重要枫糖浆生产国</li>' +
+      '<li>一半以上国土在北纬60°以北，气候寒冷</li></ul>' },
+    { title: '埃及', body:
+      '<ul><li><strong>首都：</strong>开罗（Cairo）</li><li><strong>位置：</strong>非洲东北部</li>' +
+      '<li>面积约100万km²，人口约1亿</li>' +
+      '<li>地跨非亚两洲（苏伊士运河）</li>' +
+      '<li>尼罗河贯穿全境，入海口形成三角洲</li>' +
+      '<li>金字塔和狮身人面像世界闻名</li></ul>' }
+  ],
+  worldclimate: [
+    { title: '热带气候类型', body:
+      '<ul><li><strong>热带雨林气候：</strong>全年高温多雨，年降水量>2000mm；分布在赤道附近（亚马孙平原、刚果盆地、马来群岛）</li>' +
+      '<li><strong>热带草原气候：</strong>全年高温，干湿季分明；分布在热带雨林南北两侧（非洲大部分、巴西高原、澳大利亚北部）</li>' +
+      '<li><strong>热带季风气候：</strong>全年高温，分旱季和雨季；分布在东南亚和南亚（印度、中南半岛）</li>' +
+      '<li><strong>热带沙漠气候：</strong>全年高温少雨；分布在南北回归线附近（撒哈拉、阿拉伯半岛、澳大利亚中西部）</li></ul>' },
+    { title: '亚热带与温带气候类型', body:
+      '<ul><li><strong>亚热带季风气候：</strong>夏季高温多雨，冬季温和少雨；分布在中国东南部、日本南部等</li>' +
+      '<li><strong>地中海气候：</strong>夏季炎热干燥，冬季温和多雨；分布在地中海沿岸（南欧、北非）、美国加州、澳大利亚西南部等</li>' +
+      '<li><strong>温带海洋性气候：</strong>全年温和湿润，降水均匀；分布在南北纬40°~60°大陆西岸（西欧、新西兰）</li>' +
+      '<li><strong>温带季风气候：</strong>夏季高温多雨，冬季寒冷干燥；分布在亚洲东部（中国华北、日本北部、朝鲜半岛）</li>' +
+      '<li><strong>温带大陆性气候：</strong>冬冷夏热，温差大，降水较少；分布在中纬度大陆内部（亚欧大陆和北美大陆内部）</li></ul>' },
+    { title: '寒带与其他气候', body:
+      '<ul><li><strong>极地苔原气候：</strong>终年寒冷，最暖月>0℃，苔藓地衣为主</li>' +
+      '<li><strong>极地冰原气候：</strong>终年严寒，最暖月<0℃，冰雪覆盖</li>' +
+      '<li><strong>高原山地气候：</strong>气温随海拔升高而降低，垂直变化显著（青藏高原、安第斯山脉）</li></ul>' }
+  ],
+  current: [
+    { title: '主要洋流分布', body:
+      '<p><span class="tag tag-red">暖流</span><span class="tag tag-blue">寒流</span></p>' +
+      '<ul><li><strong>太平洋：</strong></li>' +
+      '<li>· <span class="tag tag-red">日本暖流（黑潮）</span>：台湾东部→日本东部</li>' +
+      '<li>· <span class="tag tag-blue">千岛寒流（亲潮）</span>：白令海峡→日本北部</li>' +
+      '<li>· <span class="tag tag-red">北太平洋暖流</span>：日本东部→北美西部</li>' +
+      '<li>· <span class="tag tag-blue">加利福尼亚寒流</span>：北美西海岸南下</li>' +
+      '<li>· <span class="tag tag-red">东澳大利亚暖流</span>：澳大利亚东岸南下</li>' +
+      '<li>· <span class="tag tag-blue">秘鲁寒流</span>：南美西海岸北上（世界最强寒流之一）</li>' +
+      '<li>· <span class="tag tag-blue">本格拉寒流</span>：非洲西南海岸北上</li></ul>' },
+    { title: '大西洋与印度洋洋流', body:
+      '<ul><li><strong>大西洋：</strong></li>' +
+      '<li>· <span class="tag tag-red">墨西哥湾暖流</span>：墨西哥湾→北大西洋（世界最强暖流）</li>' +
+      '<li>· <span class="tag tag-red">北大西洋暖流</span>：北大西洋→欧洲西北部</li>' +
+      '<li>· <span class="tag tag-blue">拉布拉多寒流</span>：加拿大北部南下</li>' +
+      '<li>· <span class="tag tag-red">巴西暖流</span>：南美东海岸南下</li>' +
+      '<li>· <span class="tag tag-blue">加那利寒流</span>：非洲西北海岸南下</li></li>' +
+      '<li><strong>印度洋：</strong></li>' +
+      '<li>· <span class="tag tag-red">西风漂流（寒流）</span>：南纬40°附近自西向东</li>' +
+      '<li>· 北印度洋季风洋流：夏季顺时针、冬季逆时针</li></ul>' },
+    { title: '大气环流与风向', body:
+      '<ul><li><strong>全球三圈环流：</strong>哈德莱环流（低纬）、费雷尔环流（中纬）、极地环流（高纬）</li>' +
+      '<li><strong>信风带（0°~30°）：</strong>低纬东北信风（北半球）、东南信风（南半球）</li>' +
+      '<li><strong>西风带（30°~60°）：</strong>中纬盛行西南风（北半球）、西北风（南半球）</li>' +
+      '<li><strong>极地东风带（60°~90°）：</strong>高纬盛行东北风（北半球）、东南风（南半球）</li>' +
+      '<li><strong>气压带：</strong>赤道低气压带、副热带高气压带（30°）、副极地低气压带（60°）、极地高气压带（90°）</li></ul>' }
+  ]
+};
+
+// ==================== Render initial content ====================
+renderCards('chinaContent', chinaData.province);
+renderCards('worldContent', worldData.continent);
+
+setupSubTabs('chinaTabs', 'chinaContent', chinaData);
+setupSubTabs('worldTabs', 'worldContent', worldData);
+
+// ==================== Search ====================
+var searchInput = document.getElementById('geoSearch');
+var searchResults = document.getElementById('searchResults');
+var searchResultsList = document.getElementById('searchResultsList');
+
+function getAllSearchableContent() {
+  var items = [];
+  var allData = Object.assign({}, chinaData, worldData);
+  for (var cat in allData) {
+    allData[cat].forEach(function(card) {
+      items.push({ title: card.title, body: card.body });
+    });
+  }
+  return items;
+}
+
+searchInput.addEventListener('input', function() {
+  var query = this.value.trim();
+  if (!query) {
+    searchResults.classList.add('hidden');
+    return;
+  }
+  var items = getAllSearchableContent();
+  var results = [];
+  items.forEach(function(item) {
+    if (item.title.indexOf(query) !== -1 || item.body.indexOf(query) !== -1) {
+      results.push(item);
+    }
+  });
+  if (results.length === 0) {
+    searchResults.classList.remove('hidden');
+    searchResultsList.innerHTML = '<div class="result-item">未找到相关内容</div>';
+    return;
+  }
+  searchResults.classList.remove('hidden');
+  searchResultsList.innerHTML = '';
+  results.forEach(function(item) {
+    var div = document.createElement('div');
+    div.className = 'result-item';
+    var highlightedTitle = item.title.replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'g'), '<span class="highlight">$1</span>');
+    var plainBody = item.body.replace(/<[^>]*>/g, '');
+    var idx = plainBody.indexOf(query);
+    var snippet = '';
+    if (idx !== -1) {
+      var start = Math.max(0, idx - 30);
+      var end = Math.min(plainBody.length, idx + query.length + 30);
+      snippet = (start > 0 ? '...' : '') + plainBody.substring(start, end).replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'g'), '<span class="highlight">$1</span>') + (end < plainBody.length ? '...' : '');
+    }
+    div.innerHTML = '<strong>' + highlightedTitle + '</strong>' + (snippet ? '<br><span style="color:#94a3b8;font-size:12px">' + snippet + '</span>' : '');
+    searchResultsList.appendChild(div);
+  });
+});
+
+// ==================== QUIZ ====================
+var geoQuestions = [
+  // 中国省份省会
+  {q:'湖北省的省会是哪个城市？',opts:['武汉','长沙','南昌','合肥'],ans:0},
+  {q:'湖南省的省会是哪个城市？',opts:['武汉','长沙','南昌','郑州'],ans:1},
+  {q:'浙江省的省会是哪个城市？',opts:['南京','杭州','福州','宁波'],ans:1},
+  {q:'江苏省的省会是哪个城市？',opts:['苏州','南京','无锡','杭州'],ans:1},
+  {q:'山东省的省会是哪个城市？',opts:['青岛','济南','烟台','潍坊'],ans:1},
+  {q:'福建省的省会是哪个城市？',opts:['厦门','福州','泉州','漳州'],ans:1},
+  {q:'甘肃省的省会是哪个城市？',opts:['兰州','西宁','西安','银川'],ans:0},
+  {q:'四川省的简称是什么？',opts:['渝','黔','滇','川'],ans:3},
+  {q:'云南省的简称是什么？',opts:['川','黔','滇','桂'],ans:2},
+  {q:'广东省的简称是什么？',opts:['粤','桂','闽','琼'],ans:0},
+  {q:'河北省的简称是什么？',opts:['豫','鲁','冀','晋'],ans:2},
+  {q:'安徽省的简称是什么？',opts:['皖','赣','浙','闽'],ans:0},
+  {q:'陕西省的简称是什么？',opts:['甘','陕','宁','豫'],ans:1},
+  {q:'黑龙江省的省会是哪个城市？',opts:['长春','沈阳','哈尔滨','大连'],ans:2},
+  {q:'吉林省的省会是哪个城市？',opts:['哈尔滨','长春','沈阳','大连'],ans:1},
+  {q:'海南省的简称是什么？',opts:['粤','桂','琼','闽'],ans:2},
+  // 中国地形
+  {q:'中国地势的基本特征是什么？',opts:['东高西低','南高北低','西高东低，阶梯状分布','中间高四周低'],ans:2},
+  {q:'世界屋脊是指哪个高原？',opts:['内蒙古高原','青藏高原','黄土高原','云贵高原'],ans:1},
+  {q:'中国面积最大的盆地是？',opts:['准噶尔盆地','塔里木盆地','四川盆地','柴达木盆地'],ans:1},
+  {q:'有"天府之国"之称的盆地是？',opts:['塔里木盆地','准噶尔盆地','四川盆地','柴达木盆地'],ans:2},
+  {q:'世界黄土分布最广的高原是？',opts:['云贵高原','青藏高原','内蒙古高原','黄土高原'],ans:3},
+  {q:'喀斯特地貌最典型的高原是？',opts:['内蒙古高原','云贵高原','黄土高原','青藏高原'],ans:1},
+  {q:'中国面积最大的平原是？',opts:['华北平原','东北平原','长江中下游平原','珠江三角洲'],ans:1},
+  {q:'海拔最高的盆地是？',opts:['四川盆地','塔里木盆地','柴达木盆地','准噶尔盆地'],ans:2},
+  {q:'被称为"聚宝盆"的盆地是？',opts:['四川盆地','塔里木盆地','柴达木盆地','准噶尔盆地'],ans:2},
+  {q:'中国第一、二阶梯的分界线是？',opts:['大兴安岭—太行山—巫山—雪峰山','秦岭—淮河','昆仑山—祁连山—横断山脉','南岭'],ans:2},
+  {q:'中国第二、三阶梯的分界线是？',opts:['昆仑山—祁连山—横断山脉','大兴安岭—太行山—巫山—雪峰山','秦岭—淮河','天山'],ans:1},
+  // 中国河流
+  {q:'中国最长的河流是？',opts:['黄河','珠江','长江','黑龙江'],ans:2},
+  {q:'长江上、中游的分界点是？',opts:['湖口','宜昌','武汉','南京'],ans:1},
+  {q:'长江中、下游的分界点是？',opts:['宜昌','湖口','武汉','南京'],ans:1},
+  {q:'黄河上、中游的分界点是？',opts:['桃花峪','河口','龙门','潼关'],ans:1},
+  {q:'黄河中、下游的分界点是？',opts:['河口','桃花峪','潼关','郑州'],ans:1},
+  {q:'中国最大的淡水湖是？',opts:['洞庭湖','太湖','鄱阳湖','巢湖'],ans:2},
+  {q:'中国最大的湖泊（含咸水湖）是？',opts:['鄱阳湖','洞庭湖','青海湖','太湖'],ans:2},
+  {q:'世界含沙量最大的河流是？',opts:['长江','黄河','珠江','黑龙江'],ans:1},
+  {q:"黄河的'地上河'现象出现在哪一段？",opts:['上游','中游','下游','全程'],ans:2},
+  {q:'中国唯一流入北冰洋的河流是？',opts:['额尔齐斯河','黑龙江','塔里木河','雅鲁藏布江'],ans:0},
+  // 中国气候
+  {q:'秦岭—淮河一线是哪两个温度带的分界线？',opts:['中温带与暖温带','暖温带与亚热带','亚热带与热带','寒温带与中温带'],ans:1},
+  {q:'秦岭—淮河一线是哪两条等值线？',opts:['1月10℃等温线和800mm等降水量线','1月0℃等温线和800mm等降水量线','1月0℃等温线和400mm等降水量线','7月25℃等温线和800mm等降水量线'],ans:1},
+  {q:'中国夏季风主要来自？',opts:['西伯利亚','太平洋和印度洋','北冰洋','中亚'],ans:1},
+  {q:'中国冬季风主要来自？',opts:['太平洋','印度洋','西伯利亚和蒙古高原','北冰洋'],ans:2},
+  {q:'年降水量400mm等降水量线大致经过哪里？',opts:['秦岭—淮河','大兴安岭—张家口—兰州—拉萨','大兴安岭—阴山—贺兰山','南岭'],ans:1},
+  // 世界地理
+  {q:'世界面积最大的大洲是？',opts:['非洲','北美洲','亚洲','南极洲'],ans:2},
+  {q:'世界面积最大的大洋是？',opts:['大西洋','印度洋','太平洋','北冰洋'],ans:2},
+  {q:'世界面积最小的洲是？',opts:['欧洲','南极洲','大洋洲','南美洲'],ans:2},
+  {q:'世界最深处是？',opts:['波多黎各海沟','汤加海沟','日本海沟','马里亚纳海沟'],ans:3},
+  {q:'世界最大的沙漠是？',opts:['戈壁沙漠','阿拉伯沙漠','卡拉哈里沙漠','撒哈拉沙漠'],ans:3},
+  {q:'世界最长的河流是？',opts:['长江','亚马孙河','密西西比河','尼罗河'],ans:3},
+  {q:'世界流量最大的河流是？',opts:['尼罗河','长江','亚马孙河','密西西比河'],ans:2},
+  {q:'世界最大的岛屿是？',opts:['马达加斯加岛','格陵兰岛','加里曼丹岛','新几内亚岛'],ans:1},
+  {q:'世界最高峰是？',opts:['乔戈里峰','干城章嘉峰','珠穆朗玛峰','洛子峰'],ans:2},
+  {q:'美国的首都是？',opts:['纽约','华盛顿','洛杉矶','芝加哥'],ans:1},
+  {q:'俄罗斯的首都是？',opts:['圣彼得堡','莫斯科','新西伯利亚','海参崴'],ans:1},
+  {q:'澳大利亚的首都是？',opts:['悉尼','墨尔本','堪培拉','布里斯班'],ans:2},
+  {q:'加拿大的首都是？',opts:['多伦多','温哥华','蒙特利尔','渥太华'],ans:3},
+  {q:'巴西的首都是？',opts:['圣保罗','里约热内卢','巴西利亚','萨尔瓦多'],ans:2},
+  {q:'埃及的首都是？',opts:['亚历山大','开罗','卢克索','阿斯旺'],ans:1},
+  {q:'跨经度最多的大洲是？',opts:['亚洲','北美洲','南极洲','非洲'],ans:2},
+  {q:'海岸线最曲折的大洲是？',opts:['亚洲','非洲','欧洲','南美洲'],ans:2},
+  // 世界气候
+  {q:'地中海气候的降水特征是？',opts:['全年均匀','夏季多雨冬季少雨','全年少雨','冬季多雨夏季少雨'],ans:3},
+  {q:'热带雨林气候主要分布在？',opts:['回归线附近','赤道附近','中纬度','高纬度'],ans:1},
+  {q:'温带海洋性气候主要分布在？',opts:['大陆内部','大陆东岸','大陆西岸40°~60°','赤道'],ans:2},
+  {q:'下列哪个不属于热带气候类型？',opts:['热带雨林气候','热带季风气候','热带沙漠气候','地中海气候'],ans:3},
+  {q:'温带大陆性气候的典型特征是？',opts:['全年温和湿润','冬冷夏热，温差大','全年高温多雨','全年炎热干燥'],ans:1},
+  {q:'世界最大的热带雨林气候区在？',opts:['刚果盆地','亚马孙平原','马来群岛','中美洲'],ans:1},
+  {q:'全年高温，分明显干湿两季的气候类型是？',opts:['热带雨林气候','热带草原气候','热带沙漠气候','热带季风气候'],ans:1},
+  // 洋流
+  {q:'秘鲁寒流对沿岸气候的影响是？',opts:['增温增湿','降温减湿','增温减湿','降温增湿'],ans:1},
+  {q:'北大西洋暖流对欧洲西部气候的影响是？',opts:['使气候更加寒冷干燥','使气候更加温暖湿润','没有明显影响','使降水减少'],ans:1},
+  {q:'北印度洋洋流的流向特点是？',opts:['全年顺时针','全年逆时针','夏季顺时针冬季逆时针','夏季逆时针冬季顺时针'],ans:2},
+  {q:'世界最强的暖流是？',opts:['日本暖流','墨西哥湾暖流','东澳大利亚暖流','北大西洋暖流'],ans:1},
+  // 交通农业
+  {q:'京广线连接的两大城市是？',opts:['北京和上海','北京和广州','北京和武汉','上海和广州'],ans:1},
+  {q:'被称为"铁路心脏"的城市是？',opts:['武汉','郑州','徐州','兰州'],ans:1},
+  {q:'陇海—兰新线东起哪个城市？',opts:['西安','兰州','连云港','郑州'],ans:2},
+  {q:'中国最大的商品粮基地是？',opts:['松嫩平原','三江平原','鄱阳湖平原','成都平原'],ans:1},
+  {q:'中国甘蔗产量最高的省级行政区是？',opts:['广东','云南','广西','海南'],ans:2},
+  {q:'中国棉花产量最高的省级行政区是？',opts:['山东','河北','新疆','河南'],ans:2},
+  {q:'中国橡胶主要分布在？',opts:['广东、广西','海南、云南','福建、浙江','四川、贵州'],ans:1},
+  {q:'九大商品粮基地中位于广东省的是？',opts:['江淮地区','鄱阳湖平原','珠江三角洲','江汉平原'],ans:2},
+  {q:'上海港在世界港口中什么指标排名第一？',opts:['货物吞吐量','集装箱吞吐量','旅客吞吐量','石油吞吐量'],ans:1},
+  {q:'宁波—舟山港在世界港口中什么指标排名第一？',opts:['集装箱吞吐量','货物吞吐量','旅客吞吐量','汽车吞吐量'],ans:1},
+  {q:'中国水稻最主要的产区在哪个区域？',opts:['东北平原','华北平原','秦岭淮河以南','西北内陆'],ans:2},
+  {q:'青藏地区最具代表性的牲畜是？',opts:['牛','牦牛','马','绵羊'],ans:1},
+  // 更多综合
+  {q:'中国面积最大的省级行政区是？',opts:['西藏','内蒙古','新疆','青海'],ans:2},
+  {q:'中国人口最多的少数民族是？',opts:['壮族','回族','满族','维吾尔族'],ans:0},
+  {q:'中国跨纬度最广的省级行政区是？',opts:['新疆','内蒙古','西藏','黑龙江'],ans:1},
+  {q:'中国最大的岛屿是？',opts:['海南岛','崇明岛','台湾岛','舟山岛'],ans:2},
+  {q:'中国最大的群岛是？',opts:['南沙群岛','舟山群岛','西沙群岛','澎湖列岛'],ans:1},
+  {q:'中国最长的内流河是？',opts:['塔里木河','黑河','疏勒河','伊犁河'],ans:0},
+  {q:'世界上面积最大的热带沙漠是？',opts:['戈壁沙漠','撒哈拉沙漠','阿拉伯沙漠','塔克拉玛干沙漠'],ans:1},
+  {q:'世界上面积最大的淡水湖群是？',opts:['非洲大湖区','贝加尔湖区','五大湖','千岛湖区'],ans:2},
+  {q:'世界上面积最大的淡水湖是？',opts:['贝加尔湖','苏必利尔湖','维多利亚湖','密歇根湖'],ans:1},
+  {q:'连接地中海和红海的重要运河是？',opts:['巴拿马运河','基尔运河','苏伊士运河','京杭大运河'],ans:2},
+  {q:'巴拿马运河连接的大洋是？',opts:['太平洋和印度洋','大西洋和印度洋','太平洋和大西洋','北冰洋和太平洋'],ans:2},
+  {q:'非洲最高峰是？',opts:['乞力马扎罗山','肯尼亚山','鲁文佐里山','阿特拉斯山'],ans:0},
+  {q:'南美洲最高峰是？',opts:['钦博拉索山','阿空加瓜山','麦金利山','奥霍斯·德尔萨拉多'],ans:1},
+  {q:'亚洲最长的河流是？',opts:['黄河','长江','湄公河','叶尼塞河'],ans:1},
+  {q:'世界上最深的湖泊是？',opts:['里海','坦噶尼喀湖','贝加尔湖','苏必利尔湖'],ans:2},
+  {q:'世界上面积最大的咸水湖是？',opts:['青海湖','里海','死海','咸海'],ans:1},
+  {q:'印度洋大部分位于哪个半球？',opts:['北半球','南半球','东半球','跨赤道南北'],ans:1},
+  {q:'世界陆地最低点是？',opts:['吐鲁番盆地','死海沿岸','加利福尼亚死谷','里海沿岸'],ans:1},
+  {q:'中国最大的渔场是？',opts:['北部湾渔场','舟山渔场','渤海渔场','南海渔场'],ans:1},
+  {q:'"三山五岳"中的五岳之首是？',opts:['泰山','华山','嵩山','衡山'],ans:0},
+  {q:'中国最大的沙漠是？',opts:['古尔班通古特沙漠','巴丹吉林沙漠','塔克拉玛干沙漠','腾格里沙漠'],ans:2},
+  {q:'世界人口最多的国家是？',opts:['中国','印度','美国','印度尼西亚'],ans:1},
+  {q:'世界上面积最大的国家是？',opts:['加拿大','中国','美国','俄罗斯'],ans:3},
+  {q:'世界上最小的国家是？',opts:['摩纳哥','梵蒂冈','圣马力诺','列支敦士登'],ans:1},
+  {q:'世界上最大的半岛是？',opts:['斯堪的纳维亚半岛','阿拉伯半岛','印度半岛','中南半岛'],ans:1},
+  {q:'世界最大的群岛国家是？',opts:['菲律宾','印度尼西亚','日本','马尔代夫'],ans:1},
+];
+
+// ==================== Quiz Logic ====================
+function shuffleArray(arr) {
+  var result = arr.slice();
+  for (var i = result.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = result[i]; result[i] = result[j]; result[j] = t;
+  }
+  return result;
+}
+
+(function() {
+  var questions = shuffleArray(geoQuestions);
+  var idx = 0;
+  var score = 0;
+  var totalAnswered = 0;
+
+  function show() {
+    var q = questions[idx];
+    document.getElementById('quizQ').textContent = q.q;
+    document.getElementById('quizCounter').textContent = '第 ' + (idx + 1) + ' / ' + questions.length + ' 题';
+    var container = document.getElementById('quizOpts');
+    container.innerHTML = '';
+    var correctText = q.opts[q.ans];
+    var shuffledOpts = shuffleArray(q.opts);
+    shuffledOpts.forEach(function(opt) {
+      var btn = document.createElement('button');
+      btn.className = 'quiz-option';
+      btn.textContent = opt;
+      btn.addEventListener('click', function() {
+        if (btn.classList.contains('correct') || btn.classList.contains('wrong')) return;
+        totalAnswered++;
+        if (opt === correctText) {
+          btn.classList.add('correct');
+          score++;
+          document.getElementById('quizScore').textContent = '正确: ' + score + '/' + totalAnswered;
+          setTimeout(function() {
+            idx = (idx + 1) % questions.length;
+            if (idx === 0) {
+              questions = shuffleArray(geoQuestions);
+              score = 0;
+              totalAnswered = 0;
+              document.getElementById('quizScore').textContent = '正确: 0';
+            }
+            show();
+          }, 800);
+        } else {
+          btn.classList.add('wrong');
+          document.getElementById('quizScore').textContent = '正确: ' + score + '/' + totalAnswered;
+        }
+      });
+      container.appendChild(btn);
+    });
+  }
+  show();
+})();
+</script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>

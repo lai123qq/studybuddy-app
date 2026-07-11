@@ -1,0 +1,1645 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f8f9fc">
+<title>VocabBuilder · 词汇构建者</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  html, body { overscroll-behavior: none; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    background: #f8f9fc; color: #1e293b;
+    min-height: 100vh; overflow-x: hidden;
+    padding: 28px env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app { max-width: 480px; margin: 0 auto; padding: 20px 16px 100px; }
+
+  /* Header */
+  .head { margin-bottom: 16px; margin-top: 24px; }
+  .back-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 4px; color: #64748b; text-decoration: none; font-size: 14px;
+    margin-bottom: 10px; cursor: pointer; min-width: 44px; min-height: 44px;
+    padding: 10px 14px; border-radius: 10px; transition: background 0.2s;
+    border: none; background: transparent; font-family: inherit; margin-top: 0px; }
+  .back-btn:active { background: #e2e8f0; }
+  .head h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .head .subtitle { font-size: 13px; color: #94a3b8; }
+
+  /* Library selector */
+  .lib-bar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    background: #fff; border-radius: 12px; padding: 10px 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .lib-bar label { font-size: 13px; color: #64748b; font-weight: 500; }
+  .lib-bar select {
+    flex: 1; border: none; background: transparent; font-size: 14px; font-weight: 600;
+    color: #1e293b; font-family: inherit; outline: none; cursor: pointer;
+  }
+  .lib-info { font-size: 12px; color: #94a3b8; }
+
+  /* Daily goal */
+  .goal-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff; border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04); margin-bottom: 16px;
+  }
+  .goal-bar .lbl { font-size: 13px; color: #64748b; font-weight: 500; }
+  .goal-bar .val { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .goal-bar .val b { color: #6366f1; }
+  .goal-bar input[type="number"] {
+    width: 56px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px 6px;
+    font-size: 14px; font-weight: 600; text-align: center; font-family: inherit;
+  }
+
+  /* Progress */
+  .progress-bar {
+    background: #fff; border-radius: 12px; padding: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04); margin-bottom: 16px;
+  }
+  .progress-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 10px; }
+  .progress-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .progress-cell { text-align: center; }
+  .progress-cell .num { font-size: 20px; font-weight: 700; color: #6366f1; }
+  .progress-cell .txt { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  /* Mode tabs */
+  .mode-tabs {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  }
+  .mode-tabs::-webkit-scrollbar { display: none; }
+  .mode-tab {
+    flex-shrink: 0; padding: 8px 18px; border-radius: 20px;
+    border: none; background: #e2e8f0; color: #64748b;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .mode-tab.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+  }
+
+  /* Card */
+  .card-area { perspective: 1200px; margin-bottom: 20px; }
+  .word-card {
+    position: relative; width: 100%; height: 280px;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d; cursor: pointer;
+  }
+  .word-card.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; inset: 0; backface-visibility: hidden;
+    background: #fff; border-radius: 20px; padding: 28px 24px;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    border: 1px solid rgba(226,232,240,0.6);
+  }
+  .card-face.back { transform: rotateY(180deg); background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-color: transparent; }
+  .card-face .word { font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .card-face.back .word { color: #fff; }
+  .card-face .phonetic { font-size: 15px; color: #94a3b8; font-family: 'JetBrainsMono', monospace; margin-bottom: 16px; }
+  .card-face.back .phonetic { color: rgba(255,255,255,0.7); }
+  .card-face .meaning { font-size: 18px; color: #475569; font-weight: 500; text-align: center; line-height: 1.5; }
+  .card-face.back .meaning { color: rgba(255,255,255,0.95); }
+  .card-face .hint { position: absolute; bottom: 16px; font-size: 12px; color: #cbd5e1; }
+  .card-face.back .hint { color: rgba(255,255,255,0.5); }
+
+  /* Controls */
+  .ctrl-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .ctrl-btn {
+    flex: 1; padding: 14px; border-radius: 14px; border: none;
+    font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .ctrl-btn.primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+  .ctrl-btn.primary:active { transform: scale(0.97); }
+  .ctrl-btn.ghost { background: #fff; color: #64748b; border: 1px solid #e2e8f0; }
+  .ctrl-btn.ghost:active { background: #f1f5f9; }
+
+  /* Quiz options */
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .quiz-opt {
+    background: #fff; border: 2px solid #e2e8f0; border-radius: 14px; padding: 14px 16px;
+    font-size: 15px; color: #1e293b; cursor: pointer; transition: all 0.2s; font-family: inherit;
+    text-align: left;
+  }
+  .quiz-opt:hover { border-color: #cbd5e1; }
+  .quiz-opt.correct { border-color: #22c55e; background: #f0fdf4; color: #166534; }
+  .quiz-opt.wrong { border-color: #ef4444; background: #fef2f2; color: #b91c1c; }
+  .quiz-opt.disabled { opacity: 0.6; pointer-events: none; }
+
+  /* Spell input */
+  .spell-box {
+    background: #fff; border-radius: 14px; padding: 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04); margin-bottom: 16px;
+  }
+  .spell-prompt { font-size: 16px; color: #475569; margin-bottom: 12px; text-align: center; }
+  .spell-prompt b { color: #1e293b; }
+  .spell-input {
+    width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 18px; font-family: inherit; text-align: center; outline: none; transition: border-color 0.2s;
+  }
+  .spell-input:focus { border-color: #6366f1; }
+  .spell-input.correct { border-color: #22c55e; background: #f0fdf4; }
+  .spell-input.wrong { border-color: #ef4444; background: #fef2f2; }
+  .spell-result { text-align: center; margin-top: 10px; font-size: 14px; font-weight: 600; }
+  .spell-result.ok { color: #22c55e; }
+  .spell-result.bad { color: #ef4444; }
+
+  /* Score bar */
+  .score-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff; border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04); margin-bottom: 16px;
+  }
+  .score-bar .item { text-align: center; }
+  .score-bar .item .num { font-size: 18px; font-weight: 700; color: #6366f1; }
+  .score-bar .item .txt { font-size: 11px; color: #94a3b8; }
+
+  /* Streak badge */
+  .streak-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #fff;
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+  .shake { animation: shake 0.4s ease; }
+  @keyframes pop { 0%{transform:scale(0.9)} 50%{transform:scale(1.02)} 100%{transform:scale(1)} }
+  .pop { animation: pop 0.3s ease; }
+
+  /* Section display */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .app { padding: 10px 12px 100px; max-width: 100%; }
+    .head h1 { font-size: 17px; }
+    .head .subtitle { font-size: 12px; }
+    .word-card { height: 240px; }
+    .card-face .word { font-size: 19px; }
+    .card-face .pos { font-size: 12px; }
+    .card-face .phonetic { font-size: 13px; }
+    .card-face .meaning { font-size: 13px; }
+    .progress-bar { padding: 12px; }
+    .progress-cell .num { font-size: 15px; }
+    .progress-cell .txt { font-size: 10px; }
+    .goal-bar { padding: 10px 12px; }
+    .goal-bar .lbl { font-size: 12px; }
+    .goal-bar .val { font-size: 13px; }
+    .lib-bar { padding: 8px 12px; }
+    .lib-bar label { font-size: 12px; }
+    .lib-bar select { font-size: 13px; }
+    .lib-info { font-size: 11px; }
+    .mode-tabs { gap: 6px; margin-bottom: 16px; }
+    .mode-tab { padding: 6px 14px; font-size: 13px; }
+    .quiz-option { padding: 10px; font-size: 13px; min-height: 44px; }
+    .vocab-toolbar { white-space: normal; word-break: break-word; }
+    .toast { bottom: calc(24px + env(safe-area-inset-bottom)); }
+  }
+  @media (max-width: 360px) {
+    .word-card { height: 220px; }
+    .card-face .word { font-size: 22px; }
+  }
+
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <a class="back-btn" href="../index-v2.html">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      返回
+    </a>
+    <h1>VocabBuilder</h1>
+    <p class="subtitle">构建你的英语词汇力</p>
+  </div>
+
+  <div class="lib-bar">
+    <label>词库</label>
+    <select id="libSelect" onchange="changeLib()">
+      <option value="middle">中考核心 (300词)</option>
+      <option value="high">高考核心 (300词)</option>
+      <option value="cet4">四级核心 (200词)</option>
+      <option value="cet6">六级核心 (200词)</option>
+    </select>
+    <span class="lib-info" id="libCount">300词</span>
+  </div>
+
+  <div class="goal-bar">
+    <span class="lbl">每日目标</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="number" id="dailyGoal" value="20" min="5" max="100" onchange="saveGoal()">
+      <span class="val">词 / 天</span>
+    </div>
+    <span class="val">今日: <b id="todayCount">0</b></span>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-title">学习进度</div>
+    <div class="progress-grid">
+      <div class="progress-cell">
+        <div class="num" id="progLearned">0</div>
+        <div class="txt">已学习</div>
+      </div>
+      <div class="progress-cell">
+        <div class="num" id="progAccuracy">0%</div>
+        <div class="txt">正确率</div>
+      </div>
+      <div class="progress-cell">
+        <div class="num" id="progStreak">0</div>
+        <div class="txt">连续天数</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('browse')">浏览模式</button>
+    <button class="mode-tab" onclick="setMode('quiz')">测验模式</button>
+    <button class="mode-tab" onclick="setMode('spell')">拼写模式</button>
+  </div>
+
+  <div id="browseSection" class="section active">
+    <div class="card-area" onclick="flipCard()">
+      <div class="word-card" id="browseCard">
+        <div class="card-face front">
+          <div class="word" id="bWord">word</div>
+          <div class="phonetic" id="bPhonetic">/phonetic/</div>
+          <div class="hint">点击翻转查看释义</div>
+        </div>
+        <div class="card-face back">
+          <div class="word" id="bWordBack">word</div>
+          <div class="meaning" id="bMeaning">meaning</div>
+          <div class="hint">点击翻转</div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn ghost" onclick="prevWord()">上一个</button>
+      <button class="ctrl-btn primary" onclick="nextWord()">下一个</button>
+    </div>
+  </div>
+
+  <div id="quizSection" class="section">
+    <div class="score-bar">
+      <div class="item"><div class="num" id="qScore">0</div><div class="txt">得分</div></div>
+      <div class="item"><div class="num" id="qTotal">0</div><div class="txt">题目</div></div>
+      <div class="item"><div class="num" id="qStreak">0</div><div class="txt">连对</div></div>
+    </div>
+    <div class="card-area">
+      <div class="word-card" style="height:140px;cursor:default;">
+        <div class="card-face front" style="justify-content:center;">
+          <div class="word" id="qWord">word</div>
+          <div class="phonetic" id="qPhonetic">/phonetic/</div>
+        </div>
+      </div>
+    </div>
+    <div class="quiz-options" id="qOptions"></div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn primary" onclick="nextQuiz()">下一题</button>
+    </div>
+  </div>
+
+  <div id="spellSection" class="section">
+    <div class="score-bar">
+      <div class="item"><div class="num" id="sScore">0</div><div class="txt">得分</div></div>
+      <div class="item"><div class="num" id="sTotal">0</div><div class="txt">题目</div></div>
+      <div class="item"><div class="num" id="sStreak">0</div><div class="txt">连对</div></div>
+    </div>
+    <div class="spell-box">
+      <div class="spell-prompt">请根据释义拼写单词：<br><b id="sMeaning">meaning</b></div>
+      <input type="text" class="spell-input" id="sInput" placeholder="输入英文单词" autocomplete="off" autocorrect="off" autocapitalize="off" onkeydown="if(event.key==='Enter')checkSpell()">
+      <div class="spell-result" id="sResult"></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn ghost" onclick="showSpellHint()">提示</button>
+      <button class="ctrl-btn primary" onclick="checkSpell()">检查</button>
+      <button class="ctrl-btn primary" onclick="nextSpell()" id="sNextBtn" style="display:none;">下一题</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Vocabulary Data
+// ============================================================
+const VOCAB = {
+  middle: [
+["ability", "能力", "/əˈbɪləti/"],
+["able", "能够", "/ˈeɪbl/"],
+["abroad", "在国外", "/əˈbrɔːd/"],
+["accept", "接受", "/əkˈsept/"],
+["accident", "事故", "/ˈæksɪdənt/"],
+["achieve", "达到", "/əˈtʃiːv/"],
+["across", "横过", "/əˈkrɔːs/"],
+["action", "行动", "/ˈækʃn/"],
+["active", "积极的", "/ˈæktɪv/"],
+["activity", "活动", "/ækˈtɪvəti/"],
+["actor", "男演员", "/ˈæktər/"],
+["actress", "女演员", "/ˈæktrəs/"],
+["actually", "实际上", "/ˈæktʃuəli/"],
+["add", "添加", "/æd/"],
+["address", "地址", "/əˈdres/"],
+["admire", "钦佩", "/ədˈmaɪər/"],
+["advantage", "优势", "/ədˈvæntɪdʒ/"],
+["adventure", "冒险", "/ədˈventʃər/"],
+["advice", "建议", "/ədˈvaɪs/"],
+["advise", "劝告", "/ədˈvaɪz/"],
+["afford", "负担得起", "/əˈfɔːrd/"],
+["afraid", "害怕的", "/əˈfreɪd/"],
+["against", "反对", "/əˈɡenst/"],
+["agency", "代理机构", "/ˈeɪdʒənsi/"],
+["agent", "代理人", "/ˈeɪdʒənt/"],
+["ago", "以前", "/əˈɡoʊ/"],
+["agree", "同意", "/əˈɡriː/"],
+["agreement", "协议", "/əˈɡriːmənt/"],
+["ahead", "向前", "/əˈhed/"],
+["aid", "帮助", "/eɪd/"],
+["aim", "目标", "/eɪm/"],
+["air", "空气", "/er/"],
+["airline", "航空公司", "/ˈerlaɪn/"],
+["airport", "机场", "/ˈerpɔːrt/"],
+["alive", "活着的", "/əˈlaɪv/"],
+["allow", "允许", "/əˈlaʊ/"],
+["almost", "几乎", "/ˈɔːlmoʊst/"],
+["alone", "独自", "/əˈloʊn/"],
+["along", "沿着", "/əˈlɔːŋ/"],
+["aloud", "大声地", "/əˈlaʊd/"],
+["already", "已经", "/ɔːlˈredi/"],
+["also", "也", "/ˈɔːlsoʊ/"],
+["although", "虽然", "/ɔːlˈðoʊ/"],
+["always", "总是", "/ˈɔːlweɪz/"],
+["amaze", "使惊奇", "/əˈmeɪz/"],
+["amazing", "令人惊奇的", "/əˈmeɪzɪŋ/"],
+["ambition", "雄心", "/æmˈbɪʃn/"],
+["among", "在……之中", "/əˈmʌŋ/"],
+["ancient", "古代的", "/ˈeɪnʃənt/"],
+["anger", "愤怒", "/ˈæŋɡər/"],
+["angry", "生气的", "/ˈæŋɡri/"],
+["animal", "动物", "/ˈænɪml/"],
+["announce", "宣布", "/əˈnaʊns/"],
+["annoy", "使烦恼", "/əˈnɔɪ/"],
+["another", "另一个", "/əˈnʌðər/"],
+["answer", "回答", "/ˈænsər/"],
+["anxious", "焦虑的", "/ˈæŋkʃəs/"],
+["anybody", "任何人", "/ˈenibɑːdi/"],
+["anyone", "任何人", "/ˈeniwʌn/"],
+["anything", "任何事", "/ˈeniθɪŋ/"],
+["anyway", "无论如何", "/ˈeniweɪ/"],
+["anywhere", "任何地方", "/ˈeniwer/"],
+["apart", "分开", "/əˈpɑːrt/"],
+["apartment", "公寓", "/əˈpɑːrtmənt/"],
+["apologize", "道歉", "/əˈpɑːlədʒaɪz/"],
+["apparently", "显然", "/əˈpærəntli/"],
+["appear", "出现", "/əˈpɪr/"],
+["appearance", "外貌", "/əˈpɪərəns/"],
+["apple", "苹果", "/ˈæpl/"],
+["application", "申请", "/ˌæplɪˈkeɪʃn/"],
+["apply", "申请", "/əˈplaɪ/"],
+["appoint", "任命", "/əˈpɔɪnt/"],
+["appointment", "约会", "/əˈpɔɪntmənt/"],
+["appreciate", "感激", "/əˈpriːʃieɪt/"],
+["approach", "接近", "/əˈproʊtʃ/"],
+["appropriate", "适当的", "/əˈproʊpriət/"],
+["approve", "赞成", "/əˈpruːv/"],
+["approximately", "大约", "/əˈprɑːksɪmətli/"],
+["architect", "建筑师", "/ˈɑːrkɪtekt/"],
+["area", "地区", "/ˈeriə/"],
+["argue", "争论", "/ˈɑːrɡjuː/"],
+["arise", "出现", "/əˈraɪz/"],
+["arm", "手臂", "/ɑːrm/"],
+["army", "军队", "/ˈɑːrmi/"],
+["around", "周围", "/əˈraʊnd/"],
+["arrange", "安排", "/əˈreɪndʒ/"],
+["arrangement", "安排", "/əˈreɪndʒmənt/"],
+["arrest", "逮捕", "/əˈrest/"],
+["arrival", "到达", "/əˈraɪvl/"],
+["arrive", "到达", "/əˈraɪv/"],
+["art", "艺术", "/ɑːrt/"],
+["article", "文章", "/ˈɑːrtɪkl/"],
+["artist", "艺术家", "/ˈɑːrtɪst/"],
+["ashamed", "羞愧的", "/əˈʃeɪmd/"],
+["aside", "在旁边", "/əˈsaɪd/"],
+["ask", "问", "/ɑːsk/"],
+["asleep", "睡着的", "/əˈsliːp/"],
+["aspect", "方面", "/ˈæspekt/"],
+["assist", "协助", "/əˈsɪst/"],
+["assistance", "帮助", "/əˈsɪstəns/"],
+["assistant", "助手", "/əˈsɪstənt/"],
+["associate", "联想", "/əˈsoʊsieɪt/"],
+["association", "协会", "/əˌsoʊsiˈeɪʃn/"],
+["assume", "假设", "/əˈsuːm/"],
+["assumption", "假定", "/əˈsʌmpʃn/"],
+["assure", "保证", "/əˈʃʊr/"],
+["astonish", "使惊讶", "/əˈstɑːnɪʃ/"],
+["atmosphere", "气氛", "/ˈætməsfɪr/"],
+["attach", "附上", "/əˈtætʃ/"],
+["attack", "攻击", "/əˈtæk/"],
+["attain", "达到", "/əˈteɪn/"],
+["attempt", "尝试", "/əˈtempt/"],
+["attend", "参加", "/əˈtend/"],
+["attention", "注意", "/əˈtenʃn/"],
+["attitude", "态度", "/ˈætɪtuːd/"],
+["attract", "吸引", "/əˈtrækt/"],
+["attraction", "吸引力", "/əˈtrækʃn/"],
+["attractive", "有吸引力的", "/əˈtræktɪv/"],
+["audience", "观众", "/ˈɔːdiəns/"],
+["aunt", "阿姨", "/ænt/"],
+["authority", "权威", "/əˈθɔːrəti/"],
+["automatic", "自动的", "/ˌɔːtəˈmætɪk/"],
+["autumn", "秋天", "/ˈɔːtəm/"],
+["available", "可用的", "/əˈveɪləbl/"],
+["average", "平均的", "/ˈævərɪdʒ/"],
+["avoid", "避免", "/əˈvɔɪd/"],
+["awake", "醒着的", "/əˈweɪk/"],
+["award", "奖", "/əˈwɔːrd/"],
+["aware", "意识到的", "/əˈwer/"],
+["away", "离开", "/əˈweɪ/"],
+["awful", "糟糕的", "/ˈɔːfl/"],
+["awkward", "尴尬的", "/ˈɔːkwərd/"],
+["baby", "婴儿", "/ˈbeɪbi/"],
+["back", "后面", "/bæk/"],
+["background", "背景", "/ˈbækɡraʊnd/"],
+["backward", "向后的", "/ˈbækwərd/"],
+["bad", "坏的", "/bæd/"],
+["badly", "严重地", "/ˈbædli/"],
+["bag", "包", "/bæɡ/"],
+["bake", "烘烤", "/beɪk/"],
+["balance", "平衡", "/ˈbæləns/"],
+["ball", "球", "/bɔːl/"],
+["balloon", "气球", "/bəˈluːn/"],
+["ban", "禁止", "/bæn/"],
+["banana", "香蕉", "/bəˈnænə/"],
+["band", "乐队", "/bænd/"],
+["bank", "银行", "/bæŋk/"],
+["bar", "酒吧", "/bɑːr/"],
+["bare", "赤裸的", "/ber/"],
+["barely", "仅仅", "/ˈberli/"],
+["bark", "吠叫", "/bɑːrk/"],
+["base", "基础", "/beɪs/"],
+["baseball", "棒球", "/ˈbeɪsbɔːl/"],
+["basic", "基本的", "/ˈbeɪsɪk/"],
+["basically", "基本上", "/ˈbeɪsɪkli/"],
+["basis", "基础", "/ˈbeɪsɪs/"],
+["basket", "篮子", "/ˈbɑːskɪt/"],
+["basketball", "篮球", "/ˈbɑːskɪtbɔːl/"],
+["bat", "球棒", "/bæt/"],
+["bath", "洗澡", "/bæθ/"],
+["bathroom", "浴室", "/ˈbæθruːm/"],
+["battery", "电池", "/ˈbætəri/"],
+["battle", "战斗", "/ˈbætl/"],
+["beach", "海滩", "/biːtʃ/"],
+["bean", "豆", "/biːn/"],
+["bear", "熊", "/ber/"],
+["beard", "胡须", "/bɪrd/"],
+["beat", "打败", "/biːt/"],
+["beautiful", "美丽的", "/ˈbjuːtɪfl/"],
+["beauty", "美", "/ˈbjuːti/"],
+["because", "因为", "/bɪˈkɔːz/"],
+["become", "变成", "/bɪˈkʌm/"],
+["bed", "床", "/bed/"],
+["bedroom", "卧室", "/ˈbedruːm/"],
+["beef", "牛肉", "/biːf/"],
+["beer", "啤酒", "/bɪr/"],
+["before", "在……之前", "/bɪˈfɔːr/"],
+["beg", "乞求", "/beɡ/"],
+["begin", "开始", "/bɪˈɡɪn/"],
+["beginning", "开始", "/bɪˈɡɪnɪŋ/"],
+["behalf", "代表", "/bɪˈhæf/"],
+["behave", "表现", "/bɪˈheɪv/"],
+["behavior", "行为", "/bɪˈheɪvjər/"],
+["behind", "在……后面", "/bɪˈhaɪnd/"],
+["being", "存在", "/ˈbiːɪŋ/"],
+["belief", "信念", "/bɪˈliːf/"],
+["believe", "相信", "/bɪˈliːv/"],
+["bell", "钟", "/bel/"],
+["belong", "属于", "/bɪˈlɔːŋ/"],
+["below", "在下面", "/bɪˈloʊ/"],
+["belt", "腰带", "/belt/"],
+["bench", "长凳", "/bentʃ/"],
+["bend", "弯曲", "/bend/"],
+["beneath", "在……下方", "/bɪˈniːθ/"],
+["benefit", "利益", "/ˈbenɪfɪt/"],
+["beside", "在旁边", "/bɪˈsaɪd/"],
+["besides", "此外", "/bɪˈsaɪdz/"],
+["best", "最好的", "/best/"],
+["bet", "打赌", "/bet/"],
+["better", "更好的", "/ˈbetər/"],
+["between", "在……之间", "/bɪˈtwiːn/"],
+["beyond", "超出", "/bɪˈjɑːnd/"],
+["bicycle", "自行车", "/ˈbaɪsɪkl/"],
+["big", "大的", "/bɪɡ/"],
+["bike", "自行车", "/baɪk/"],
+["bill", "账单", "/bɪl/"],
+["billion", "十亿", "/ˈbɪljən/"],
+["bind", "捆绑", "/baɪnd/"],
+["biology", "生物学", "/baɪˈɑːlədʒi/"],
+["bird", "鸟", "/bɜːrd/"],
+["birth", "出生", "/bɜːrθ/"],
+["birthday", "生日", "/ˈbɜːrθdeɪ/"],
+["biscuit", "饼干", "/ˈbɪskɪt/"],
+["bit", "一点", "/bɪt/"],
+["bite", "咬", "/baɪt/"],
+["bitter", "苦的", "/ˈbɪtər/"],
+["black", "黑色的", "/blæk/"],
+["blade", "刀片", "/bleɪd/"],
+["blame", "责备", "/bleɪm/"],
+["blank", "空白的", "/blæŋk/"],
+["blanket", "毛毯", "/ˈblæŋkɪt/"],
+["blind", "盲目的", "/blaɪnd/"],
+["block", "街区", "/blɑːk/"],
+["blood", "血", "/blʌd/"],
+["blow", "吹", "/bloʊ/"],
+["blue", "蓝色的", "/bluː/"],
+["board", "木板", "/bɔːrd/"],
+["boast", "自夸", "/boʊst/"],
+["boat", "船", "/boʊt/"],
+["body", "身体", "/ˈbɑːdi/"],
+["boil", "沸腾", "/bɔɪl/"],
+["bomb", "炸弹", "/bɑːm/"],
+["bone", "骨头", "/boʊn/"],
+["book", "书", "/bʊk/"],
+["boot", "靴子", "/buːt/"],
+["border", "边界", "/ˈbɔːrdər/"],
+["bore", "使厌烦", "/bɔːr/"],
+["bored", "无聊的", "/bɔːrd/"],
+["boring", "乏味的", "/ˈbɔːrɪŋ/"],
+["born", "出生的", "/bɔːrn/"],
+["borrow", "借", "/ˈbɑːroʊ/"],
+["boss", "老板", "/bɔːs/"],
+["both", "两者都", "/boʊθ/"],
+["bother", "打扰", "/ˈbɑːðər/"],
+["bottle", "瓶子", "/ˈbɑːtl/"],
+["bottom", "底部", "/ˈbɑːtəm/"],
+["bowl", "碗", "/boʊl/"],
+["box", "盒子", "/bɑːks/"],
+["boy", "男孩", "/bɔɪ/"],
+["brain", "大脑", "/breɪn/"],
+["branch", "树枝", "/bræntʃ/"],
+["brand", "品牌", "/brænd/"],
+["brave", "勇敢的", "/breɪv/"],
+["bread", "面包", "/bred/"],
+["break", "打破", "/breɪk/"],
+["breakfast", "早餐", "/ˈbrekfəst/"],
+["breast", "胸部", "/brest/"],
+["breath", "呼吸", "/breθ/"],
+["breathe", "呼吸", "/briːð/"],
+["brick", "砖", "/brɪk/"],
+["bridge", "桥", "/brɪdʒ/"],
+["brief", "简短的", "/briːf/"],
+["bright", "明亮的", "/braɪt/"],
+["brilliant", "杰出的", "/ˈbrɪliənt/"],
+["bring", "带来", "/brɪŋ/"],
+["broad", "宽阔的", "/brɔːd/"],
+["broadcast", "广播", "/ˈbrɔːdkæst/"],
+["brother", "兄弟", "/ˈbrʌðər/"],
+["brown", "棕色的", "/braʊn/"],
+["brush", "刷子", "/brʌʃ/"],
+["bubble", "气泡", "/ˈbʌbl/"],
+["budget", "预算", "/ˈbʌdʒɪt/"],
+["build", "建造", "/bɪld/"],
+["building", "建筑物", "/ˈbɪldɪŋ/"],
+["bunch", "束", "/bʌntʃ/"],
+["burn", "燃烧", "/bɜːrn/"],
+["burst", "爆发", "/bɜːrst/"],
+["bury", "埋葬", "/ˈberi/"],
+["bus", "公共汽车", "/bʌs/"],
+["bush", "灌木", "/bʊʃ/"],
+["business", "商业", "/ˈbɪznəs/"],
+["busy", "忙碌的", "/ˈbɪzi/"],
+["but", "但是", "/bʌt/"],
+["butter", "黄油", "/ˈbʌtər/"],
+["button", "按钮", "/ˈbʌtn/"],
+["buy", "买", "/baɪ/"],
+["by", "通过", "/baɪ/"],
+["cabinet", "内阁", "/ˈkæbɪnət/"],
+["cable", "电缆", "/ˈkeɪbl/"],
+["cafe", "咖啡馆", "/ˈkæfeɪ/"],
+["cake", "蛋糕", "/keɪk/"],
+["calculate", "计算", "/ˈkælkjuleɪt/"],
+["call", "打电话", "/kɔːl/"],
+["calm", "平静的", "/kɑːm/"],
+["camera", "照相机", "/ˈkæmərə/"],
+["camp", "营地", "/kæmp/"],
+["campaign", "运动", "/kæmˈpeɪn/"],
+["cancel", "取消", "/ˈkænsl/"],
+["cancer", "癌症", "/ˈkænsər/"],
+["candidate", "候选人", "/ˈkændɪdət/"]
+],
+  high: [
+["daily", "每日的", "/ˈdeɪli/"],
+["damage", "损害", "/ˈdæmɪdʒ/"],
+["dance", "跳舞", "/dæns/"],
+["danger", "危险", "/ˈdeɪndʒər/"],
+["dangerous", "危险的", "/ˈdeɪndʒərəs/"],
+["dare", "敢", "/der/"],
+["dark", "黑暗的", "/dɑːrk/"],
+["data", "数据", "/ˈdeɪtə/"],
+["date", "日期", "/deɪt/"],
+["daughter", "女儿", "/ˈdɔːtər/"],
+["day", "天", "/deɪ/"],
+["dead", "死的", "/ded/"],
+["deaf", "聋的", "/def/"],
+["deal", "处理", "/diːl/"],
+["dear", "亲爱的", "/dɪr/"],
+["death", "死亡", "/deθ/"],
+["debate", "辩论", "/dɪˈbeɪt/"],
+["debt", "债务", "/det/"],
+["decade", "十年", "/ˈdekeɪd/"],
+["decide", "决定", "/dɪˈsaɪd/"],
+["decision", "决定", "/dɪˈsɪʒn/"],
+["declare", "宣布", "/dɪˈkler/"],
+["decline", "下降", "/dɪˈklaɪn/"],
+["decorate", "装饰", "/ˈdekəreɪt/"],
+["decrease", "减少", "/dɪˈkriːs/"],
+["deep", "深的", "/diːp/"],
+["defeat", "击败", "/dɪˈfiːt/"],
+["defense", "防御", "/dɪˈfens/"],
+["defend", "保卫", "/dɪˈfend/"],
+["define", "定义", "/dɪˈfaɪn/"],
+["definite", "明确的", "/ˈdefɪnət/"],
+["definitely", "明确地", "/ˈdefɪnətli/"],
+["definition", "定义", "/ˌdefɪˈnɪʃn/"],
+["degree", "程度", "/dɪˈɡriː/"],
+["delay", "延迟", "/dɪˈleɪ/"],
+["delete", "删除", "/dɪˈliːt/"],
+["deliberately", "故意地", "/dɪˈlɪbərətli/"],
+["delicious", "美味的", "/dɪˈlɪʃəs/"],
+["delight", "高兴", "/dɪˈlaɪt/"],
+["delighted", "高兴的", "/dɪˈlaɪtɪd/"],
+["deliver", "递送", "/dɪˈlɪvər/"],
+["demand", "要求", "/dɪˈmænd/"],
+["demonstrate", "证明", "/ˈdemənstreɪt/"],
+["dentist", "牙医", "/ˈdentɪst/"],
+["deny", "否认", "/dɪˈnaɪ/"],
+["depart", "离开", "/dɪˈpɑːrt/"],
+["department", "部门", "/dɪˈpɑːrtmənt/"],
+["departure", "离开", "/dɪˈpɑːrtʃər/"],
+["depend", "依靠", "/dɪˈpend/"],
+["dependent", "依赖的", "/dɪˈpendənt/"],
+["deposit", "存款", "/dɪˈpɑːzɪt/"],
+["depress", "使沮丧", "/dɪˈpres/"],
+["depressed", "沮丧的", "/dɪˈprest/"],
+["depth", "深度", "/depθ/"],
+["describe", "描述", "/dɪˈskraɪb/"],
+["description", "描述", "/dɪˈskrɪpʃn/"],
+["desert", "沙漠", "/ˈdezərt/"],
+["deserve", "值得", "/dɪˈzɜːrv/"],
+["design", "设计", "/dɪˈzaɪn/"],
+["designer", "设计师", "/dɪˈzaɪnər/"],
+["desire", "渴望", "/dɪˈzaɪər/"],
+["desk", "书桌", "/desk/"],
+["desperate", "绝望的", "/ˈdespərət/"],
+["despite", "尽管", "/dɪˈspaɪt/"],
+["destination", "目的地", "/ˌdestɪˈneɪʃn/"],
+["destroy", "破坏", "/dɪˈstrɔɪ/"],
+["detail", "细节", "/ˈdiːteɪl/"],
+["detect", "察觉", "/dɪˈtekt/"],
+["determination", "决心", "/dɪˌtɜːrmɪˈneɪʃn/"],
+["determine", "决定", "/dɪˈtɜːrmɪn/"],
+["develop", "发展", "/dɪˈveləp/"],
+["development", "发展", "/dɪˈveləpmənt/"],
+["device", "装置", "/dɪˈvaɪs/"],
+["devote", "奉献", "/dɪˈvoʊt/"],
+["diagram", "图表", "/ˈdaɪəɡræm/"],
+["dial", "拨号", "/ˈdaɪəl/"],
+["dialog", "对话", "/ˈdaɪəlɔːɡ/"],
+["diamond", "钻石", "/ˈdaɪəmənd/"],
+["diary", "日记", "/ˈdaɪəri/"],
+["dictionary", "词典", "/ˈdɪkʃəneri/"],
+["die", "死亡", "/daɪ/"],
+["diet", "饮食", "/ˈdaɪət/"],
+["differ", "不同", "/ˈdɪfər/"],
+["difference", "差异", "/ˈdɪfrəns/"],
+["different", "不同的", "/ˈdɪfrənt/"],
+["difficult", "困难的", "/ˈdɪfɪkəlt/"],
+["difficulty", "困难", "/ˈdɪfɪkəlti/"],
+["dig", "挖", "/dɪɡ/"],
+["digital", "数字的", "/ˈdɪdʒɪtl/"],
+["dinner", "晚餐", "/ˈdɪnər/"],
+["direct", "直接的", "/dəˈrekt/"],
+["direction", "方向", "/dəˈrekʃn/"],
+["directly", "直接地", "/dəˈrektli/"],
+["director", "导演", "/dəˈrektər/"],
+["directory", "目录", "/dəˈrektəri/"],
+["dirt", "污垢", "/dɜːrt/"],
+["dirty", "脏的", "/ˈdɜːrti/"],
+["disadvantage", "劣势", "/ˌdɪsədˈvæntɪdʒ/"],
+["disagree", "不同意", "/ˌdɪsəˈɡriː/"],
+["disappear", "消失", "/ˌdɪsəˈpɪr/"],
+["disappoint", "使失望", "/ˌdɪsəˈpɔɪnt/"],
+["disappointed", "失望的", "/ˌdɪsəˈpɔɪntɪd/"],
+["disappointing", "令人失望的", "/ˌdɪsəˈpɔɪntɪŋ/"],
+["disaster", "灾难", "/dɪˈzæstər/"],
+["discipline", "纪律", "/ˈdɪsəplɪn/"],
+["discount", "折扣", "/ˈdɪskaʊnt/"],
+["discover", "发现", "/dɪˈskʌvər/"],
+["discovery", "发现", "/dɪˈskʌvəri/"],
+["discuss", "讨论", "/dɪˈskʌs/"],
+["discussion", "讨论", "/dɪˈskʌʃn/"],
+["disease", "疾病", "/dɪˈziːz/"],
+["disgust", "厌恶", "/dɪsˈɡʌst/"],
+["dish", "盘子", "/dɪʃ/"],
+["dismiss", "解雇", "/dɪsˈmɪs/"],
+["display", "展示", "/dɪˈspleɪ/"],
+["distance", "距离", "/ˈdɪstəns/"],
+["distant", "遥远的", "/ˈdɪstənt/"],
+["distinguish", "区分", "/dɪˈstɪŋɡwɪʃ/"],
+["distribute", "分配", "/dɪˈstrɪbjuːt/"],
+["district", "地区", "/ˈdɪstrɪkt/"],
+["disturb", "打扰", "/dɪˈstɜːrb/"],
+["divide", "划分", "/dɪˈvaɪd/"],
+["division", "部门", "/dɪˈvɪʒn/"],
+["divorce", "离婚", "/dɪˈvɔːrs/"],
+["doctor", "医生", "/ˈdɑːktər/"],
+["document", "文件", "/ˈdɑːkjumənt/"],
+["dollar", "美元", "/ˈdɑːlər/"],
+["door", "门", "/dɔːr/"],
+["dot", "点", "/dɑːt/"],
+["double", "双倍的", "/ˈdʌbl/"],
+["doubt", "怀疑", "/daʊt/"],
+["down", "向下", "/daʊn/"],
+["download", "下载", "/ˌdaʊnˈloʊd/"],
+["downstairs", "楼下", "/ˌdaʊnˈsterz/"],
+["downtown", "市中心", "/ˌdaʊnˈtaʊn/"],
+["dozen", "打", "/ˈdʌzn/"],
+["draft", "草稿", "/dræft/"],
+["drag", "拖", "/dræɡ/"],
+["drama", "戏剧", "/ˈdrɑːmə/"],
+["dramatic", "戏剧性的", "/drəˈmætɪk/"],
+["draw", "画", "/drɔː/"],
+["drawer", "抽屉", "/ˈdrɔːər/"],
+["dream", "梦", "/driːm/"],
+["dress", "连衣裙", "/dres/"],
+["drink", "喝", "/drɪŋk/"],
+["drive", "驾驶", "/draɪv/"],
+["driver", "司机", "/ˈdraɪvər/"],
+["drop", "下降", "/drɑːp/"],
+["drug", "药物", "/drʌɡ/"],
+["drum", "鼓", "/drʌm/"],
+["dry", "干燥的", "/draɪ/"],
+["duck", "鸭子", "/dʌk/"],
+["due", "到期的", "/duː/"],
+["dull", "枯燥的", "/dʌl/"],
+["during", "在……期间", "/ˈdʊrɪŋ/"],
+["dust", "灰尘", "/dʌst/"],
+["duty", "职责", "/ˈduːti/"],
+["each", "每个", "/iːtʃ/"],
+["eager", "渴望的", "/ˈiːɡər/"],
+["ear", "耳朵", "/ɪr/"],
+["early", "早的", "/ˈɜːrli/"],
+["earn", "赚得", "/ɜːrn/"],
+["earth", "地球", "/ɜːrθ/"],
+["earthquake", "地震", "/ˈɜːrθkweɪk/"],
+["ease", "舒适", "/iːz/"],
+["easily", "容易地", "/ˈiːzəli/"],
+["east", "东方", "/iːst/"],
+["eastern", "东方的", "/ˈiːstərn/"],
+["easy", "容易的", "/ˈiːzi/"],
+["eat", "吃", "/iːt/"],
+["economy", "经济", "/ɪˈkɑːnəmi/"],
+["economic", "经济的", "/ˌiːkəˈnɑːmɪk/"],
+["edge", "边缘", "/edʒ/"],
+["edit", "编辑", "/ˈedɪt/"],
+["edition", "版本", "/ɪˈdɪʃn/"],
+["editor", "编辑", "/ˈedɪtər/"],
+["educate", "教育", "/ˈedʒukeɪt/"],
+["education", "教育", "/ˌedʒuˈkeɪʃn/"],
+["educational", "教育的", "/ˌedʒuˈkeɪʃənl/"],
+["effect", "影响", "/ɪˈfekt/"],
+["effective", "有效的", "/ɪˈfektɪv/"],
+["efficient", "高效的", "/ɪˈfɪʃnt/"],
+["effort", "努力", "/ˈefərt/"],
+["egg", "蛋", "/eɡ/"],
+["either", "任一", "/ˈiːðər/"],
+["elder", "年长的", "/ˈeldər/"],
+["elect", "选举", "/ɪˈlekt/"],
+["election", "选举", "/ɪˈlekʃn/"],
+["electric", "电的", "/ɪˈlektrɪk/"],
+["electronic", "电子的", "/ɪˌlekˈtrɑːnɪk/"],
+["elegant", "优雅的", "/ˈelɪɡənt/"],
+["element", "元素", "/ˈelɪmənt/"],
+["elementary", "基本的", "/ˌelɪˈmentri/"],
+["eliminate", "消除", "/ɪˈlɪmɪneɪt/"],
+["else", "其他", "/els/"],
+["elsewhere", "别处", "/ˌelsˈwer/"],
+["email", "电子邮件", "/ˈiːmeɪl/"],
+["embarrass", "使尴尬", "/ɪmˈbærəs/"],
+["embassy", "大使馆", "/ˈembəsi/"],
+["emergency", "紧急情况", "/ɪˈmɜːrdʒənsi/"],
+["emotion", "情感", "/ɪˈmoʊʃn/"],
+["emotional", "情感的", "/ɪˈmoʊʃənl/"],
+["emphasis", "强调", "/ˈemfəsɪs/"],
+["emphasize", "强调", "/ˈemfəsaɪz/"],
+["employ", "雇用", "/ɪmˈplɔɪ/"],
+["employee", "雇员", "/ɪmˈplɔɪiː/"],
+["employer", "雇主", "/ɪmˈplɔɪər/"],
+["employment", "就业", "/ɪmˈplɔɪmənt/"],
+["empty", "空的", "/ˈempti/"],
+["enable", "使能够", "/ɪˈneɪbl/"],
+["encounter", "遭遇", "/ɪnˈkaʊntər/"],
+["encourage", "鼓励", "/ɪnˈkɜːrɪdʒ/"],
+["end", "结束", "/end/"],
+["enemy", "敌人", "/ˈenəmi/"],
+["energy", "能量", "/ˈenərdʒi/"],
+["engage", "参与", "/ɪnˈɡeɪdʒ/"],
+["engine", "发动机", "/ˈendʒɪn/"],
+["engineer", "工程师", "/ˌendʒɪˈnɪr/"],
+["enjoy", "享受", "/ɪnˈdʒɔɪ/"],
+["enormous", "巨大的", "/ɪˈnɔːrməs/"],
+["enough", "足够的", "/ɪˈnʌf/"],
+["ensure", "确保", "/ɪnˈʃʊr/"],
+["enter", "进入", "/ˈentər/"],
+["entertain", "娱乐", "/ˌentərˈteɪn/"],
+["entertainment", "娱乐", "/ˌentərˈteɪnmənt/"],
+["enthusiasm", "热情", "/ɪnˈθuːziæzəm/"],
+["entire", "整个的", "/ɪnˈtaɪər/"],
+["entrance", "入口", "/ˈentrəns/"],
+["entry", "进入", "/ˈentri/"],
+["envelope", "信封", "/ˈenvəloʊp/"],
+["environment", "环境", "/ɪnˈvaɪrənmənt/"],
+["envy", "羡慕", "/ˈenvi/"],
+["equal", "相等的", "/ˈiːkwəl/"],
+["equipment", "设备", "/ɪˈkwɪpmənt/"],
+["equivalent", "相等的", "/ɪˈkwɪvələnt/"],
+["eraser", "橡皮", "/ɪˈreɪsər/"],
+["error", "错误", "/ˈerər/"],
+["escape", "逃跑", "/ɪˈskeɪp/"],
+["especially", "尤其", "/ɪˈspeʃəli/"],
+["essay", "文章", "/ˈeseɪ/"],
+["essential", "必要的", "/ɪˈsenʃl/"],
+["establish", "建立", "/ɪˈstæblɪʃ/"],
+["estate", "地产", "/ɪˈsteɪt/"],
+["estimate", "估计", "/ˈestɪmeɪt/"],
+["evaluate", "评价", "/ɪˈvæljueɪt/"],
+["even", "甚至", "/ˈiːvn/"],
+["evening", "晚上", "/ˈiːvnɪŋ/"],
+["event", "事件", "/ɪˈvent/"],
+["eventually", "最终", "/ɪˈventʃuəli/"],
+["ever", "曾经", "/ˈevər/"],
+["every", "每个", "/ˈevri/"],
+["everybody", "每个人", "/ˈevribɑːdi/"],
+["everyday", "每天的", "/ˈevrideɪ/"],
+["everyone", "每个人", "/ˈevriwʌn/"],
+["everything", "一切", "/ˈevriθɪŋ/"],
+["everywhere", "到处", "/ˈevriwer/"],
+["evidence", "证据", "/ˈevɪdəns/"],
+["evil", "邪恶的", "/ˈiːvl/"],
+["exact", "精确的", "/ɪɡˈzækt/"],
+["exactly", "确切地", "/ɪɡˈzæktli/"],
+["exam", "考试", "/ɪɡˈzæm/"],
+["examine", "检查", "/ɪɡˈzæmɪn/"],
+["example", "例子", "/ɪɡˈzæmpl/"],
+["excellent", "优秀的", "/ˈeksələnt/"],
+["except", "除了", "/ɪkˈsept/"],
+["exception", "例外", "/ɪkˈsepʃn/"],
+["excess", "过量", "/ɪkˈses/"],
+["exchange", "交换", "/ɪksˈtʃeɪndʒ/"],
+["excite", "使兴奋", "/ɪkˈsaɪt/"],
+["excited", "兴奋的", "/ɪkˈsaɪtɪd/"],
+["exciting", "令人兴奋的", "/ɪkˈsaɪtɪŋ/"],
+["excuse", "借口", "/ɪkˈskjuːs/"],
+["exercise", "锻炼", "/ˈeksərsaɪz/"],
+["exhibition", "展览", "/ˌeksɪˈbɪʃn/"],
+["exist", "存在", "/ɪɡˈzɪst/"],
+["existence", "存在", "/ɪɡˈzɪstəns/"],
+["exit", "出口", "/ˈeksɪt/"],
+["expand", "扩大", "/ɪkˈspænd/"],
+["expansion", "扩张", "/ɪkˈspænʃn/"],
+["expect", "期望", "/ɪkˈspekt/"],
+["expectation", "期望", "/ˌekspekˈteɪʃn/"],
+["expense", "费用", "/ɪkˈspens/"],
+["expensive", "昂贵的", "/ɪkˈspensɪv/"],
+["experience", "经验", "/ɪkˈspɪriəns/"],
+["experiment", "实验", "/ɪkˈsperɪmənt/"],
+["expert", "专家", "/ˈekspɜːrt/"],
+["explain", "解释", "/ɪkˈspleɪn/"],
+["explanation", "解释", "/ˌekspləˈneɪʃn/"],
+["explode", "爆炸", "/ɪkˈsploʊd/"],
+["exploit", "开发", "/ɪkˈsplɔɪt/"],
+["explore", "探索", "/ɪkˈsplɔːr/"],
+["explosion", "爆炸", "/ɪkˈsploʊʒn/"],
+["export", "出口", "/ˈekspɔːrt/"],
+["expose", "暴露", "/ɪkˈspoʊz/"],
+["express", "表达", "/ɪkˈspres/"],
+["expression", "表达", "/ɪkˈspreʃn/"],
+["extend", "延伸", "/ɪkˈstend/"],
+["extension", "延伸", "/ɪkˈstenʃn/"],
+["extensive", "广泛的", "/ɪkˈstensɪv/"],
+["extent", "程度", "/ɪkˈstent/"]
+],
+  cet4: [
+["ideal", "理想的", "/aɪˈdiːəl/"],
+["identify", "识别", "/aɪˈdentɪfaɪ/"],
+["identity", "身份", "/aɪˈdentəti/"],
+["ignore", "忽视", "/ɪɡˈnɔːr/"],
+["illegal", "非法的", "/ɪˈliːɡl/"],
+["illness", "疾病", "/ˈɪlnəs/"],
+["illustrate", "说明", "/ˈɪləstreɪt/"],
+["image", "图像", "/ˈɪmɪdʒ/"],
+["imagination", "想象力", "/ɪˌmædʒɪˈneɪʃn/"],
+["imagine", "想象", "/ɪˈmædʒɪn/"],
+["immediate", "立即的", "/ɪˈmiːdiət/"],
+["immediately", "立即", "/ɪˈmiːdiətli/"],
+["immigrant", "移民", "/ˈɪmɪɡrənt/"],
+["impact", "影响", "/ˈɪmpækt/"],
+["impatient", "不耐烦的", "/ɪmˈpeɪʃnt/"],
+["imply", "暗示", "/ɪmˈplaɪ/"],
+["import", "进口", "/ˈɪmpɔːrt/"],
+["importance", "重要性", "/ɪmˈpɔːrtns/"],
+["important", "重要的", "/ɪmˈpɔːrtnt/"],
+["impose", "强加", "/ɪmˈpoʊz/"],
+["impossible", "不可能的", "/ɪmˈpɑːsəbl/"],
+["impress", "给……留下印象", "/ɪmˈpres/"],
+["impression", "印象", "/ɪmˈpreʃn/"],
+["impressive", "令人印象深刻的", "/ɪmˈpresɪv/"],
+["improve", "改善", "/ɪmˈpruːv/"],
+["improvement", "改善", "/ɪmˈpruːvmənt/"],
+["inch", "英寸", "/ɪntʃ/"],
+["incident", "事件", "/ˈɪnsɪdənt/"],
+["include", "包括", "/ɪnˈkluːd/"],
+["income", "收入", "/ˈɪnkʌm/"],
+["increase", "增加", "/ɪnˈkriːs/"],
+["indeed", "确实", "/ɪnˈdiːd/"],
+["independence", "独立", "/ˌɪndɪˈpendəns/"],
+["independent", "独立的", "/ˌɪndɪˈpendənt/"],
+["index", "索引", "/ˈɪndeks/"],
+["indicate", "表明", "/ˈɪndɪkeɪt/"],
+["indication", "迹象", "/ˌɪndɪˈkeɪʃn/"],
+["individual", "个人的", "/ˌɪndɪˈvɪdʒuəl/"],
+["indoor", "室内的", "/ˈɪndɔːr/"],
+["industry", "工业", "/ˈɪndəstri/"],
+["influence", "影响", "/ˈɪnfluəns/"],
+["inform", "通知", "/ɪnˈfɔːrm/"],
+["information", "信息", "/ˌɪnfərˈmeɪʃn/"],
+["initial", "最初的", "/ɪˈnɪʃl/"],
+["injure", "伤害", "/ˈɪndʒər/"],
+["injury", "伤害", "/ˈɪndʒəri/"],
+["innocent", "无辜的", "/ˈɪnəsnt/"],
+["insect", "昆虫", "/ˈɪnsekt/"],
+["insert", "插入", "/ɪnˈsɜːrt/"],
+["inside", "在里面", "/ˌɪnˈsaɪd/"],
+["insist", "坚持", "/ɪnˈsɪst/"],
+["inspect", "检查", "/ɪnˈspekt/"],
+["inspire", "激励", "/ɪnˈspaɪər/"],
+["install", "安装", "/ɪnˈstɔːl/"],
+["instance", "例子", "/ˈɪnstəns/"],
+["instead", "代替", "/ɪnˈsted/"],
+["institute", "学院", "/ˈɪnstɪtuːt/"],
+["institution", "机构", "/ˌɪnstɪˈtuːʃn/"],
+["instruction", "指示", "/ɪnˈstrʌkʃn/"],
+["instrument", "乐器", "/ˈɪnstrəmənt/"],
+["insurance", "保险", "/ɪnˈʃʊrəns/"],
+["insure", "确保", "/ɪnˈʃʊr/"],
+["intelligence", "智力", "/ɪnˈtelɪdʒəns/"],
+["intelligent", "聪明的", "/ɪnˈtelɪdʒənt/"],
+["intend", "打算", "/ɪnˈtend/"],
+["intention", "意图", "/ɪnˈtenʃn/"],
+["interest", "兴趣", "/ˈɪntrəst/"],
+["interesting", "有趣的", "/ˈɪntrəstɪŋ/"],
+["international", "国际的", "/ˌɪntərˈnæʃnəl/"],
+["Internet", "互联网", "/ˈɪntərnet/"],
+["interview", "面试", "/ˈɪntərvjuː/"],
+["introduce", "介绍", "/ˌɪntrəˈduːs/"],
+["introduction", "介绍", "/ˌɪntrəˈdʌkʃn/"],
+["invent", "发明", "/ɪnˈvent/"],
+["invention", "发明", "/ɪnˈvenʃn/"],
+["invest", "投资", "/ɪnˈvest/"],
+["investigate", "调查", "/ɪnˈvestɪɡeɪt/"],
+["invitation", "邀请", "/ˌɪnvɪˈteɪʃn/"],
+["invite", "邀请", "/ɪnˈvaɪt/"],
+["involve", "涉及", "/ɪnˈvɑːlv/"],
+["iron", "铁", "/ˈaɪərn/"],
+["island", "岛", "/ˈaɪlənd/"],
+["issue", "问题", "/ˈɪʃuː/"],
+["item", "项目", "/ˈaɪtəm/"],
+["jacket", "夹克", "/ˈdʒækɪt/"],
+["jail", "监狱", "/dʒeɪl/"],
+["jam", "果酱", "/dʒæm/"],
+["jar", "罐子", "/dʒɑːr/"],
+["jazz", "爵士乐", "/dʒæz/"],
+["jealous", "嫉妒的", "/ˈdʒeləs/"],
+["jeans", "牛仔裤", "/dʒiːnz/"],
+["jet", "喷气", "/dʒet/"],
+["jewelry", "珠宝", "/ˈdʒuːəlri/"],
+["job", "工作", "/dʒɑːb/"],
+["jog", "慢跑", "/dʒɑːɡ/"],
+["join", "加入", "/dʒɔɪn/"],
+["joke", "笑话", "/dʒoʊk/"],
+["journal", "期刊", "/ˈdʒɜːrnl/"],
+["journalist", "记者", "/ˈdʒɜːrnəlɪst/"],
+["journey", "旅行", "/ˈdʒɜːrni/"],
+["joy", "欢乐", "/dʒɔɪ/"],
+["judge", "法官", "/dʒʌdʒ/"],
+["judgment", "判断", "/ˈdʒʌdʒmənt/"],
+["juice", "果汁", "/dʒuːs/"],
+["jump", "跳", "/dʒʌmp/"],
+["jungle", "丛林", "/ˈdʒʌŋɡl/"],
+["junior", "初级的", "/ˈdʒuːniər/"],
+["justice", "正义", "/ˈdʒʌstɪs/"],
+["justify", "证明", "/ˈdʒʌstɪfaɪ/"],
+["keen", "热心的", "/kiːn/"],
+["kettle", "水壶", "/ˈketl/"],
+["keyboard", "键盘", "/ˈkiːbɔːrd/"],
+["kick", "踢", "/kɪk/"],
+["kid", "小孩", "/kɪd/"],
+["kilogram", "千克", "/ˈkɪləɡræm/"],
+["kilometer", "千米", "/kɪˈlɑːmɪtər/"],
+["kind", "善良的", "/kaɪnd/"],
+["king", "国王", "/kɪŋ/"],
+["kingdom", "王国", "/ˈkɪŋdəm/"],
+["kiss", "吻", "/kɪs/"],
+["kitchen", "厨房", "/ˈkɪtʃɪn/"],
+["kite", "风筝", "/kaɪt/"],
+["knee", "膝盖", "/niː/"],
+["knife", "刀", "/naɪf/"],
+["knock", "敲", "/nɑːk/"],
+["knowledge", "知识", "/ˈnɑːlɪdʒ/"],
+["lab", "实验室", "/læb/"],
+["labor", "劳动", "/ˈleɪbər/"],
+["laboratory", "实验室", "/ˈlæbrətɔːri/"],
+["lack", "缺乏", "/læk/"],
+["ladder", "梯子", "/ˈlædər/"],
+["lady", "女士", "/ˈleɪdi/"],
+["lake", "湖", "/leɪk/"],
+["lamb", "羔羊", "/læm/"],
+["lamp", "灯", "/læmp/"],
+["land", "土地", "/lænd/"],
+["landscape", "风景", "/ˈlændskeɪp/"],
+["lane", "小路", "/leɪn/"],
+["language", "语言", "/ˈlæŋɡwɪdʒ/"],
+["large", "大的", "/lɑːrdʒ/"],
+["last", "最后的", "/læst/"],
+["late", "晚的", "/leɪt/"],
+["lately", "最近", "/ˈleɪtli/"],
+["later", "后来", "/ˈleɪtər/"],
+["latest", "最新的", "/ˈleɪtɪst/"],
+["latter", "后者的", "/ˈlætər/"],
+["laugh", "笑", "/læf/"],
+["law", "法律", "/lɔː/"],
+["lawyer", "律师", "/ˈlɔːjər/"],
+["lay", "放置", "/leɪ/"],
+["lazy", "懒惰的", "/ˈleɪzi/"],
+["lead", "领导", "/liːd/"],
+["leader", "领导者", "/ˈliːdər/"],
+["leading", "领先的", "/ˈliːdɪŋ/"],
+["leaf", "叶子", "/liːf/"],
+["league", "联盟", "/liːɡ/"],
+["learn", "学习", "/lɜːrn/"],
+["least", "最少", "/liːst/"],
+["leave", "离开", "/liːv/"],
+["lecture", "讲座", "/ˈlektʃər/"],
+["left", "左边", "/left/"],
+["leg", "腿", "/leɡ/"],
+["legal", "合法的", "/ˈliːɡl/"],
+["lemon", "柠檬", "/ˈlemən/"],
+["lend", "借出", "/lend/"],
+["length", "长度", "/leŋθ/"],
+["less", "更少", "/les/"],
+["lesson", "课", "/ˈlesn/"],
+["letter", "信", "/ˈletər/"],
+["level", "水平", "/ˈlevl/"],
+["liberty", "自由", "/ˈlɪbərti/"],
+["librarian", "图书管理员", "/laɪˈbreriən/"],
+["library", "图书馆", "/ˈlaɪbreri/"],
+["license", "许可证", "/ˈlaɪsns/"],
+["lie", "躺", "/laɪ/"],
+["life", "生活", "/laɪf/"],
+["lift", "举起", "/lɪft/"],
+["light", "光", "/laɪt/"],
+["likely", "可能的", "/ˈlaɪkli/"],
+["limit", "限制", "/ˈlɪmɪt/"],
+["line", "线", "/laɪn/"],
+["link", "连接", "/lɪŋk/"],
+["lion", "狮子", "/ˈlaɪən/"],
+["lip", "嘴唇", "/lɪp/"],
+["liquid", "液体", "/ˈlɪkwɪd/"],
+["list", "清单", "/lɪst/"],
+["listen", "听", "/ˈlɪsn/"],
+["literature", "文学", "/ˈlɪtrətʃər/"],
+["little", "小的", "/ˈlɪtl/"],
+["lively", "活泼的", "/ˈlaɪvli/"],
+["living", "活的", "/ˈlɪvɪŋ/"],
+["load", "装载", "/loʊd/"],
+["local", "当地的", "/ˈloʊkl/"],
+["location", "位置", "/loʊˈkeɪʃn/"],
+["lock", "锁", "/lɑːk/"],
+["lonely", "孤独的", "/ˈloʊnli/"],
+["long", "长的", "/lɔːŋ/"],
+["look", "看", "/lʊk/"],
+["loose", "松的", "/luːs/"],
+["lose", "失去", "/luːz/"]
+],
+  cet6: [
+["machine", "机器", "/məˈʃiːn/"],
+["mad", "疯狂的", "/mæd/"],
+["magazine", "杂志", "/ˌmæɡəˈziːn/"],
+["magic", "魔法", "/ˈmædʒɪk/"],
+["magnet", "磁铁", "/ˈmæɡnət/"],
+["magnificent", "壮丽的", "/mæɡˈnɪfɪsnt/"],
+["maid", "女仆", "/meɪd/"],
+["mail", "邮件", "/meɪl/"],
+["main", "主要的", "/meɪn/"],
+["mainland", "大陆", "/ˈmeɪnlænd/"],
+["maintain", "维持", "/meɪnˈteɪn/"],
+["maintenance", "维护", "/ˈmeɪntənəns/"],
+["major", "主要的", "/ˈmeɪdʒər/"],
+["majority", "大多数", "/məˈdʒɔːrəti/"],
+["make", "制造", "/meɪk/"],
+["male", "男性的", "/meɪl/"],
+["man", "男人", "/mæn/"],
+["manage", "管理", "/ˈmænɪdʒ/"],
+["management", "管理", "/ˈmænɪdʒmənt/"],
+["manager", "经理", "/ˈmænɪdʒər/"],
+["mankind", "人类", "/mænˈkaɪnd/"],
+["manner", "方式", "/ˈmænər/"],
+["manual", "手工的", "/ˈmænjuəl/"],
+["manufacture", "制造", "/ˌmænjuˈfæktʃər/"],
+["manufacturer", "制造商", "/ˌmænjuˈfæktʃərər/"],
+["many", "许多", "/ˈmeni/"],
+["map", "地图", "/mæp/"],
+["marathon", "马拉松", "/ˈmærəθɑːn/"],
+["marble", "大理石", "/ˈmɑːrbl/"],
+["march", "行进", "/mɑːrtʃ/"],
+["margin", "边缘", "/ˈmɑːrdʒɪn/"],
+["marine", "海洋的", "/məˈriːn/"],
+["mark", "标记", "/mɑːrk/"],
+["market", "市场", "/ˈmɑːrkɪt/"],
+["marriage", "婚姻", "/ˈmærɪdʒ/"],
+["married", "已婚的", "/ˈmærid/"],
+["marry", "结婚", "/ˈmæri/"],
+["marvelous", "极好的", "/ˈmɑːrvələs/"],
+["mask", "面具", "/mɑːsk/"],
+["mass", "大量", "/mæs/"],
+["massive", "大量的", "/ˈmæsɪv/"],
+["master", "掌握", "/ˈmæstər/"],
+["match", "比赛", "/mætʃ/"],
+["mate", "伙伴", "/meɪt/"],
+["material", "材料", "/məˈtɪriəl/"],
+["mathematics", "数学", "/ˌmæθəˈmætɪks/"],
+["matter", "事情", "/ˈmætər/"],
+["mature", "成熟的", "/məˈtʃʊr/"],
+["maximum", "最大值", "/ˈmæksɪməm/"],
+["may", "可能", "/meɪ/"],
+["maybe", "也许", "/ˈmeɪbi/"],
+["mayor", "市长", "/ˈmeɪər/"],
+["meal", "一餐", "/miːl/"],
+["mean", "意味着", "/miːn/"],
+["meaning", "意义", "/ˈmiːnɪŋ/"],
+["means", "方法", "/miːnz/"],
+["meanwhile", "同时", "/ˈmiːnwaɪl/"],
+["measure", "测量", "/ˈmeʒər/"],
+["measurement", "测量", "/ˈmeʒərmənt/"],
+["meat", "肉", "/miːt/"],
+["mechanic", "机械师", "/məˈkænɪk/"],
+["mechanical", "机械的", "/məˈkænɪkl/"],
+["mechanism", "机制", "/ˈmekənɪzəm/"],
+["medal", "奖章", "/ˈmedl/"],
+["medical", "医学的", "/ˈmedɪkl/"],
+["medicine", "药", "/ˈmedsn/"],
+["medium", "中等的", "/ˈmiːdiəm/"],
+["meet", "遇见", "/miːt/"],
+["meeting", "会议", "/ˈmiːtɪŋ/"],
+["melt", "融化", "/melt/"],
+["member", "成员", "/ˈmembər/"],
+["memorial", "纪念的", "/məˈmɔːriəl/"],
+["memory", "记忆", "/ˈmeməri/"],
+["mend", "修理", "/mend/"],
+["mental", "精神的", "/ˈmentl/"],
+["mention", "提到", "/ˈmenʃn/"],
+["menu", "菜单", "/ˈmenjuː/"],
+["merchant", "商人", "/ˈmɜːrtʃənt/"],
+["mercy", "仁慈", "/ˈmɜːrsi/"],
+["mere", "仅仅的", "/mɪr/"],
+["merely", "仅仅", "/ˈmɪrli/"],
+["merit", "优点", "/ˈmerɪt/"],
+["merry", "愉快的", "/ˈmeri/"],
+["mess", "混乱", "/mes/"],
+["message", "信息", "/ˈmesɪdʒ/"],
+["metal", "金属", "/ˈmetl/"],
+["method", "方法", "/ˈmeθəd/"],
+["microphone", "麦克风", "/ˈmaɪkrəfoʊn/"],
+["microscope", "显微镜", "/ˈmaɪkrəskoʊp/"],
+["midday", "正午", "/ˈmɪddeɪ/"],
+["middle", "中间", "/ˈmɪdl/"],
+["midnight", "午夜", "/ˈmɪdnaɪt/"],
+["might", "可能", "/maɪt/"],
+["mild", "温和的", "/maɪld/"],
+["mile", "英里", "/maɪl/"],
+["military", "军事的", "/ˈmɪləteri/"],
+["milk", "牛奶", "/mɪlk/"],
+["mill", "磨坊", "/mɪl/"],
+["millimeter", "毫米", "/ˈmɪlimiːtər/"],
+["million", "百万", "/ˈmɪljən/"],
+["mind", "头脑", "/maɪnd/"],
+["mine", "我的", "/maɪn/"],
+["mineral", "矿物", "/ˈmɪnərəl/"],
+["minimum", "最小值", "/ˈmɪnɪməm/"],
+["minister", "部长", "/ˈmɪnɪstər/"],
+["ministry", "部", "/ˈmɪnɪstri/"],
+["minor", "较小的", "/ˈmaɪnər/"],
+["minority", "少数", "/maɪˈnɔːrəti/"],
+["minus", "减", "/ˈmaɪnəs/"],
+["minute", "分钟", "/ˈmɪnɪt/"],
+["miracle", "奇迹", "/ˈmɪrəkl/"],
+["mirror", "镜子", "/ˈmɪrər/"],
+["miserable", "痛苦的", "/ˈmɪzrəbl/"],
+["mislead", "误导", "/ˌmɪsˈliːd/"],
+["miss", "错过", "/mɪs/"],
+["missile", "导弹", "/ˈmɪsl/"],
+["missing", "失踪的", "/ˈmɪsɪŋ/"],
+["mission", "任务", "/ˈmɪʃn/"],
+["mist", "雾", "/mɪst/"],
+["mistake", "错误", "/mɪˈsteɪk/"],
+["misunderstand", "误解", "/ˌmɪsʌndərˈstænd/"],
+["mix", "混合", "/mɪks/"],
+["mixture", "混合物", "/ˈmɪkstʃər/"],
+["mobile", "移动的", "/ˈmoʊbl/"],
+["mode", "模式", "/moʊd/"],
+["model", "模型", "/ˈmɑːdl/"],
+["moderate", "适度的", "/ˈmɑːdərət/"],
+["modern", "现代的", "/ˈmɑːdərn/"],
+["modest", "谦虚的", "/ˈmɑːdɪst/"],
+["modify", "修改", "/ˈmɑːdɪfaɪ/"],
+["moist", "潮湿的", "/mɔɪst/"],
+["moisture", "湿气", "/ˈmɔɪstʃər/"],
+["molecule", "分子", "/ˈmɑːlɪkjuːl/"],
+["moment", "时刻", "/ˈmoʊmənt/"],
+["money", "钱", "/ˈmʌni/"],
+["monitor", "监视器", "/ˈmɑːnɪtər/"],
+["monkey", "猴子", "/ˈmʌŋki/"],
+["month", "月", "/mʌnθ/"],
+["monthly", "每月的", "/ˈmʌnθli/"],
+["monument", "纪念碑", "/ˈmɑːnjumənt/"],
+["mood", "心情", "/muːd/"],
+["moon", "月亮", "/muːn/"],
+["moral", "道德的", "/ˈmɔːrəl/"],
+["more", "更多", "/mɔːr/"],
+["moreover", "此外", "/mɔːrˈoʊvər/"],
+["morning", "早晨", "/ˈmɔːrnɪŋ/"],
+["most", "最多的", "/moʊst/"],
+["mostly", "主要地", "/ˈmoʊstli/"],
+["mother", "母亲", "/ˈmʌðər/"],
+["motion", "运动", "/ˈmoʊʃn/"],
+["motivate", "激励", "/ˈmoʊtɪveɪt/"],
+["motive", "动机", "/ˈmoʊtɪv/"],
+["motor", "发动机", "/ˈmoʊtər/"],
+["mount", "山", "/maʊnt/"],
+["mountain", "山", "/ˈmaʊntn/"],
+["mourn", "哀悼", "/mɔːrn/"],
+["mouse", "老鼠", "/maʊs/"],
+["mouth", "嘴", "/maʊθ/"],
+["move", "移动", "/muːv/"],
+["movement", "运动", "/ˈmuːvmənt/"],
+["movie", "电影", "/ˈmuːvi/"],
+["much", "许多", "/mʌtʃ/"],
+["mud", "泥", "/mʌd/"],
+["multiple", "多样的", "/ˈmʌltɪpl/"],
+["multiply", "乘", "/ˈmʌltɪplaɪ/"],
+["murder", "谋杀", "/ˈmɜːrdər/"],
+["muscle", "肌肉", "/ˈmʌsl/"],
+["museum", "博物馆", "/mjuˈziːəm/"],
+["mushroom", "蘑菇", "/ˈmʌʃrʊm/"],
+["music", "音乐", "/ˈmjuːzɪk/"],
+["musical", "音乐的", "/ˈmjuːzɪkl/"],
+["musician", "音乐家", "/mjuˈzɪʃn/"],
+["must", "必须", "/mʌst/"],
+["mutual", "相互的", "/ˈmjuːtʃuəl/"],
+["myself", "我自己", "/maɪˈself/"],
+["mysterious", "神秘的", "/mɪˈstɪriəs/"],
+["mystery", "神秘", "/ˈmɪstri/"],
+["myth", "神话", "/mɪθ/"],
+["nail", "钉子", "/neɪl/"],
+["naked", "裸体的", "/ˈneɪkɪd/"],
+["name", "名字", "/neɪm/"],
+["namely", "即", "/ˈneɪmli/"],
+["narrow", "狭窄的", "/ˈnæroʊ/"],
+["nation", "国家", "/ˈneɪʃn/"],
+["national", "国家的", "/ˈnæʃnəl/"],
+["nationality", "国籍", "/ˌnæʃəˈnæləti/"],
+["native", "本地的", "/ˈneɪtɪv/"],
+["natural", "自然的", "/ˈnætʃrəl/"],
+["naturally", "自然地", "/ˈnætʃrəli/"],
+["nature", "自然", "/ˈneɪtʃər/"],
+["naval", "海军的", "/ˈneɪvl/"],
+["navigation", "导航", "/ˌnævɪˈɡeɪʃn/"],
+["navy", "海军", "/ˈneɪvi/"],
+["near", "近的", "/nɪr/"],
+["nearby", "附近的", "/ˌnɪrˈbaɪ/"],
+["nearly", "几乎", "/ˈnɪrli/"],
+["neat", "整洁的", "/niːt/"],
+["necessarily", "必要地", "/ˌnesəˈserəli/"],
+["necessary", "必要的", "/ˈnesəseri/"],
+["necessity", "必需品", "/nəˈsesəti/"]
+]
+};
+
+// ============================================================
+// App Logic
+// ============================================================
+let currentLib = 'middle';
+let currentIndex = 0;
+let currentMode = 'browse';
+let quizScore = 0, quizTotal = 0, quizStreak = 0;
+let spellScore = 0, spellTotal = 0, spellStreak = 0;
+let spellChecked = false;
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function loadStorage() {
+  const g = localStorage.getItem('vb_goal');
+  if (g) document.getElementById('dailyGoal').value = g;
+  const lib = localStorage.getItem('vb_lib');
+  if (lib && VOCAB[lib]) { currentLib = lib; document.getElementById('libSelect').value = lib; }
+  const idx = localStorage.getItem('vb_currentIndex_' + currentLib);
+  if (idx) currentIndex = parseInt(idx, 10);
+  updateProgress();
+  updateTodayCount();
+}
+
+function saveStorage() {
+  localStorage.setItem('vb_lib', currentLib);
+  localStorage.setItem('vb_currentIndex_' + currentLib, currentIndex);
+}
+
+function saveGoal() {
+  const v = parseInt(document.getElementById('dailyGoal').value, 10) || 20;
+  localStorage.setItem('vb_goal', v);
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return 'vb_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate();
+}
+
+function getTodayCount() {
+  const k = getTodayKey();
+  return parseInt(localStorage.getItem(k) || '0', 10);
+}
+
+function addTodayCount(n) {
+  const k = getTodayKey();
+  localStorage.setItem(k, (getTodayCount() + n).toString());
+  updateTodayCount();
+}
+
+function updateTodayCount() {
+  document.getElementById('todayCount').textContent = getTodayCount();
+}
+
+function getLearnedKey(lib) { return 'vb_learned_' + lib; }
+function getCorrectKey(lib) { return 'vb_correct_' + lib; }
+function getTotalKey(lib) { return 'vb_total_' + lib; }
+function getStreakKey() { return 'vb_streak'; }
+function getLastDateKey() { return 'vb_lastdate'; }
+
+function recordLearned(lib) {
+  try {
+    const k = getLearnedKey(lib);
+    const raw = localStorage.getItem(k);
+    let arr = [];
+    if (raw) { try { arr = JSON.parse(raw); if (!Array.isArray(arr)) arr = []; } catch(e) { arr = []; } }
+    const set = new Set(arr);
+    const words = VOCAB[lib];
+    if (!words || !words[currentIndex]) return;
+    set.add(words[currentIndex][0]);
+    localStorage.setItem(k, JSON.stringify(Array.from(set)));
+  } catch (e) { console.error('recordLearned error', e); }
+}
+
+function recordAnswer(lib, isCorrect) {
+  const ck = getCorrectKey(lib), tk = getTotalKey(lib);
+  localStorage.setItem(tk, (parseInt(localStorage.getItem(tk)||'0',10)+1).toString());
+  if (isCorrect) localStorage.setItem(ck, (parseInt(localStorage.getItem(ck)||'0',10)+1).toString());
+  // streak
+  const today = new Date().toDateString();
+  const last = localStorage.getItem(getLastDateKey());
+  if (last !== today) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    if (last === yesterday.toDateString()) {
+      localStorage.setItem(getStreakKey(), (parseInt(localStorage.getItem(getStreakKey())||'0',10)+1).toString());
+    } else { localStorage.setItem(getStreakKey(), '1'); }
+    localStorage.setItem(getLastDateKey(), today);
+  }
+}
+
+function updateProgress() {
+  const lib = currentLib;
+  const learned = JSON.parse(localStorage.getItem(getLearnedKey(lib)) || '[]').length;
+  const correct = parseInt(localStorage.getItem(getCorrectKey(lib)) || '0', 10);
+  const total = parseInt(localStorage.getItem(getTotalKey(lib)) || '0', 10);
+  const acc = total > 0 ? Math.round(correct / total * 100) : 0;
+  const streak = parseInt(localStorage.getItem(getStreakKey()) || '0', 10);
+  document.getElementById('progLearned').textContent = learned;
+  document.getElementById('progAccuracy').textContent = acc + '%';
+  document.getElementById('progStreak').textContent = streak;
+}
+
+function changeLib() {
+  currentLib = document.getElementById('libSelect').value;
+  currentIndex = parseInt(localStorage.getItem('vb_currentIndex_' + currentLib) || '0', 10);
+  document.getElementById('libCount').textContent = VOCAB[currentLib].length + '词';
+  saveStorage();
+  updateProgress();
+  if (currentMode === 'browse') renderBrowse();
+  if (currentMode === 'quiz') nextQuiz(true);
+  if (currentMode === 'spell') nextSpell(true);
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(mode + 'Section').classList.add('active');
+  if (mode === 'browse') renderBrowse();
+  if (mode === 'quiz') nextQuiz(true);
+  if (mode === 'spell') nextSpell(true);
+}
+
+// Browse
+function renderBrowse() {
+  const words = VOCAB[currentLib];
+  const w = words[currentIndex];
+  if (!w) return;
+  document.getElementById('bWord').textContent = w[0];
+  document.getElementById('bWordBack').textContent = w[0];
+  document.getElementById('bPhonetic').textContent = w[2];
+  document.getElementById('bMeaning').textContent = w[1];
+  document.getElementById('browseCard').classList.remove('flipped');
+  recordLearned(currentLib);
+  updateProgress();
+}
+
+function flipCard() {
+  document.getElementById('browseCard').classList.toggle('flipped');
+}
+
+function nextWord() {
+  const words = VOCAB[currentLib];
+  currentIndex = (currentIndex + 1) % words.length;
+  saveStorage();
+  renderBrowse();
+  addTodayCount(1);
+}
+
+function prevWord() {
+  const words = VOCAB[currentLib];
+  currentIndex = (currentIndex - 1 + words.length) % words.length;
+  saveStorage();
+  renderBrowse();
+}
+
+// Quiz
+let quizCurrent = null;
+let quizOptions = [];
+
+function nextQuiz(reset) {
+  if (reset) { quizScore = 0; quizTotal = 0; quizStreak = 0; }
+  const words = VOCAB[currentLib];
+  if (words.length < 4) return;
+  quizCurrent = words[Math.floor(Math.random() * words.length)];
+  const others = words.filter(w => w[0] !== quizCurrent[0]);
+  const wrong = shuffle(others).slice(0, 3);
+  quizOptions = shuffle([quizCurrent, ...wrong]);
+  document.getElementById('qWord').textContent = quizCurrent[0];
+  document.getElementById('qPhonetic').textContent = quizCurrent[2];
+  const opts = document.getElementById('qOptions');
+  opts.innerHTML = '';
+  quizOptions.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt';
+    btn.textContent = opt[1];
+    btn.onclick = () => pickQuiz(i);
+    opts.appendChild(btn);
+  });
+  document.getElementById('qScore').textContent = quizScore;
+  document.getElementById('qTotal').textContent = quizTotal;
+  document.getElementById('qStreak').textContent = quizStreak;
+}
+
+function pickQuiz(idx) {
+  const btns = document.querySelectorAll('.quiz-opt');
+  const correctIdx = quizOptions.findIndex(o => o[0] === quizCurrent[0]);
+  btns.forEach((b, i) => {
+    b.classList.add('disabled');
+    if (i === correctIdx) b.classList.add('correct');
+    else if (i === idx) b.classList.add('wrong');
+  });
+  const ok = (idx === correctIdx);
+  if (ok) { quizScore++; quizStreak++; } else { quizStreak = 0; }
+  quizTotal++;
+  recordAnswer(currentLib, ok);
+  addTodayCount(1);
+  document.getElementById('qScore').textContent = quizScore;
+  document.getElementById('qTotal').textContent = quizTotal;
+  document.getElementById('qStreak').textContent = quizStreak;
+  updateProgress();
+}
+
+// Spell
+let spellCurrent = null;
+let spellHintUsed = false;
+
+function nextSpell(reset) {
+  if (reset) { spellScore = 0; spellTotal = 0; spellStreak = 0; }
+  const words = VOCAB[currentLib];
+  spellCurrent = words[Math.floor(Math.random() * words.length)];
+  spellHintUsed = false;
+  spellChecked = false;
+  document.getElementById('sMeaning').textContent = spellCurrent[1];
+  const inp = document.getElementById('sInput');
+  inp.value = ''; inp.className = 'spell-input'; inp.disabled = false; inp.focus();
+  document.getElementById('sResult').textContent = '';
+  document.getElementById('sResult').className = 'spell-result';
+  document.getElementById('sNextBtn').style.display = 'none';
+  document.getElementById('sScore').textContent = spellScore;
+  document.getElementById('sTotal').textContent = spellTotal;
+  document.getElementById('sStreak').textContent = spellStreak;
+}
+
+function showSpellHint() {
+  if (!spellCurrent || spellChecked) return;
+  const inp = document.getElementById('sInput');
+  const w = spellCurrent[0];
+  if (inp.value.length < w.length) {
+    inp.value = w.slice(0, inp.value.length + 1);
+    spellHintUsed = true;
+  }
+}
+
+function checkSpell() {
+  if (!spellCurrent || spellChecked) return;
+  const inp = document.getElementById('sInput');
+  const val = inp.value.trim().toLowerCase();
+  const correct = spellCurrent[0].toLowerCase();
+  const ok = (val === correct);
+  spellChecked = true;
+  inp.disabled = true;
+  const res = document.getElementById('sResult');
+  if (ok) {
+    inp.classList.add('correct');
+    res.textContent = '正确！' + (spellHintUsed ? '（使用了提示）' : '');
+    res.className = 'spell-result ok';
+    spellScore++; spellStreak++;
+  } else {
+    inp.classList.add('wrong');
+    res.innerHTML = '错误。正确答案是 <b>' + spellCurrent[0] + '</b>';
+    res.className = 'spell-result bad';
+    spellStreak = 0;
+  }
+  spellTotal++;
+  recordAnswer(currentLib, ok);
+  addTodayCount(1);
+  document.getElementById('sScore').textContent = spellScore;
+  document.getElementById('sTotal').textContent = spellTotal;
+  document.getElementById('sStreak').textContent = spellStreak;
+  document.getElementById('sNextBtn').style.display = 'flex';
+  updateProgress();
+}
+
+// Init
+function init() {
+  document.getElementById('libCount').textContent = VOCAB[currentLib].length + '词';
+  loadStorage();
+  renderBrowse();
+}
+init();
+</script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>

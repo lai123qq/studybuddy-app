@@ -1,0 +1,275 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f8f9fc">
+<title>Classica · 古诗文学习</title>
+<style>
+  @font-face { font-family: 'Bricolage'; src: url('../_shared/fonts/BricolageGrotesque-Regular.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'Bricolage'; src: url('../_shared/fonts/BricolageGrotesque-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'JetMono'; src: url('../_shared/fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-display: swap; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; overscroll-behavior: none; }
+  body {
+    font-family: 'Bricolage', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    background: #f8f9fc; color: #1e293b;
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+    padding: 28px env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(20, 184, 166, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(251, 191, 36, 0.06), transparent);
+  }
+
+  /* 中国风 subtle texture overlay */
+  body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.25;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230d9488' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 16px 20px 40px; }
+
+  /* Header */
+  .head { text-align: center; margin-bottom: 24px; margin-top: 20px; }
+  .head h1 { font-size: 28px; font-weight: 700; margin: 0 0 6px; letter-spacing: 2px; color: #1e293b;
+    font-family: 'PingFang SC', 'STKaiti', 'KaiTi', 'Microsoft YaHei', serif;
+  }
+  .head p { font-size: 13px; color: #64748b; margin: 0; }
+  /* Category tabs */
+  .cat-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(30, 41, 59, 0.08);
+    background: rgba(255,255,255,0.7); color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .cat-tab.active { background: rgba(56,189,248,0.12); color: #0ea5e9; border-color: rgba(56,189,248,0.25); }
+
+  /* Grade tabs */
+  .grade-tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+  .grade-tabs::-webkit-scrollbar { display: none; }
+  .grade-tab { flex-shrink: 0; padding: 6px 14px; border-radius: 10px; border: 1px solid rgba(30, 41, 59, 0.06);
+    background: rgba(255,255,255,0.6); color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .grade-tab.active { background: linear-gradient(135deg, #a855f7, #c084fc); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(168,85,247,0.25); }
+
+  /* Search */
+  .search-box { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(30, 41, 59, 0.1);
+    background: #ffffff; color: #1e293b; font-size: 14px; font-family: inherit;
+    margin-bottom: 16px; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .search-box::placeholder { color: #94a3b8; }
+  .search-box:focus { border-color: rgba(20, 184, 166, 0.5); box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.08); }
+
+  /* Poem list */
+  .poem-list { display: flex; flex-direction: column; gap: 10px; }
+  .poem-card { background: #ffffff; border: 1px solid rgba(30, 41, 59, 0.08);
+    border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    position: relative; overflow: hidden;
+  }
+  .poem-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #0d9488, #14b8a6, #fbbf24);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .poem-card:hover::before { opacity: 1; }
+  .poem-card:hover { border-color: rgba(20, 184, 166, 0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .poem-card .title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .poem-card .meta { font-size: 12px; color: #64748b; }
+  .poem-card .meta .dynasty { color: #0d9488; font-weight: 600; }
+  .poem-card .type-tag { display: inline-block; padding: 2px 8px; border-radius: 6px;
+    background: rgba(56,189,248,0.08); color: #0284c7; font-size: 11px; margin-left: 8px;
+  }
+  .poem-card .preview { font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* Detail modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-content { background: #ffffff; border-radius: 20px; max-width: 480px; width: 100%;
+    max-height: 85vh; overflow-y: auto; padding: 24px; position: relative;
+    border: 1px solid rgba(30, 41, 59, 0.08);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.02);
+  }
+  .modal-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+    border-radius: 50%; background: rgba(30, 41, 59, 0.06); border: none; color: #64748b;
+    font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { background: rgba(30, 41, 59, 0.12); color: #1e293b; }
+
+  .detail-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; padding-right: 40px; color: #1e293b; }
+  .detail-meta { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+  .detail-meta .dynasty { color: #0d9488; font-weight: 600; }
+
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 13px; font-weight: 700; color: #0d9488; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 10px;
+  }
+  .content-lines { font-size: 17px; line-height: 2.2; color: #1e293b;
+    font-family: 'PingFang SC', 'STKaiti', 'KaiTi', 'Microsoft YaHei', serif;
+  }
+  .content-lines .line { display: block; }
+
+  .notes-list { display: flex; flex-direction: column; gap: 8px; }
+  .note-item { background: #f8fafc; border-radius: 10px; padding: 10px 14px; border: 1px solid rgba(30, 41, 59, 0.06); }
+  .note-item .word { font-weight: 700; color: #0ea5e9; }
+  .note-item .meaning { color: #64748b; font-size: 13px; }
+
+  .translation-text, .analysis-text { font-size: 14px; line-height: 1.8; color: #64748b; }
+
+  /* Recite mode */
+  .recite-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    padding: 10px 14px; background: rgba(168,85,247,0.08); border-radius: 10px; cursor: pointer;
+    border: 1px solid rgba(168,85,247,0.12);
+  }
+  .recite-toggle .label { font-size: 13px; color: #9333ea; font-weight: 600; }
+  .recite-toggle .switch { width: 40px; height: 22px; border-radius: 11px;
+    background: rgba(30, 41, 59, 0.15); position: relative; transition: all 0.2s;
+  }
+  .recite-toggle .switch::after { content: ''; position: absolute; width: 18px; height: 18px;
+    border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .recite-toggle.active .switch { background: #a855f7; }
+  .recite-toggle.active .switch::after { left: 20px; }
+
+  .recite-mask .line { background: #e2e8f0; color: transparent; border-radius: 4px;
+    cursor: pointer; transition: all 0.2s; user-select: none;
+  }
+  .recite-mask .line:hover { background: rgba(168,85,247,0.15); }
+  .recite-mask .line.revealed { background: transparent; color: #1e293b; }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-box { background: #ffffff; border: 1px solid rgba(30, 41, 59, 0.08);
+    border-radius: 14px; padding: 16px 8px; text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    position: relative; overflow: hidden;
+  }
+  .stat-box::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #0d9488, #fbbf24);
+    opacity: 0.6;
+  }
+  .stat-box .v { font-size: 22px; font-weight: 700; color: #1e293b; }
+  .stat-box .l { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* Section title */
+  .list-section-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .app { max-width: 100%; padding: 16px 12px 32px; }
+    .head h1 { font-size: 17px; }
+    .head { margin-bottom: 16px; margin-top: 20px; }
+    .cat-tabs { gap: 6px; margin-bottom: 12px; }
+    .cat-tab { padding: 6px 12px; font-size: 12px; }
+    .grade-tabs { gap: 4px; margin-bottom: 12px; }
+    .grade-tab { padding: 5px 10px; font-size: 11px; }
+    .search-box { padding: 10px 12px; font-size: 16px; margin-bottom: 12px; }
+    .stats-bar { gap: 6px; margin-bottom: 16px; }
+    .stat-box { padding: 12px 6px; border-radius: 12px; }
+    .stat-box .v { font-size: 15px; }
+    .stat-box .l { font-size: 10px; }
+    .poem-list { gap: 8px; }
+    .poem-card { padding: 14px 12px; border-radius: 10px; }
+    .poem-card .title { font-size: 15px; }
+    .poem-card .preview { font-size: 12px; }
+    .modal-content { max-width: 100%; padding: 12px 16px; border-radius: 10px; max-height: 90vh; }
+    .modal-close { width: 36px; height: 36px; top: 12px; right: 12px; }
+    .detail-title { font-size: 16px; padding-right: 44px; }
+    .detail-meta { font-size: 12px; margin-bottom: 16px; }
+    .section { margin-bottom: 16px; }
+    .section-title { font-size: 12px; margin-bottom: 8px; }
+    .content-lines { font-size: 15px; line-height: 2; }
+    .notes-list { gap: 6px; }
+    .note-item { padding: 8px 10px; font-size: 12px; }
+    .translation-text, .analysis-text { font-size: 13px; line-height: 1.7; }
+    .recite-toggle { padding: 8px 10px; gap: 6px; margin-bottom: 12px; }
+    .recite-toggle .label { font-size: 12px; }
+    .recite-toggle .switch { width: 36px; height: 20px; }
+    .list-section-title { font-size: 12px; margin-bottom: 8px; }
+    .empty-state { padding: 12px 16px; }
+  }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #64748b; text-decoration: none; font-size: 14px;
+    margin-bottom: 12px; cursor: pointer; font-family: inherit;
+    border: none; background: none; padding: 4px 0; margin-top: 0px; }
+  .back-btn:active { opacity: 0.6; }
+
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+<div class="app">
+  <a class="back-btn" href="../index-v2.html">← 返回</a>
+
+  <div class="head">
+    <h1>Classica</h1>
+    <p>小学到高中 · 古诗文言文 · 注释解析</p>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-box"><div class="v" id="statTotal">0</div><div class="l">总篇数</div></div>
+    <div class="stat-box"><div class="v" id="statLearned">0</div><div class="l">已学习</div></div>
+    <div class="stat-box"><div class="v" id="statRecited">0</div><div class="l">已背诵</div></div>
+  </div>
+
+  <div class="cat-tabs" id="catTabs">
+    <button class="cat-tab active" data-cat="小学">小学</button>
+    <button class="cat-tab" data-cat="初中">初中</button>
+    <button class="cat-tab" data-cat="高中">高中</button>
+  </div>
+
+  <div class="grade-tabs" id="gradeTabs"></div>
+
+  <input type="text" class="search-box" id="searchBox" placeholder="搜索诗名、作者、内容...">
+
+  <div class="list-section-title" id="listTitle">全部篇目</div>
+  <div class="poem-list" id="poemList"></div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script defer src="assets/data.js"></script>
+<script defer src="assets/app.js"></script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>

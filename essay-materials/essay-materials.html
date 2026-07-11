@@ -1,0 +1,779 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>作文素材</title>
+<style>
+  :root {
+    --bg: #f8f9fc;
+    --card-bg: #ffffff;
+    --text-main: #2c3e50;
+    --text-sub: #7f8c8d;
+    --border: #e8eaf0;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --primary: #d46890;
+    --primary-light: #fff0f5;
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    line-height: 1.6;
+    padding-top: 28px;
+    padding-bottom: 32px;
+    }
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #f8f9fc;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform .15s, background .2s;
+  }
+  .back-btn:active { transform: scale(0.94); background: var(--primary-light); }
+  .back-btn svg { width: 20px; height: 20px; stroke: var(--text-main); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .header-title {
+    font-size: 18px;
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+    padding-right: 56px;
+  }
+  /* Search */
+  .search-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 16px 4px;
+  }
+  .search-box {
+    position: relative;
+  }
+  .search-box input {
+    width: 100%;
+    height: 44px;
+    padding: 0 40px 0 40px;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    font-size: 15px;
+    outline: none;
+    transition: border .2s, box-shadow .2s;
+  }
+  .search-box input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(212,104,144,0.12);
+  }
+  .search-box .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    stroke: #aab;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .search-box .clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: none;
+    background: #e8eaf0;
+    cursor: pointer;
+    font-size: 16px;
+    color: #667;
+    line-height: 1;
+    padding-bottom: 2px;
+  }
+  /* Category tabs */
+  .tabs-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 10px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+  .tabs {
+    display: inline-flex;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .tab {
+    padding: 6px 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    font-size: 13px;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: all .2s;
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 500;
+  }
+  .tab:active { transform: scale(0.96); }
+  /* Daily quote */
+  .daily-wrap {
+    max-width: 480px;
+    margin: 8px auto 0;
+    padding: 0 16px;
+  }
+  .daily-card {
+    background: linear-gradient(135deg, #d46890 0%, #e89ab0 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(212,104,144,0.25);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .daily-card[data-theme="blue"] { background: linear-gradient(135deg, #5b8ec4 0%, #7aaccc 100%); box-shadow: 0 6px 20px rgba(91,142,196,0.25); }
+  .daily-card[data-theme="green"] { background: linear-gradient(135deg, #5a9e7a 0%, #7ab89a 100%); box-shadow: 0 6px 20px rgba(90,158,122,0.25); }
+  .daily-card[data-theme="purple"] { background: linear-gradient(135deg, #8b7ec8 0%, #a89ee0 100%); box-shadow: 0 6px 20px rgba(139,126,200,0.25); }
+  .daily-card[data-theme="gray"] { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); box-shadow: 0 6px 20px rgba(100,116,139,0.25); }
+  .daily-card[data-theme="orange"] { background: linear-gradient(135deg, #e8835a 0%, #f5b08a 100%); box-shadow: 0 6px 20px rgba(232,131,90,0.25); }
+  .daily-card[data-theme="dark"] { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); box-shadow: 0 6px 20px rgba(30,41,59,0.25); }
+  .color-picker {
+    display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 8px; padding: 0 2px;
+  }
+  .color-dot {
+    width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .color-dot:hover { transform: scale(1.15); }
+  .color-dot.active { border-color: #1e293b; transform: scale(1.15); }
+  .daily-card::before {
+    content: """;
+    position: absolute;
+    top: 8px;
+    right: 20px;
+    font-size: 72px;
+    opacity: 0.12;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .daily-label {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .daily-label .sparkle {
+    width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round;
+  }
+  .daily-text {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
+  }
+  .daily-source {
+    margin-top: 10px;
+    font-size: 12px;
+    opacity: 0.75;
+    text-align: right;
+  }
+  /* Stats bar */
+  .stats-wrap {
+    max-width: 480px;
+    margin: 14px auto 0;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-sub);
+  }
+  .stats-wrap .count { font-weight: 600; color: var(--text-main); }
+  .fav-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    font-size: 12px;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .fav-filter-btn.active { background: #fff0f5; border-color: #d46890; color: #d46890; }
+  .fav-filter-btn svg { width: 14px; height: 14px; }
+  /* Cards */
+  .cards-wrap {
+    max-width: 480px;
+    margin: 10px auto 0;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .2s;
+  }
+  .card:active { transform: scale(0.995); }
+  .card-border {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .card-body { padding-left: 8px; }
+  .card-text {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-main);
+    word-break: break-word;
+  }
+  .card-meta {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-tags {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+  .tag-source {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+  .card-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .action-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, transform .15s;
+  }
+  .action-btn:active { transform: scale(0.9); }
+  .action-btn svg { width: 16px; height: 16px; stroke: #99a; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .2s, fill .2s; }
+  .action-btn.faved { background: #fff0f5; }
+  .action-btn.faved svg { stroke: #d46890; fill: #d46890; }
+  .action-btn.copied { background: #e8f5e9; }
+  .action-btn.copied svg { stroke: #27ae60; }
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-sub);
+  }
+  .empty-state svg {
+    width: 64px; height: 64px; stroke: #ccd; fill: none; stroke-width: 1.5; margin-bottom: 12px;
+  }
+  /* Toast */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(44,62,80,0.92);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 3px; }
+  /* Responsive */
+  @media (max-width: 480px) {
+    body { font-size: 14px; padding-bottom: 24px; }
+    .header-inner { padding: 10px 12px; }
+    .header-title { font-size: 16px; padding-right: 48px; }
+    .back-btn { width: 40px; height: 40px; min-width: 40px; }
+    .search-wrap { padding: 10px 12px 4px; }
+    .search-box input { height: 40px; font-size: 14px; }
+    .tabs-wrap { padding: 8px 12px; }
+    .tab { padding: 5px 12px; font-size: 12px; white-space: normal; word-break: break-word; }
+    .daily-wrap { padding: 0 12px; }
+    .daily-card { padding: 16px; }
+    .daily-text { font-size: 14px; }
+    .stats-wrap { padding: 0 12px; font-size: 12px; }
+    .cards-wrap { padding: 0 12px; gap: 10px; }
+    .card { padding: 14px; }
+    .card-text { font-size: 14px; }
+    .card-meta { margin-top: 8px; }
+    .tag { font-size: 10px; }
+    .tag-source { font-size: 11px; }
+    .action-btn { width: 36px; height: 36px; min-width: 36px; }
+    .modal-content { max-width: 100%; padding: 12px 16px; border-radius: 10px; }
+    .toast { bottom: calc(24px + env(safe-area-inset-bottom)); }
+  }
+
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <a class="back-btn" href="../index-v2.html" aria-label="返回">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="header-title">作文素材</div>
+  </div>
+</header>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="搜索关键词、作者、内容..." autocomplete="off">
+    <button class="clear-btn" id="clearSearch" style="display:none">&times;</button>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="categoryTabs">
+    <button class="tab active" data-cat="all">全部</button>
+    <button class="tab" data-cat="励志成长">励志成长</button>
+    <button class="tab" data-cat="亲情友情">亲情友情</button>
+    <button class="tab" data-cat="环保自然">环保自然</button>
+    <button class="tab" data-cat="科技创新">科技创新</button>
+    <button class="tab" data-cat="传统文化">传统文化</button>
+    <button class="tab" data-cat="人生哲理">人生哲理</button>
+    <button class="tab" data-cat="家国情怀">家国情怀</button>
+  </div>
+</div>
+
+<div class="daily-wrap" id="dailyWrap">
+  <div class="color-picker" id="colorPicker">
+    <div class="color-dot active" data-color="default" style="background:linear-gradient(135deg,#d46890,#e89ab0)"></div>
+    <div class="color-dot" data-color="blue" style="background:linear-gradient(135deg,#5b8ec4,#7aaccc)"></div>
+    <div class="color-dot" data-color="green" style="background:linear-gradient(135deg,#5a9e7a,#7ab89a)"></div>
+    <div class="color-dot" data-color="purple" style="background:linear-gradient(135deg,#8b7ec8,#a89ee0)"></div>
+    <div class="color-dot" data-color="gray" style="background:linear-gradient(135deg,#64748b,#94a3b8)"></div>
+    <div class="color-dot" data-color="orange" style="background:linear-gradient(135deg,#e8835a,#f5b08a)"></div>
+    <div class="color-dot" data-color="dark" style="background:linear-gradient(135deg,#1e293b,#334155)"></div>
+  </div>
+  <div class="daily-card" id="dailyCard">
+    <div class="daily-label"><svg class="sparkle" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg> 每日一句</div>
+    <div class="daily-text" id="dailyText"></div>
+    <div class="daily-source" id="dailySource"></div>
+  </div>
+</div>
+
+<div class="stats-wrap">
+  <div>共 <span class="count" id="totalCount">0</span> 条素材</div>
+  <button class="fav-filter-btn" id="favFilterBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    仅看收藏
+  </button>
+</div>
+
+<div class="cards-wrap" id="cardsWrap"></div>
+
+<div class="empty-state" id="emptyState" style="display:none">
+  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+  <div>没有找到匹配的素材</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // Category colors
+  const CAT_COLORS = {
+    '励志成长': '#ff8a65',
+    '亲情友情': '#f06292',
+    '环保自然': '#4db6ac',
+    '科技创新': '#64b5f6',
+    '传统文化': '#ffb74d',
+    '人生哲理': '#9575cd',
+    '家国情怀': '#e57373'
+  };
+
+  const quotes = [
+    // ====== 励志成长 (13) ======
+    {text: "宝剑锋从磨砺出，梅花香自苦寒来。", source: "《警世贤文》", cat: "励志成长"},
+    {text: "不积跬步，无以至千里；不积小流，无以成江海。", source: "荀子《劝学》", cat: "励志成长"},
+    {text: "锲而舍之，朽木不折；锲而不舍，金石可镂。", source: "荀子《劝学》", cat: "励志成长"},
+    {text: "每一个不曾起舞的日子，都是对生命的辜负。", source: "尼采", cat: "励志成长"},
+    {text: "即使跌倒一百次，也要一百零一次地站起来。", source: "张海迪", cat: "励志成长"},
+    {text: "愿你历尽千帆，归来仍是少年。", source: "冯唐", cat: "励志成长"},
+    {text: "青春不是年华，而是心境；青春不是桃面，而是深沉的意志。", source: "塞缪尔·厄尔曼", cat: "励志成长"},
+    {text: "那些杀不死你的，终将使你更强大。", source: "尼采", cat: "励志成长"},
+    {text: "所有坚忍不拔的努力迟早会取得报酬的。", source: "安格尔", cat: "励志成长"},
+    {text: "英雄就是普通人拥有一颗伟大的心。", source: "苏格拉底", cat: "励志成长"},
+    {text: "我从来不曾有过幸运，将来也永远不指望幸运，我的最高原则是：不论对任何困难都决不屈服。", source: "居里夫人", cat: "励志成长"},
+    {text: "千淘万漉虽辛苦，吹尽狂沙始到金。", source: "刘禹锡", cat: "励志成长"},
+    {text: "没有一个冬天不可逾越，没有一个春天不会来临。", source: "雪莱", cat: "励志成长"},
+    // ====== 亲情友情 (13) ======
+    {text: "谁言寸草心，报得三春晖。", source: "孟郊《游子吟》", cat: "亲情友情"},
+    {text: "独在异乡为异客，每逢佳节倍思亲。", source: "王维《九月九日忆山东兄弟》", cat: "亲情友情"},
+    {text: "海内存知己，天涯若比邻。", source: "王勃《送杜少府之任蜀州》", cat: "亲情友情"},
+    {text: "但愿人长久，千里共婵娟。", source: "苏轼《水调歌头》", cat: "亲情友情"},
+    {text: "所谓父女母子一场，只不过意味着你和他的缘分就是今生今世不断地在目送他的背影渐行渐远。", source: "龙应台《目送》", cat: "亲情友情"},
+    {text: "友谊是两颗心真诚相待，而不是一颗心对另一颗心的敲打。", source: "鲁迅", cat: "亲情友情"},
+    {text: "父母在，不远游，游必有方。", source: "《论语》", cat: "亲情友情"},
+    {text: "父母之爱子，则为之计深远。", source: "《战国策》", cat: "亲情友情"},
+    {text: "真正的朋友，是一个灵魂孕育在两个躯体里。", source: "亚里士多德", cat: "亲情友情"},
+    {text: "莫愁前路无知己，天下谁人不识君。", source: "高适《别董大》", cat: "亲情友情"},
+    {text: "家是世界上唯一隐藏人类缺点与失败的地方，同时也蕴藏着甜蜜的爱。", source: "萧伯纳", cat: "亲情友情"},
+    {text: "妈妈说，人最好不要错过两种东西：最后一班回家的车和一个深爱你的人。", source: "张嘉佳", cat: "亲情友情"},
+    {text: "我慢慢地、慢慢地了解到，所谓父女母子一场，只不过意味着，你和他的缘分就是今生今世不断地在目送他的背影渐行渐远。", source: "龙应台", cat: "亲情友情"},
+    // ====== 环保自然 (12) ======
+    {text: "人法地，地法天，天法道，道法自然。", source: "老子《道德经》", cat: "环保自然"},
+    {text: "天地与我并生，而万物与我为一。", source: "庄子《齐物论》", cat: "环保自然"},
+    {text: "竭泽而渔，岂不获得？而明年无鱼。", source: "《吕氏春秋》", cat: "环保自然"},
+    {text: "落霞与孤鹜齐飞，秋水共长天一色。", source: "王勃《滕王阁序》", cat: "环保自然"},
+    {text: "万物各得其和以生，各得其养以成。", source: "《荀子·天论》", cat: "环保自然"},
+    {text: "大自然的每一个领域都是精妙绝伦的。", source: "亚里士多德", cat: "环保自然"},
+    {text: "当人类欢呼对自然的胜利之时，也就是自然对人类惩罚的开始。", source: "黑格尔", cat: "环保自然"},
+    {text: "一花一世界，一叶一菩提。", source: "《华严经》", cat: "环保自然"},
+    {text: "青山遮不住，毕竟东流去。", source: "辛弃疾", cat: "环保自然"},
+    {text: "我们不是继承了父辈的地球，而是借用了儿孙的地球。", source: "联合国环境方案", cat: "环保自然"},
+    {text: "绿水青山就是金山银山。", source: "习近平", cat: "环保自然"},
+    {text: "大自然从不吝啬，她赐予我们阳光、雨露和四季，只是人类忘记了感恩。", source: "珍·古道尔", cat: "环保自然"},
+    // ====== 科技创新 (13) ======
+    {text: "苟日新，日日新，又日新。", source: "《礼记·大学》", cat: "科技创新"},
+    {text: "穷则变，变则通，通则久。", source: "《周易·系辞下》", cat: "科技创新"},
+    {text: "想像力比知识更重要，因为知识是有限的，而想像力概括着世界上的一切。", source: "爱因斯坦", cat: "科技创新"},
+    {text: "科学技术是第一生产力。", source: "邓小平", cat: "科技创新"},
+    {text: "问号是开启任何一门科学的钥匙。", source: "巴尔扎克", cat: "科技创新"},
+    {text: "可上九天揽月，可下五洋捉鳖。", source: "毛泽东", cat: "科技创新"},
+    {text: "航天是千人一杆枪的事业，没有完美的个人，只有完美的团队。", source: "中国航天人", cat: "科技创新"},
+    {text: "蛟龙号载人潜水器创造了下潜7062米的中国深度。", source: "科技成就", cat: "科技创新"},
+    {text: "北斗三号全球卫星导航系统全面建成开通，中国从此有了自己的全球定位系统。", source: "科技成就", cat: "科技创新"},
+    {text: "人工智能不是要取代人类，而是要延伸人类的能力。", source: "李彦宏", cat: "科技创新"},
+    {text: "5G时代正在到来，万物互联不再是想象，而是正在发生的现实。", source: "科技前沿", cat: "科技创新"},
+    {text: "嫦娥五号成功带回月球土壤，这是人类时隔44年再次实现月球采样返回。", source: "科技成就", cat: "科技创新"},
+    {text: "芯片是现代工业的粮食，核心技术必须掌握在自己手中。", source: "科技评论", cat: "科技创新"},
+    // ====== 传统文化 (13) ======
+    {text: "博学之，审问之，慎思之，明辨之，笃行之。", source: "《礼记·中庸》", cat: "传统文化"},
+    {text: "温故而知新，可以为师矣。", source: "《论语·为政》", cat: "传统文化"},
+    {text: "知之者不如好之者，好之者不如乐之者。", source: "《论语·雍也》", cat: "传统文化"},
+    {text: "学而不思则罔，思而不学则殆。", source: "《论语·为政》", cat: "传统文化"},
+    {text: "己所不欲，勿施于人。", source: "《论语·卫灵公》", cat: "传统文化"},
+    {text: "求木之长者，必固其根本；欲流之远者，必浚其泉源。", source: "魏征《谏太宗十思疏》", cat: "传统文化"},
+    {text: "文化是民族的血脉，是人民的精神家园。", source: "习近平", cat: "传统文化"},
+    {text: "敦煌壁画历经千年依然绚丽夺目，那是一代代匠人用生命守护的色彩。", source: "文化素材", cat: "传统文化"},
+    {text: "故宫不仅是建筑，更是中华文明的活态传承，每一块砖瓦都刻着时间的印记。", source: "文化素材", cat: "传统文化"},
+    {text: "从《诗经》到《楚辞》，从唐诗到宋词，中华文学的星河从未黯淡。", source: "文化素材", cat: "传统文化"},
+    {text: "非物质文化遗产不是躺在博物馆里的标本，而是活在人们生活中的记忆。", source: "文化评论", cat: "传统文化"},
+    {text: "汉字是中华文明的基因密码，每一个字都承载着先人的智慧。", source: "文化素材", cat: "传统文化"},
+    {text: "君子和而不同，小人同而不和。", source: "《论语·子路》", cat: "传统文化"},
+    // ====== 人生哲理 (13) ======
+    {text: "人生如逆旅，我亦是行人。", source: "苏轼《临江仙》", cat: "人生哲理"},
+    {text: "不以物喜，不以己悲。", source: "范仲淹《岳阳楼记》", cat: "人生哲理"},
+    {text: "宠辱不惊，闲看庭前花开花落；去留无意，漫随天外云卷云舒。", source: "《幽窗小记》", cat: "人生哲理"},
+    {text: "山重水复疑无路，柳暗花明又一村。", source: "陆游《游山西村》", cat: "人生哲理"},
+    {text: "人间不值得，但你值得。", source: "网络流行语", cat: "人生哲理"},
+    {text: "岁月不居，时节如流。", source: "孔融", cat: "人生哲理"},
+    {text: "把每一个黎明看作生命的开始，把每一个黄昏看作生命的小结。", source: "约翰·罗斯金", cat: "人生哲理"},
+    {text: "生活不会因为你是女孩就对你格外宽容，但也不会因为你努力而辜负你。", source: "杨澜", cat: "人生哲理"},
+    {text: "你要做一个不动声色的大人了，不准情绪化，不准偷偷想念，不准回头看。", source: "村上春树", cat: "人生哲理"},
+    {text: "所有你乐于挥霍的时间，都不能算作浪费。", source: "约翰·列侬", cat: "人生哲理"},
+    {text: "纵有疾风起，人生不言弃。", source: "保尔·瓦莱里", cat: "人生哲理"},
+    {text: "心之所向，素履以往，生如逆旅，一苇以航。", source: "七堇年", cat: "人生哲理"},
+    {text: "我们都在阴沟里，但仍有人仰望星空。", source: "王尔德", cat: "人生哲理"},
+    // ====== 家国情怀 (13) ======
+    {text: "天下兴亡，匹夫有责。", source: "顾炎武", cat: "家国情怀"},
+    {text: "先天下之忧而忧，后天下之乐而乐。", source: "范仲淹《岳阳楼记》", cat: "家国情怀"},
+    {text: "苟利国家生死以，岂因祸福避趋之。", source: "林则徐", cat: "家国情怀"},
+    {text: "位卑未敢忘忧国。", source: "陆游", cat: "家国情怀"},
+    {text: "人生自古谁无死，留取丹心照汗青。", source: "文天祥《过零丁洋》", cat: "家国情怀"},
+    {text: "为中华之崛起而读书。", source: "周恩来", cat: "家国情怀"},
+    {text: "为什么我的眼里常含泪水？因为我对这土地爱得深沉。", source: "艾青", cat: "家国情怀"},
+    {text: "少年强则国强，少年独立则国独立。", source: "梁启超《少年中国说》", cat: "家国情怀"},
+    {text: "我毕生的梦想就是让所有人远离饥饿。", source: "袁隆平", cat: "家国情怀"},
+    {text: "只要还有一口气，我就要站在讲台上，倾尽全力奉献所有。", source: "张桂梅", cat: "家国情怀"},
+    {text: "一块blanket改变不了世界，但我们可以改变自己脚下的土地。", source: "屠呦呦", cat: "家国情怀"},
+    {text: "我的中国心，一颗永远为中国跳动的赤子之心。", source: "奥运精神", cat: "家国情怀"},
+    {text: "此时此刻，我仿佛看到了当年的长征路，我们这代人的长征，是科技兴国的长征。", source: "航天员", cat: "家国情怀"}
+  ];
+
+  // Add IDs
+  quotes.forEach((q, i) => q.id = i);
+
+  // State
+  let currentCat = 'all';
+  let searchQuery = '';
+  let showFavOnly = false;
+  let favorites = [];
+
+  // Load favorites
+  try {
+    const raw = localStorage.getItem('essay_favorites');
+    if (raw) favorites = JSON.parse(raw);
+  } catch(e) { favorites = []; }
+
+  function saveFav() {
+    try { localStorage.setItem('essay_favorites', JSON.stringify(favorites)); } catch(e) {}
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function getDailySeed() {
+    const d = new Date();
+    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  }
+  function seededRandom(seed) {
+    let x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  }
+  function pickDaily() {
+    const seed = getDailySeed();
+    const idx = Math.floor(seededRandom(seed) * quotes.length);
+    return quotes[idx];
+  }
+
+  function renderDaily() {
+    const q = pickDaily();
+    document.getElementById('dailyText').textContent = q.text;
+    document.getElementById('dailySource').textContent = '—— ' + q.source;
+  }
+
+  function renderCards() {
+    const wrap = document.getElementById('cardsWrap');
+    const empty = document.getElementById('emptyState');
+    let filtered = quotes.filter(q => {
+      if (currentCat !== 'all' && q.cat !== currentCat) return false;
+      if (showFavOnly && !favorites.includes(q.id)) return false;
+      if (searchQuery) {
+        const s = searchQuery.toLowerCase();
+        return q.text.toLowerCase().includes(s) || q.source.toLowerCase().includes(s) || q.cat.toLowerCase().includes(s);
+      }
+      return true;
+    });
+
+    document.getElementById('totalCount').textContent = filtered.length;
+
+    if (filtered.length === 0) {
+      wrap.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+
+    wrap.innerHTML = filtered.map(q => {
+      const color = CAT_COLORS[q.cat] || '#999';
+      const isFav = favorites.includes(q.id);
+      return `
+        <div class="card">
+          <div class="card-border" style="background:${color}"></div>
+          <div class="card-body">
+            <div class="card-text">${escapeHtml(q.text)}</div>
+            <div class="card-meta">
+              <div class="card-tags">
+                <span class="tag" style="background:${color}15;color:${color}">${escapeHtml(q.cat)}</span>
+                <span class="tag-source">${escapeHtml(q.source)}</span>
+              </div>
+              <div class="card-actions">
+                <button class="action-btn ${isFav?'faved':''}" onclick="toggleFav(${q.id})" aria-label="收藏">
+                  <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+                <button class="action-btn" onclick="copyQuote(${q.id},this)" aria-label="复制">
+                  <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+  }
+
+  window.toggleFav = function(id) {
+    const idx = favorites.indexOf(id);
+    if (idx > -1) { favorites.splice(idx, 1); showToast('已取消收藏'); }
+    else { favorites.push(id); showToast('已收藏'); }
+    saveFav();
+    renderCards();
+  };
+
+  window.copyQuote = function(id, btn) {
+    const q = quotes.find(x => x.id === id);
+    if (!q) return;
+    const text = q.text + '\n—— ' + q.source;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => { showCopy(btn); });
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showCopy(btn); } catch(e){}
+      document.body.removeChild(ta);
+    }
+  };
+
+  function showCopy(btn) {
+    showToast('已复制到剪贴板');
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1500);
+  }
+
+  // Tabs
+  document.getElementById('categoryTabs').addEventListener('click', function(e) {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat = btn.dataset.cat;
+    renderCards();
+  });
+
+  // Search
+  const searchInput = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearSearch');
+  searchInput.addEventListener('input', function() {
+    searchQuery = this.value.trim();
+    clearBtn.style.display = searchQuery ? 'flex' : 'none';
+    renderCards();
+  });
+  clearBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    searchQuery = '';
+    clearBtn.style.display = 'none';
+    renderCards();
+  });
+
+  // Fav filter
+  const favBtn = document.getElementById('favFilterBtn');
+  favBtn.addEventListener('click', function() {
+    showFavOnly = !showFavOnly;
+    this.classList.toggle('active', showFavOnly);
+    renderCards();
+  });
+
+  // Init
+  renderDaily();
+  renderCards();
+
+  // 颜色选择器
+  (function(){
+    var card = document.getElementById('dailyCard');
+    var dots = document.querySelectorAll('.color-dot');
+    var saved = localStorage.getItem('essay_daily_color') || 'default';
+    if (saved !== 'default') {
+      card.setAttribute('data-theme', saved);
+      dots.forEach(function(d) {
+        d.classList.toggle('active', d.dataset.color === saved);
+      });
+    }
+    dots.forEach(function(dot) {
+      dot.addEventListener('click', function() {
+        var color = this.dataset.color;
+        if (color === 'default') {
+          card.removeAttribute('data-theme');
+        } else {
+          card.setAttribute('data-theme', color);
+        }
+        dots.forEach(function(d) { d.classList.remove('active'); });
+        this.classList.add('active');
+        localStorage.setItem('essay_daily_color', color);
+      });
+    });
+  })();
+})();
+</script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>

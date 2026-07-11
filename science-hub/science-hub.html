@@ -1,0 +1,945 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f8f9fc">
+<title>ScienceHub · 学科知识库</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  html, body { overscroll-behavior: none; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    background: #f8f9fc; color: #1e293b;
+    min-height: 100vh; overflow-x: hidden;
+    padding: 16px env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+
+  /* Header */
+  .head { margin-bottom: 20px; margin-top: 20px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #64748b; text-decoration: none; font-size: 14px;
+    margin-bottom: 12px; cursor: pointer; margin-top: 0px; }
+  .head h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .head .subtitle { font-size: 13px; color: #94a3b8; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0; padding: 8px 18px; border-radius: 20px;
+    border: none; background: #e2e8f0; color: #64748b;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+
+  /* Section */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Search */
+  .search-box {
+    width: 100%; padding: 12px 16px; border-radius: 12px;
+    border: 1px solid #e2e8f0; background: #fff;
+    font-size: 14px; margin-bottom: 16px; outline: none;
+    font-family: inherit;
+  }
+  .search-box:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+  /* Chemistry - Periodic Table */
+  .periodic-table {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px; margin-bottom: 16px;
+  }
+  .element {
+    aspect-ratio: 1; border-radius: 8px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 11px; cursor: pointer;
+    transition: all 0.2s; border: 1px solid transparent;
+    position: relative; overflow: hidden;
+  }
+  .element .sym { font-size: 16px; font-weight: 700; }
+  .element .num { font-size: 9px; opacity: 0.7; position: absolute; top: 2px; left: 4px; }
+  .element .name { font-size: 8px; opacity: 0.8; }
+  .element:active { transform: scale(0.95); }
+
+  .el-nonmetal { background: #dbeafe; color: #1e40af; }
+  .el-noble { background: #e0e7ff; color: #3730a3; }
+  .el-alkali { background: #fee2e2; color: #991b1b; }
+  .el-alkaline { background: #ffedd5; color: #9a3412; }
+  .el-transition { background: #fef3c7; color: #92400e; }
+  .el-halogen { background: #d1fae5; color: #065f46; }
+  .el-metalloid { background: #f3e8ff; color: #6b21a8; }
+
+  .element-detail {
+    background: #fff; border-radius: 16px; padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 16px;
+  }
+  .element-detail h3 {
+    font-size: 20px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .element-detail .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+  }
+  .detail-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .detail-item {
+    background: #f8fafc; padding: 10px; border-radius: 10px;
+  }
+  .detail-item .label { font-size: 11px; color: #94a3b8; }
+  .detail-item .value { font-size: 14px; font-weight: 600; color: #1e293b; }
+
+  /* Version Selector */
+  .version-selector {
+    background: #fff; border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .version-label {
+    font-size: 13px; font-weight: 600; color: #475569;
+    margin-bottom: 8px;
+  }
+  .version-pills {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .v-pill {
+    padding: 6px 12px; border-radius: 16px;
+    border: 1px solid #e2e8f0; background: #f8fafc;
+    color: #64748b; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .v-pill:active { transform: scale(0.96); }
+  .v-pill.active {
+    background: linear-gradient(135deg, #06b6d4, #22d3ee);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 6px rgba(6,182,212,0.3);
+  }
+  .formula-card .ver-tag {
+    display: inline-block; padding: 1px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 600; margin-left: 8px;
+    vertical-align: middle;
+  }
+  .ver-tag.pep { background: #dbeafe; color: #1e40af; }
+  .ver-tag.huke { background: #fce7f3; color: #be185d; }
+  .ver-tag.suke { background: #d1fae5; color: #065f46; }
+  .ver-tag.bsdsd { background: #fef3c7; color: #92400e; }
+  .ver-tag.yueke { background: #e0e7ff; color: #3730a3; }
+  .ver-tag.jiaoke { background: #f3e8ff; color: #6b21a8; }
+
+  /* Physics - Formula Cards */
+  .formula-card {
+    background: #fff; border-radius: 14px; padding: 16px;
+    margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    border-left: 4px solid #3b82f6;
+  }
+  .formula-card h4 { font-size: 15px; margin-bottom: 8px; color: #1e293b; }
+  .formula-card .formula {
+    font-family: 'Times New Roman', serif; font-size: 18px;
+    color: #3b82f6; background: #eff6ff; padding: 8px 12px;
+    border-radius: 8px; display: inline-block; margin-bottom: 8px;
+  }
+  .formula-card .explain { font-size: 13px; color: #64748b; line-height: 1.6; }
+  .formula-card .vars { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+
+  /* History - Timeline */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
+    width: 2px; background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+  }
+  .timeline-item {
+    position: relative; margin-bottom: 16px;
+    background: #fff; border-radius: 12px; padding: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -20px; top: 18px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #3b82f6; border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #3b82f6;
+  }
+  .timeline-item .year {
+    font-size: 12px; font-weight: 700; color: #3b82f6;
+    margin-bottom: 4px;
+  }
+  .timeline-item h4 { font-size: 15px; margin-bottom: 4px; }
+  .timeline-item p { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .dynasty-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 500; margin-top: 6px;
+  }
+
+  /* Quiz */
+  .quiz-card {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  }
+  .quiz-card h3 { font-size: 16px; margin-bottom: 12px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-option {
+    background: #fff; border: 2px solid transparent;
+    border-radius: 10px; padding: 12px; font-size: 14px;
+    cursor: pointer; transition: all 0.2s; text-align: left;
+    font-family: inherit;
+  }
+  .quiz-option:hover { border-color: #f59e0b; }
+  .quiz-option.correct { background: #d1fae5; border-color: #10b981; }
+  .quiz-option.wrong { background: #fee2e2; border-color: #ef4444; }
+
+  /* Quick facts */
+  .fact-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .fact-card {
+    background: #fff; border-radius: 12px; padding: 14px;
+    text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .fact-card .icon { font-size: 28px; margin-bottom: 6px; }
+  .fact-card h4 { font-size: 13px; margin-bottom: 2px; }
+  .fact-card p { font-size: 11px; color: #94a3b8; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .app { padding: 16px 10px 100px; }
+    .head h1 { font-size: 17px; }
+    .head .subtitle { font-size: 12px; }
+    .tab { padding: 6px 12px; font-size: 13px; }
+    .search-box { padding: 10px 12px; font-size: 14px; }
+    .periodic-table { grid-template-columns: repeat(8, 1fr); gap: 3px; }
+    .element .sym { font-size: 13px; }
+    .element .num { font-size: 7px; }
+    .element .name { font-size: 7px; }
+    .element-detail { padding: 14px; border-radius: 12px; }
+    .element-detail h3 { font-size: 17px; }
+    .detail-grid { gap: 6px; }
+    .detail-item { padding: 8px; }
+    .detail-item .value { font-size: 12px; }
+    .v-pill { padding: 5px 10px; font-size: 11px; }
+    .formula-card .ver-tag { font-size: 9px; padding: 1px 6px; }
+    .formula-card { padding: 12px; margin-bottom: 8px; }
+    .formula-card h4 { font-size: 13px; }
+    .formula-card .formula { font-size: 15px; padding: 6px 10px; }
+    .formula-card .explain { font-size: 12px; }
+    .timeline-item { padding: 10px; margin-bottom: 10px; }
+    .timeline-item h4 { font-size: 13px; }
+    .timeline-item p { font-size: 12px; }
+    .timeline-item .year { font-size: 11px; }
+    .quiz-card { padding: 14px; }
+    .quiz-card h3 { font-size: 14px; }
+    .quiz-option { padding: 10px; font-size: 13px; }
+    .fact-grid { gap: 6px; }
+    .fact-card { padding: 10px; }
+    .fact-card .icon { font-size: 17px; }
+    .fact-card h4 { font-size: 12px; }
+  }
+
+  @media (min-width: 520px) {
+    .app { padding: 16px 24px 100px; }
+    .periodic-table { grid-template-columns: repeat(10, 1fr); }
+  }
+
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <a class="back-btn" href="../index-v2.html">← 返回</a>
+    <h1>🔬 ScienceHub</h1>
+    <div class="subtitle">化学 · 物理 · 历史 · 知识速查</div>
+  </div>
+
+  <div class="tabs top-tabs">
+    <button class="tab active" data-tab="chemistry">🧪 化学</button>
+    <button class="tab" data-tab="physics">⚡ 物理</button>
+    <button class="tab" data-tab="history">📜 历史</button>
+  </div>
+
+  <!-- CHEMISTRY -->
+  <div class="section active" id="chemistry">
+    <input type="text" class="search-box" id="chemSearch" placeholder="搜索元素名称或符号...">
+
+    <div class="element-detail" id="elementDetail">
+      <h3>氢 <span style="font-size:14px;color:#94a3b8">H</span></h3>
+      <span class="badge" style="background:#dbeafe;color:#1e40af">非金属</span>
+      <div class="detail-grid" style="margin-top:12px">
+        <div class="detail-item"><div class="label">原子序数</div><div class="value">1</div></div>
+        <div class="detail-item"><div class="label">相对原子质量</div><div class="value">1.008</div></div>
+        <div class="detail-item"><div class="label">电子排布</div><div class="value">1s¹</div></div>
+        <div class="detail-item"><div class="label">常见化合价</div><div class="value">+1, -1</div></div>
+      </div>
+    </div>
+
+    <div class="periodic-table" id="periodicTable"></div>
+
+    <div class="quiz-card">
+      <h3>🎯 化学知识问答</h3>
+      <p style="font-size:14px;margin-bottom:12px" id="chemQ">水的化学式是什么？</p>
+      <div class="quiz-options" id="chemOpts">
+        <button class="quiz-option" data-ans="0">CO₂</button>
+        <button class="quiz-option" data-ans="1">H₂O</button>
+        <button class="quiz-option" data-ans="0">O₂</button>
+        <button class="quiz-option" data-ans="0">NaCl</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHYSICS -->
+  <div class="section" id="physics">
+    <input type="text" class="search-box" id="physSearch" placeholder="搜索公式或知识点...">
+
+    <div class="version-selector" id="versionSelector">
+      <div class="version-label">📚 教材版本：</div>
+      <div class="version-pills" id="versionPills">
+        <button class="v-pill active" data-ver="all">全部版本</button>
+        <button class="v-pill" data-ver="pep">人教版</button>
+        <button class="v-pill" data-ver="huke">沪科版</button>
+        <button class="v-pill" data-ver="suke">苏科版</button>
+        <button class="v-pill" data-ver="bsdsd">北师大版</button>
+        <button class="v-pill" data-ver="yueke">粤科版</button>
+        <button class="v-pill" data-ver="jiaoke">教科版</button>
+      </div>
+    </div>
+
+    <div class="physics-tabs" id="physTabs">
+      <button class="tab active" data-grade="all">全部</button>
+      <button class="tab" data-grade="junior-8">初二</button>
+      <button class="tab" data-grade="junior-9">初三</button>
+      <button class="tab" data-grade="senior-10">高一</button>
+      <button class="tab" data-grade="senior-11">高二</button>
+      <button class="tab" data-grade="senior-12">高三</button>
+    </div>
+
+    <div id="physicsContent"></div>
+
+    <div class="quiz-card">
+      <h3>🎯 物理知识问答</h3>
+      <p style="font-size:14px;margin-bottom:12px" id="physQ"></p>
+      <div class="quiz-options" id="physOpts"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="history">
+    <input type="text" class="search-box" id="histSearch" placeholder="搜索朝代、事件或人物...">
+
+    <div class="history-tabs" id="histTabs">
+      <button class="tab active" data-era="all">全部</button>
+      <button class="tab" data-era="ancient">古代史</button>
+      <button class="tab" data-era="junior-ancient">初一古代</button>
+      <button class="tab" data-era="junior-9">初三</button>
+      <button class="tab" data-era="junior-modern">初二近代</button>
+      <button class="tab" data-era="senior-ancient">高一古代</button>
+      <button class="tab" data-era="senior-modern">高二近代</button>
+      <button class="tab" data-era="senior-world">高三世界</button>
+    </div>
+
+    <div id="historyContent"></div>
+
+    <div class="quiz-card">
+      <h3>🎯 历史知识问答</h3>
+      <p style="font-size:14px;margin-bottom:12px" id="histQ">中国历史上第一个统一的多民族封建国家是？</p>
+      <div class="quiz-options" id="histOpts">
+        <button class="quiz-option" data-ans="0">周朝</button>
+        <button class="quiz-option" data-ans="1">秦朝</button>
+        <button class="quiz-option" data-ans="0">汉朝</button>
+        <button class="quiz-option" data-ans="0">唐朝</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script defer src="chem-quiz-data.js"></script>
+<script>
+// ==================== Tabs ====================
+document.querySelectorAll('.top-tabs .tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.top-tabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ==================== Chemistry - Periodic Table ====================
+var elements = [
+  {n:1,sym:'H',name:'氢',cat:'nonmetal',mass:'1.008',config:'1s¹',valence:'+1,-1'},
+  {n:2,sym:'He',name:'氦',cat:'noble',mass:'4.003',config:'1s²',valence:'0'},
+  {n:3,sym:'Li',name:'锂',cat:'alkali',mass:'6.941',config:'[He]2s¹',valence:'+1'},
+  {n:4,sym:'Be',name:'铍',cat:'alkaline',mass:'9.012',config:'[He]2s²',valence:'+2'},
+  {n:5,sym:'B',name:'硼',cat:'metalloid',mass:'10.81',config:'[He]2s²2p¹',valence:'+3'},
+  {n:6,sym:'C',name:'碳',cat:'nonmetal',mass:'12.01',config:'[He]2s²2p²',valence:'+4,-4'},
+  {n:7,sym:'N',name:'氮',cat:'nonmetal',mass:'14.01',config:'[He]2s²2p³',valence:'+5,-3'},
+  {n:8,sym:'O',name:'氧',cat:'nonmetal',mass:'16.00',config:'[He]2s²2p⁴',valence:'-2'},
+  {n:9,sym:'F',name:'氟',cat:'halogen',mass:'19.00',config:'[He]2s²2p⁵',valence:'-1'},
+  {n:10,sym:'Ne',name:'氖',cat:'noble',mass:'20.18',config:'[He]2s²2p⁶',valence:'0'},
+  {n:11,sym:'Na',name:'钠',cat:'alkali',mass:'22.99',config:'[Ne]3s¹',valence:'+1'},
+  {n:12,sym:'Mg',name:'镁',cat:'alkaline',mass:'24.31',config:'[Ne]3s²',valence:'+2'},
+  {n:13,sym:'Al',name:'铝',cat:'transition',mass:'26.98',config:'[Ne]3s²3p¹',valence:'+3'},
+  {n:14,sym:'Si',name:'硅',cat:'metalloid',mass:'28.09',config:'[Ne]3s²3p²',valence:'+4,-4'},
+  {n:15,sym:'P',name:'磷',cat:'nonmetal',mass:'30.97',config:'[Ne]3s²3p³',valence:'+5,-3'},
+  {n:16,sym:'S',name:'硫',cat:'nonmetal',mass:'32.07',config:'[Ne]3s²3p⁴',valence:'+6,-2'},
+  {n:17,sym:'Cl',name:'氯',cat:'halogen',mass:'35.45',config:'[Ne]3s²3p⁵',valence:'-1'},
+  {n:18,sym:'Ar',name:'氩',cat:'noble',mass:'39.95',config:'[Ne]3s²3p⁶',valence:'0'},
+  {n:19,sym:'K',name:'钾',cat:'alkali',mass:'39.10',config:'[Ar]4s¹',valence:'+1'},
+  {n:20,sym:'Ca',name:'钙',cat:'alkaline',mass:'40.08',config:'[Ar]4s²',valence:'+2'},
+  {n:26,sym:'Fe',name:'铁',cat:'transition',mass:'55.85',config:'[Ar]3d⁶4s²',valence:'+2,+3'},
+  {n:29,sym:'Cu',name:'铜',cat:'transition',mass:'63.55',config:'[Ar]3d¹⁰4s¹',valence:'+1,+2'},
+  {n:30,sym:'Zn',name:'锌',cat:'transition',mass:'65.38',config:'[Ar]3d¹⁰4s²',valence:'+2'},
+  {n:47,sym:'Ag',name:'银',cat:'transition',mass:'107.9',config:'[Kr]4d¹⁰5s¹',valence:'+1'},
+  {n:79,sym:'Au',name:'金',cat:'transition',mass:'197.0',config:'[Xe]4f¹⁴5d¹⁰6s¹',valence:'+1,+3'},
+  {n:80,sym:'Hg',name:'汞',cat:'transition',mass:'200.6',config:'[Xe]4f¹⁴5d¹⁰6s²',valence:'+1,+2'},
+  {n:82,sym:'Pb',name:'铅',cat:'transition',mass:'207.2',config:'[Xe]4f¹⁴5d¹⁰6s²6p²',valence:'+2,+4'},
+];
+
+var catColors = {
+  nonmetal: {bg:'#dbeafe',color:'#1e40af',name:'非金属'},
+  noble: {bg:'#e0e7ff',color:'#3730a3',name:'稀有气体'},
+  alkali: {bg:'#fee2e2',color:'#991b1b',name:'碱金属'},
+  alkaline: {bg:'#ffedd5',color:'#9a3412',name:'碱土金属'},
+  transition: {bg:'#fef3c7',color:'#92400e',name:'过渡金属'},
+  halogen: {bg:'#d1fae5',color:'#065f46',name:'卤素'},
+  metalloid: {bg:'#f3e8ff',color:'#6b21a8',name:'类金属'},
+};
+
+function renderTable(filter) {
+  var container = document.getElementById('periodicTable');
+  container.innerHTML = '';
+  elements.forEach(function(el) {
+    if (filter && !el.name.includes(filter) && !el.sym.toLowerCase().includes(filter.toLowerCase())) return;
+    var c = catColors[el.cat];
+    var div = document.createElement('div');
+    div.className = 'element el-' + el.cat;
+    div.innerHTML = '<span class="num">' + el.n + '</span><span class="sym">' + el.sym + '</span><span class="name">' + el.name + '</span>';
+    div.addEventListener('click', function() { showElement(el); });
+    container.appendChild(div);
+  });
+}
+
+function showElement(el) {
+  var c = catColors[el.cat];
+  document.getElementById('elementDetail').innerHTML =
+    '<h3>' + el.name + ' <span style="font-size:14px;color:#94a3b8">' + el.sym + '</span></h3>' +
+    '<span class="badge" style="background:' + c.bg + ';color:' + c.color + '">' + c.name + '</span>' +
+    '<div class="detail-grid" style="margin-top:12px">' +
+    '<div class="detail-item"><div class="label">原子序数</div><div class="value">' + el.n + '</div></div>' +
+    '<div class="detail-item"><div class="label">相对原子质量</div><div class="value">' + el.mass + '</div></div>' +
+    '<div class="detail-item"><div class="label">电子排布</div><div class="value">' + el.config + '</div></div>' +
+    '<div class="detail-item"><div class="label">常见化合价</div><div class="value">' + el.valence + '</div></div>' +
+    '</div>';
+}
+
+renderTable('');
+
+document.getElementById('chemSearch').addEventListener('input', function(e) {
+  renderTable(e.target.value);
+});
+
+// ==================== Quiz Logic ====================
+
+// ==================== Physics - Grade-based Formulas ====================
+var verNames = {'pep':'人教版','huke':'沪科版','suke':'苏科版','bsdsd':'北师大版','yueke':'粤科版','jiaoke':'教科版'};
+var physicsFormulas = [
+  // ====== 初二 ======
+  // -- 人教版八上：声现象、光现象、透镜、物态变化、质量与密度
+  {name:'声音传播速度',formula:'v = s / t (空气中约340m/s)',explain:'声音在空气中传播速度约为340m/s，在固体中传播最快。',vars:'v: 速度 · s: 距离 · t: 时间',grade:'junior-8',chapter:'声现象',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'光的反射定律',formula:'反射角 = 入射角',explain:'反射光线、入射光线与法线在同一平面内，反射角等于入射角。',vars:'入射角等于反射角',grade:'junior-8',chapter:'光现象',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'折射定律',formula:'sinθ₁/sinθ₂ = n',explain:'光从一种介质进入另一种介质时方向改变。',vars:'n: 折射率 · θ: 角度',grade:'junior-8',chapter:'光现象',ver:['pep','huke','suke','bsdsd']},
+  {name:'凸透镜成像',formula:'1/u + 1/v = 1/f',explain:'凸透镜成像规律公式，u物距v像距f焦距。',vars:'u: 物距 · v: 像距 · f: 焦距',grade:'junior-8',chapter:'透镜',ver:['pep','huke','bsdsd','jiaoke']},
+  {name:'密度',formula:'ρ = m / V',explain:'单位体积内物质的质量。',vars:'ρ: 密度(kg/m³) · m: 质量(kg) · V: 体积(m³)',grade:'junior-8',chapter:'质量与密度',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'密度的变形',formula:'m = ρV · V = m/ρ',explain:'由密度公式变形得到质量和体积。',vars:'ρ: 密度 · m: 质量 · V: 体积',grade:'junior-8',chapter:'质量与密度',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  // -- 人教版八下：力、运动和力、压强、浮力、功和机械能、简单机械
+  {name:'速度公式',formula:'v = s / t',explain:'物体在单位时间内通过的路程。',vars:'v: 速度(m/s) · s: 路程(m) · t: 时间(s)',grade:'junior-8',chapter:'运动和力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'平均速度',formula:'v̄ = s总 / t总',explain:'总路程除以总时间。',vars:'v̄: 平均速度 · s总: 总路程 · t总: 总时间',grade:'junior-8',chapter:'运动和力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'重力',formula:'G = mg',explain:'物体受到的重力与质量成正比。',vars:'G: 重力(N) · m: 质量(kg) · g: 9.8 N/kg',grade:'junior-8',chapter:'力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'固体压强',formula:'p = F / S',explain:'单位面积上所受的压力。',vars:'p: 压强(Pa) · F: 压力(N) · S: 受力面积(m²)',grade:'junior-8',chapter:'压强',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'液体压强',formula:'p = ρgh',explain:'液体内部某深度的压强。',vars:'p: 压强(Pa) · ρ: 液体密度 · g: 9.8 · h: 深度(m)',grade:'junior-8',chapter:'压强',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'阿基米德原理（浮力）',formula:'F浮 = ρ液gV排',explain:'浸在液体中的物体受到的浮力等于排开液体的重力。',vars:'ρ液: 液体密度 · V排: 排开体积',grade:'junior-8',chapter:'浮力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'杠杆平衡条件',formula:'F₁L₁ = F₂L₂',explain:'杠杆平衡时动力×动力臂=阻力×阻力臂。',vars:'F: 力(N) · L: 力臂(m)',grade:'junior-8',chapter:'简单机械',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'功',formula:'W = Fs',explain:'力与在力的方向上移动距离的乘积。',vars:'W: 功(J) · F: 力(N) · s: 距离(m)',grade:'junior-8',chapter:'功和机械能',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'功率',formula:'P = W / t',explain:'单位时间内所做的功。',vars:'P: 功率(W) · W: 功(J) · t: 时间(s)',grade:'junior-8',chapter:'功和机械能',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'功的原理',formula:'W总 = W有用 + W额外',explain:'使用机械时总功等于有用功与额外功之和。',vars:'W: 功(J)',grade:'junior-8',chapter:'功和机械能',ver:['pep','huke','suke','bsdsd']},
+  {name:'机械效率',formula:'η = W有用 / W总 × 100%',explain:'有用功占总功的百分比。',vars:'η: 效率 · W有用: 有用功 · W总: 总功',grade:'junior-8',chapter:'功和机械能',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'动能',formula:'Ek = ½mv²',explain:'物体由于运动而具有的能量。',vars:'Ek: 动能(J) · m: 质量(kg) · v: 速度(m/s)',grade:'junior-8',chapter:'功和机械能',ver:['pep','bsdsd','yueke','jiaoke']},
+  {name:'重力势能',formula:'Ep = mgh',explain:'物体由于被举高而具有的能量。',vars:'Ep: 势能(J) · m: 质量 · g: 9.8 · h: 高度(m)',grade:'junior-8',chapter:'功和机械能',ver:['pep','bsdsd','yueke','jiaoke']},
+
+  // ====== 初三 ======
+  // -- 人教版九全：热学、电路、电功电功率、电与磁、能源
+  {name:'温度换算',formula:'T = t + 273.15K',explain:'摄氏温度与热力学温度的换算。',vars:'T: 热力学温度(K) · t: 摄氏温度(°C)',grade:'junior-9',chapter:'温度与物态',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'内能（热量）',formula:'Q = cmΔT',explain:'物体温度变化时吸收或放出的热量。',vars:'Q: 热量(J) · c: 比热容 · m: 质量 · ΔT: 温差',grade:'junior-9',chapter:'内能',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'燃料热值',formula:'Q = mq',explain:'燃料完全燃烧放出的热量。',vars:'Q: 热量(J) · m: 质量(kg) · q: 热值(J/kg)',grade:'junior-9',chapter:'内能',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'热机效率',formula:'η = W有用 / Q放 × 100%',explain:'热机做的有用功与燃料完全燃烧放出热量的比值。',vars:'η: 效率 · W: 有用功 · Q: 放出热量',grade:'junior-9',chapter:'内能',ver:['pep','huke','bsdsd','yueke']},
+  {name:'串联电路特点',formula:'I=I₁=I₂ · U=U₁+U₂ · R=R₁+R₂',explain:'串联电路中电流处处相等，电压等于各部分之和。',vars:'I: 电流(A) · U: 电压(V) · R: 电阻(Ω)',grade:'junior-9',chapter:'电路',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'并联电路特点',formula:'I=I₁+I₂ · U=U₁=U₂ · 1/R=1/R₁+1/R₂',explain:'并联电路中电压处处相等，电流等于各支路之和。',vars:'I: 电流(A) · U: 电压(V) · R: 电阻(Ω)',grade:'junior-9',chapter:'电路',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'欧姆定律',formula:'I = U / R',explain:'导体中的电流与电压成正比，与电阻成反比。',vars:'I: 电流(A) · U: 电压(V) · R: 电阻(Ω)',grade:'junior-9',chapter:'欧姆定律',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电功',formula:'W = UIt = Pt = I²Rt',explain:'电流做功等于电压×电流×时间。',vars:'W: 电功(J) · U: 电压 · I: 电流 · t: 时间 · P: 功率 · R: 电阻',grade:'junior-9',chapter:'电功率',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电功率',formula:'P = UI = W/t = I²R = U²/R',explain:'电流做功的快慢。',vars:'P: 功率(W) · U: 电压 · I: 电流 · R: 电阻',grade:'junior-9',chapter:'电功率',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'焦耳定律',formula:'Q = I²Rt',explain:'电流通过导体产生的热量与电流的平方成正比。',vars:'Q: 热量(J) · I: 电流(A) · R: 电阻(Ω) · t: 时间(s)',grade:'junior-9',chapter:'电功率',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'磁感线',formula:'N极出发 → S极进入',explain:'磁体周围的磁感线从N极出发回到S极。',vars:'磁体外由N到S，内部由S到N',grade:'junior-9',chapter:'电与磁',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'安培定则',formula:'右手螺旋定则',explain:'用右手握住螺线管，四指弯曲方向为电流方向，大拇指指向N极。',vars:'电流方向与磁场方向的关系',grade:'junior-9',chapter:'电与磁',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'家庭电路电压',formula:'U = 220V · f = 50Hz',explain:'我国生活用电电压为220V，频率50Hz。',vars:'U: 电压(V) · f: 频率(Hz)',grade:'junior-9',chapter:'生活用电',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'安全用电',formula:'I = P / U',explain:'用电器总功率过大导致电流过大引发危险。',vars:'I: 电流 · P: 总功率 · U: 电压',grade:'junior-9',chapter:'生活用电',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+
+  // ====== 高一 ======
+  // -- 人教版必修一：运动学、力、牛顿定律
+  {name:'匀变速直线运动速度',formula:'v = v₀ + at',explain:'末速度等于初速度加上加速度乘以时间。',vars:'v: 末速度 · v₀: 初速度 · a: 加速度 · t: 时间',grade:'senior-10',chapter:'匀变速运动',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'位移公式',formula:'s = v₀t + ½at²',explain:'匀变速直线运动的位移公式。',vars:'s: 位移 · v₀: 初速度 · a: 加速度 · t: 时间',grade:'senior-10',chapter:'匀变速运动',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'速度位移关系',formula:'v² = v₀² + 2as',explain:'不含时间的速度与位移关系。',vars:'v: 末速度 · v₀: 初速度 · a: 加速度 · s: 位移',grade:'senior-10',chapter:'匀变速运动',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'自由落体',formula:'h = ½gt² · v = gt',explain:'物体仅受重力从静止开始下落的运动。',vars:'h: 高度 · g: 9.8m/s² · t: 时间 · v: 速度',grade:'senior-10',chapter:'匀变速运动',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'牛顿第二定律',formula:'F = ma',explain:'物体的加速度与合外力成正比，与质量成反比。',vars:'F: 力(N) · m: 质量(kg) · a: 加速度(m/s²)',grade:'senior-10',chapter:'牛顿定律',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'牛顿第三定律',formula:'F = -F\'',explain:'两个物体之间的作用力和反作用力总是大小相等、方向相反。',vars:'F: 作用力 · F\': 反作用力',grade:'senior-10',chapter:'牛顿定律',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'力的合成',formula:'F合 = √(F₁² + F₂² + 2F₁F₂cosθ)',explain:'互成角度的两个力的合力。',vars:'F: 力(N) · θ: 夹角',grade:'senior-10',chapter:'相互作用',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'胡克定律',formula:'F = kx',explain:'弹簧弹力与伸长量成正比。',vars:'F: 弹力(N) · k: 劲度系数(N/m) · x: 形变量(m)',grade:'senior-10',chapter:'相互作用',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'动能定理',formula:'W合 = ½mv² - ½mv₀²',explain:'合外力做的功等于动能的变化量。',vars:'W: 功(J) · Ek: 动能(J)',grade:'senior-10',chapter:'牛顿定律',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'机械能守恒',formula:'Ek₁ + Ep₁ = Ek₂ + Ep₂',explain:'只有重力或弹力做功时，动能和势能之和不变。',vars:'Ek: 动能 · Ep: 势能',grade:'senior-10',chapter:'机械能守恒',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  // -- 人教版必修二：曲线运动、万有引力、静力学
+  {name:'向心加速度',formula:'a = v²/r = ω²r',explain:'匀速圆周运动的加速度指向圆心。',vars:'a: 加速度 · v: 线速度 · r: 半径 · ω: 角速度',grade:'senior-10',chapter:'曲线运动与万有引力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'向心力',formula:'F = mv²/r = mω²r',explain:'做圆周运动物体受到的指向圆心的力。',vars:'F: 力(N) · m: 质量 · v: 线速度 · r: 半径',grade:'senior-10',chapter:'曲线运动与万有引力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'万有引力',formula:'F = GMm/r²',explain:'两个物体之间的引力。',vars:'F: 力(N) · G: 6.67×10⁻¹¹ · M,m: 质量 · r: 距离(m)',grade:'senior-10',chapter:'曲线运动与万有引力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'第一宇宙速度',formula:'v₁ = √(GM/R) ≈ 7.9 km/s',explain:'卫星绕地球做匀速圆周运动的最小发射速度。',vars:'G: 引力常量 · M: 地球质量 · R: 地球半径',grade:'senior-10',chapter:'曲线运动与万有引力',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'第二宇宙速度',formula:'v₂ ≈ 11.2 km/s',explain:'挣脱地球引力束缚的最小发射速度。',vars:'又称脱离速度',grade:'senior-10',chapter:'曲线运动与万有引力',ver:['pep','huke','suke','yueke']},
+  {name:'第三宇宙速度',formula:'v₃ ≈ 16.7 km/s',explain:'挣脱太阳引力束缚的最小发射速度。',vars:'又称逃逸速度',grade:'senior-10',chapter:'曲线运动与万有引力',ver:['pep','huke','suke','yueke']},
+
+  // ====== 高二 ======
+  // -- 人教版必修三：静电学、恒定电流、磁场
+  {name:'库仑定律',formula:'F = kQ₁Q₂/r²',explain:'真空中两点电荷之间的相互作用力。',vars:'F: 力(N) · k: 9×10⁹ · Q: 电荷量(C) · r: 距离(m)',grade:'senior-11',chapter:'静电场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电场强度',formula:'E = F/q = kQ/r²',explain:'电场中某点的电场强度。',vars:'E: 电场强度(N/C) · F: 力 · q: 电荷量',grade:'senior-11',chapter:'静电场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电场力做功',formula:'W = qU = qEd',explain:'电荷在电场中移动时电场力做的功。',vars:'W: 功(J) · q: 电荷量 · U: 电压 · E: 电场强度 · d: 距离',grade:'senior-11',chapter:'静电场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电容',formula:'C = Q/U',explain:'电容器所带电荷量与电压之比。',vars:'C: 电容(F) · Q: 电荷量(C) · U: 电压(V)',grade:'senior-11',chapter:'静电场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'平行板电容',formula:'C = εS/(4πkd)',explain:'平行板电容器的电容公式。',vars:'ε: 介电常数 · S: 面积 · d: 间距 · k: 静电力常量',grade:'senior-11',chapter:'静电场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'闭合电路欧姆定律',formula:'I = ε/(R+r)',explain:'电路中电流等于电动势除以总电阻。',vars:'I: 电流 · ε: 电动势 · R: 外电阻 · r: 内电阻',grade:'senior-11',chapter:'恒定电流',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电功率（纯电阻）',formula:'P = UI = I²R = U²/R',explain:'纯电阻电路的电功率。',vars:'P: 功率(W)',grade:'senior-11',chapter:'恒定电流',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'安培力',formula:'F = BILsinθ',explain:'通电导线在磁场中受到的力。',vars:'F: 力(N) · B: 磁感应强度(T) · I: 电流(A) · L: 长度 · θ: 夹角',grade:'senior-11',chapter:'磁场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'洛伦兹力',formula:'F = qvBsinθ',explain:'运动电荷在磁场中受到的力。',vars:'F: 力(N) · q: 电荷 · v: 速度 · B: 磁感应强度',grade:'senior-11',chapter:'磁场',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  // -- 人教版选择性必修二：电磁感应、交流电
+  {name:'法拉第电磁感应',formula:'ε = nΔΦ/Δt = BLv',explain:'感应电动势等于磁通量变化率。',vars:'ε: 电动势 · n: 匝数 · Φ: 磁通量 · B: 磁感应强度 · L: 长度 · v: 速度',grade:'senior-11',chapter:'电磁感应',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'正弦交流电',formula:'e = Emsinωt · i = Imsinωt',explain:'正弦交流电的瞬时值表达式。',vars:'Em: 峰值 · ω: 角频率 · t: 时间',grade:'senior-11',chapter:'交变电流',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'理想变压器',formula:'U₁/U₂ = n₁/n₂ · P₁ = P₂',explain:'原副线圈电压比等于匝数比。',vars:'U: 电压 · n: 匝数 · P: 功率',grade:'senior-11',chapter:'交变电流',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'有效值',formula:'U有效 = Um/√2 · I有效 = Im/√2',explain:'正弦交流电有效值与峰值的关系。',vars:'U: 电压 · I: 电流 · Um,Im: 峰值',grade:'senior-11',chapter:'交变电流',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'电磁波谱',formula:'c = λf = 3×10⁸ m/s',explain:'电磁波在真空中的传播速度等于波长乘频率。',vars:'c: 光速 · λ: 波长 · f: 频率',grade:'senior-11',chapter:'交变电流',ver:['pep','huke','suke','bsdsd','yueke']},
+
+  // ====== 高三 ======
+  // -- 人教版选择性必修三：热学、动量、波粒二象性、原子物理
+  {name:'动量',formula:'p = mv',explain:'物体的质量与速度的乘积。',vars:'p: 动量(kg·m/s) · m: 质量 · v: 速度',grade:'senior-12',chapter:'动量',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'动量定理',formula:'Ft = Δp = mv - mv₀',explain:'合外力的冲量等于动量的变化量。',vars:'F: 力 · t: 时间 · Δp: 动量变化',grade:'senior-12',chapter:'动量',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'动量守恒定律',formula:'m₁v₁ + m₂v₂ = m₁v₁\' + m₂v₂\'',explain:'系统不受外力或外力为零时，总动量不变。',vars:'m: 质量 · v: 速度',grade:'senior-12',chapter:'动量',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'波速公式',formula:'v = λf = λ/T',explain:'波的传播速度等于波长乘频率。',vars:'v: 波速 · λ: 波长 · f: 频率 · T: 周期',grade:'senior-12',chapter:'机械振动和波',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'光电效应',formula:'Ek = hν - W₀',explain:'光电子的最大初动能与入射光频率有关。',vars:'Ek: 动能(J) · h: 普朗克常量 · ν: 频率 · W₀: 逸出功',grade:'senior-12',chapter:'光',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'质能方程',formula:'E = mc²',explain:'物体的能量与质量之间的关系。',vars:'E: 能量(J) · m: 质量(kg) · c: 3×10⁸ m/s',grade:'senior-12',chapter:'波粒二象性',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'玻尔模型',formula:'En = E₁/n²',explain:'氢原子第n能级的能量。',vars:'E₁: -13.6eV · n: 能级数(1,2,3...)',grade:'senior-12',chapter:'原子结构',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'半衰期',formula:'N = N₀(½)^(t/T)',explain:'放射性元素经过时间t后剩余的原子核数。',vars:'N: 剩余数 · N₀: 初始数 · t: 时间 · T: 半衰期',grade:'senior-12',chapter:'原子核',ver:['pep','huke','suke','bsdsd','yueke','jiaoke']},
+  {name:'核能（质能方程应用）',formula:'ΔE = Δmc²',explain:'核反应中释放的能量等于质量亏损乘以光速的平方。',vars:'ΔE: 释放能量 · Δm: 质量亏损 · c: 光速',grade:'senior-12',chapter:'原子核',ver:['pep','huke','suke','bsdsd','yueke']},
+  {name:'玻意耳定律',formula:'p₁V₁ = p₂V₂（等温变化）',explain:'一定质量的气体在温度不变时，压强与体积成反比。',vars:'p: 压强 · V: 体积',grade:'senior-12',chapter:'热学',ver:['pep','huke','suke','bsdsd','yueke']},
+  {name:'查理定律',formula:'p₁/T₁ = p₂/T₂（等容变化）',explain:'一定质量的气体在体积不变时，压强与热力学温度成正比。',vars:'p: 压强(Pa) · T: 温度(K)',grade:'senior-12',chapter:'热学',ver:['pep','huke','suke','bsdsd','yueke']},
+  {name:'盖·吕萨克定律',formula:'V₁/T₁ = V₂/T₂（等压变化）',explain:'一定质量的气体在压强不变时，体积与热力学温度成正比。',vars:'V: 体积 · T: 温度(K)',grade:'senior-12',chapter:'热学',ver:['pep','huke','suke','bsdsd','yueke']},
+];
+
+var gradeColors = {
+  'junior-8': '#f59e0b',
+  'junior-9': '#ef4444',
+  'senior-10': '#3b82f6',
+  'senior-11': '#8b5cf6',
+  'senior-12': '#10b981',
+};
+var versionChapterOrder = {
+  'pep': {
+    'junior-8': ['声现象','光现象','透镜','质量与密度','力','运动和力','压强','浮力','功和机械能','简单机械'],
+    'junior-9': ['温度与物态','内能','电路','欧姆定律','电功率','生活用电','电与磁'],
+    'senior-10': ['匀变速运动','相互作用','牛顿定律','曲线运动与万有引力','机械能守恒'],
+    'senior-11': ['静电场','恒定电流','磁场','电磁感应','交变电流'],
+    'senior-12': ['动量','机械振动和波','光','热学','原子结构','原子核','波粒二象性']
+  },
+  'huke': {
+    'junior-8': ['机械运动','声现象','光现象','透镜','质量与密度','力','运动和力','压强','浮力','功和机械能','简单机械'],
+    'junior-9': ['温度与物态','内能','电路','欧姆定律','电功率','生活用电','电与磁'],
+    'senior-10': ['匀变速运动','牛顿定律','相互作用','曲线运动与万有引力','机械能守恒'],
+    'senior-11': ['静电场','磁场','恒定电流','电磁感应','交变电流'],
+    'senior-12': ['动量','光','机械振动和波','原子结构','原子核','热学','波粒二象性']
+  },
+  'suke': {
+    'junior-8': ['声现象','光现象','透镜','质量与密度','力','运动和力','压强','浮力'],
+    'junior-9': ['功和机械能','简单机械','温度与物态','内能','电路','欧姆定律','电功率'],
+    'senior-10': ['相互作用','匀变速运动','牛顿定律','机械能守恒','曲线运动与万有引力'],
+    'senior-11': ['恒定电流','静电场','磁场','交变电流','电磁感应'],
+    'senior-12': ['机械振动和波','动量','光','热学','波粒二象性','原子结构','原子核']
+  },
+  'bsdsd': {
+    'junior-8': ['光现象','透镜','质量与密度','力','运动和力','压强','浮力','功和机械能','简单机械'],
+    'junior-9': ['温度与物态','内能','电路','欧姆定律','电功率','生活用电','电与磁'],
+    'senior-10': ['匀变速运动','相互作用','机械能守恒','牛顿定律','曲线运动与万有引力'],
+    'senior-11': ['静电场','恒定电流','电磁感应','磁场','交变电流'],
+    'senior-12': ['动量','机械振动和波','热学','光','原子结构','原子核','波粒二象性']
+  },
+  'yueke': {
+    'junior-8': ['声现象','光现象','透镜','质量与密度','力','运动和力','压强','浮力','功和机械能','简单机械'],
+    'junior-9': ['温度与物态','内能','电路','欧姆定律','电功率','生活用电','电与磁'],
+    'senior-10': ['匀变速运动','相互作用','牛顿定律','机械能守恒','曲线运动与万有引力'],
+    'senior-11': ['静电场','磁场','恒定电流','交变电流','电磁感应'],
+    'senior-12': ['动量','光','机械振动和波','热学','波粒二象性','原子核','原子结构']
+  },
+  'jiaoke': {
+    'junior-8': ['声现象','光现象','透镜','质量与密度','力','运动和力','压强','浮力','功和机械能','简单机械'],
+    'junior-9': ['温度与物态','内能','电路','欧姆定律','电功率','生活用电','电与磁'],
+    'senior-10': ['相互作用','匀变速运动','曲线运动与万有引力','牛顿定律','机械能守恒'],
+    'senior-11': ['恒定电流','静电场','磁场','电磁感应','交变电流'],
+    'senior-12': ['机械振动和波','动量','光','原子结构','原子核','热学','波粒二象性']
+  }
+};
+var gradeNames = {
+  'junior-8': '初二',
+  'junior-9': '初三',
+  'senior-10': '高一',
+  'senior-11': '高二',
+  'senior-12': '高三',
+};
+
+var currentPhysGrade = 'all';
+var currentPhysVer = 'all';
+
+function renderPhysics(grade, ver, filter) {
+  var container = document.getElementById('physicsContent');
+  container.innerHTML = '';
+  var filtered = physicsFormulas.filter(function(f) {
+    var gradeOk = (grade === 'all' || f.grade === grade);
+    var verOk = (ver === 'all' || (f.ver && f.ver.indexOf(ver) !== -1));
+    var filterOk = (!filter || f.name.includes(filter) || f.formula.toLowerCase().includes(filter.toLowerCase()));
+    return gradeOk && verOk && filterOk;
+  });
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px">暂无匹配的公式</p>';
+    return;
+  }
+  if (ver !== 'all') {
+    var gradeOrder = ['junior-8','junior-9','senior-10','senior-11','senior-12'];
+    var chapterOrderMap = {};
+    if (versionChapterOrder[ver]) {
+      Object.keys(versionChapterOrder[ver]).forEach(function(g) {
+        chapterOrderMap[g] = {};
+        versionChapterOrder[ver][g].forEach(function(ch, idx) {
+          chapterOrderMap[g][ch] = idx;
+        });
+      });
+    }
+    filtered.sort(function(a, b) {
+      var ga = gradeOrder.indexOf(a.grade);
+      var gb = gradeOrder.indexOf(b.grade);
+      if (ga !== gb) return ga - gb;
+      var ca = chapterOrderMap[a.grade] && chapterOrderMap[a.grade][a.chapter] !== undefined ? chapterOrderMap[a.grade][a.chapter] : 999;
+      var cb = chapterOrderMap[b.grade] && chapterOrderMap[b.grade][b.chapter] !== undefined ? chapterOrderMap[b.grade][b.chapter] : 999;
+      return ca - cb;
+    });
+    var currentChapter = '';
+    filtered.forEach(function(f) {
+      if (f.chapter !== currentChapter) {
+        currentChapter = f.chapter;
+        var tag = document.createElement('div');
+        tag.style.cssText = 'font-size:13px; font-weight:700; color:#fff; background:linear-gradient(135deg, #3b82f6, #8b5cf6); padding:6px 12px; border-radius:8px; display:inline-block; margin:16px 0 8px;';
+        tag.textContent = f.chapter;
+        container.appendChild(tag);
+      }
+      var card = document.createElement('div');
+      card.className = 'formula-card';
+      card.style.borderLeftColor = gradeColors[f.grade];
+      var verHtml = '';
+      if (ver !== 'all' && f.ver && f.ver.indexOf(ver) !== -1) {
+        verHtml = '<span class="ver-tag ' + ver + '">' + verNames[ver] + '</span>';
+      }
+      card.innerHTML = '<h4>' + f.name + verHtml + '</h4><div class="formula">' + f.formula + '</div><div class="explain">' + f.explain + '</div><div class="vars">' + f.vars + '</div>';
+      container.appendChild(card);
+    });
+  } else {
+    var currentGrade = '';
+    filtered.forEach(function(f) {
+      if (f.grade !== currentGrade) {
+        currentGrade = f.grade;
+        var tag = document.createElement('div');
+        tag.style.cssText = 'font-size:13px;font-weight:700;color:' + gradeColors[f.grade] + ';margin:16px 0 8px;padding-left:4px;';
+        tag.textContent = '📚 ' + gradeNames[f.grade] + '物理';
+        container.appendChild(tag);
+      }
+      var card = document.createElement('div');
+      card.className = 'formula-card';
+      card.style.borderLeftColor = gradeColors[f.grade];
+      var verHtml = '';
+      if (ver !== 'all' && f.ver && f.ver.indexOf(ver) !== -1) {
+        verHtml = '<span class="ver-tag ' + ver + '">' + verNames[ver] + '</span>';
+      }
+      card.innerHTML = '<h4>' + f.name + verHtml + '</h4><div class="formula">' + f.formula + '</div><div class="explain">' + f.explain + '</div><div class="vars">' + f.vars + '</div>';
+      container.appendChild(card);
+    });
+  }
+}
+
+// Version selector
+document.querySelectorAll('#versionPills .v-pill').forEach(function(pill) {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('#versionPills .v-pill').forEach(function(p) { p.classList.remove('active'); });
+    pill.classList.add('active');
+    currentPhysVer = pill.dataset.ver;
+    var filter = document.getElementById('physSearch').value;
+    renderPhysics(currentPhysGrade, currentPhysVer, filter);
+  });
+});
+
+// Grade tabs
+document.querySelectorAll('#physTabs .tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('#physTabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentPhysGrade = tab.dataset.grade;
+    var filter = document.getElementById('physSearch').value;
+    renderPhysics(currentPhysGrade, currentPhysVer, filter);
+  });
+});
+
+renderPhysics('all', 'all', '');
+
+document.getElementById('physSearch').addEventListener('input', function(e) {
+  renderPhysics(currentPhysGrade, currentPhysVer, e.target.value);
+});
+
+var physQuestions = [
+  {q:'光在真空中的传播速度约为？',opts:['340 m/s','3×10⁸ m/s','3×10⁶ m/s','3×10⁵ m/s'],ans:1},
+  {q:'牛顿第二定律的表达式是？',opts:['F = mv','F = ma','F = mv²','F = mg'],ans:1},
+  {q:'欧姆定律的表达式是？',opts:['I = UR','I = U/R','I = U+R','I = R/U'],ans:1},
+  {q:'自由落体运动的加速度约为？',opts:['9.8 m/s²','10.8 m/s²','8.8 m/s²','11.2 m/s²'],ans:0},
+  {q:'串联电路中电流的特点是？',opts:['处处不相等','处处相等','从大到小','从小到大'],ans:1},
+  {q:'动量守恒定律的条件是？',opts:['合力不为零','合力为零','有摩擦力','有加速度'],ans:1},
+  {q:'爱因斯坦质能方程是？',opts:['E = mv²','E = mc²','E = mgh','E = ½mv²'],ans:1},
+  {q:'第一宇宙速度约为？',opts:['7.9 km/s','11.2 km/s','16.7 km/s','3×10⁸ m/s'],ans:0},
+  {q:'焦耳定律的表达式是？',opts:['Q = UIt','Q = I²Rt','Q = IR','Q = URt'],ans:1},
+  {q:'库仑定律中力与距离的关系是？',opts:['成正比','成反比','与r²成正比','与r²成反比'],ans:3},
+];
+// ==================== History - Timeline Data ====================
+var historyEvents = [
+  // --- 初一古代（中国古代史·先秦-三国）---
+  {year:'约前2070年',title:'夏朝建立',desc:'中国历史上第一个世袭制王朝，大禹之子启继位，标志着"公天下"变为"家天下"。',era:'junior-ancient',tag:'夏',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'约前1600年',title:'商朝建立',desc:'商汤灭夏，建立商朝。甲骨文是已知最早的成熟汉字体系，青铜器制造达到高峰。',era:'junior-ancient',tag:'商',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'前1046年',title:'武王伐纣 · 西周建立',desc:'周武王在牧野之战击败商纣王，建立周朝，实行分封制和宗法制。',era:'junior-ancient',tag:'周',tagColor:'#dbeafe',tagText:'#1e40af'},
+  {year:'前770年',title:'平王东迁 · 春秋开始',desc:'犬戎攻破镐京，周平王东迁洛邑。诸侯争霸开始，出现了齐桓公、晋文公等"春秋五霸"。',era:'junior-ancient',tag:'周',tagColor:'#dbeafe',tagText:'#1e40af'},
+  {year:'前551年',title:'孔子诞生',desc:'儒家学派创始人孔子出生于鲁国，提出"仁"的学说，主张"有教无类"。',era:'junior-ancient',tag:'春秋',tagColor:'#f0fdf4',tagText:'#166534'},
+  {year:'前475年',title:'战国时期开始',desc:'三家分晋标志着战国时代开始。各国变法图强，其中商鞅变法使秦国逐渐强大。',era:'junior-ancient',tag:'战国',tagColor:'#f0fdf4',tagText:'#166534'},
+  {year:'约前300年',title:'百家争鸣',desc:'战国时期，儒、墨、道、法、兵等诸子百家思想争鸣，是中国古代思想文化的黄金时期。',era:'junior-ancient',tag:'战国',tagColor:'#f0fdf4',tagText:'#166534'},
+  {year:'前221年',title:'秦始皇统一六国',desc:'秦王嬴政灭六国，建立中国第一个中央集权封建王朝，统一文字、货币、度量衡，修筑长城。',era:'junior-ancient',tag:'秦',tagColor:'#fee2e2',tagText:'#991b1b'},
+  {year:'前209年',title:'大泽乡起义',desc:'陈胜、吴广率农民起义，喊出"王侯将相宁有种乎"，是中国历史上第一次大规模农民起义。',era:'junior-ancient',tag:'秦',tagColor:'#fee2e2',tagText:'#991b1b'},
+  {year:'前202年',title:'西汉建立',desc:'刘邦击败项羽，建立汉朝，定都长安。实行休养生息政策，社会经济逐渐恢复。',era:'junior-ancient',tag:'汉',tagColor:'#ffedd5',tagText:'#9a3412'},
+  {year:'前138年',title:'张骞出使西域',desc:'汉武帝派张骞出使西域，开辟丝绸之路，促进了东西方经济文化交流。',era:'junior-ancient',tag:'汉',tagColor:'#ffedd5',tagText:'#9a3412'},
+  {year:'前134年',title:'罢黜百家 · 独尊儒术',desc:'汉武帝接受董仲舒建议，将儒学立为正统思想，设太学培养人才，加强中央集权。',era:'junior-ancient',tag:'汉',tagColor:'#ffedd5',tagText:'#9a3412'},
+  {year:'公元8年',title:'王莽改制',desc:'外戚王莽篡汉建立新朝，推行改革但失败，引发绿林赤眉起义。',era:'junior-ancient',tag:'新',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'25年',title:'东汉建立',desc:'刘秀重建汉朝，定都洛阳，史称东汉。光武帝恢复社会秩序，出现"光武中兴"。',era:'junior-ancient',tag:'汉',tagColor:'#ffedd5',tagText:'#9a3412'},
+  {year:'105年',title:'蔡伦改进造纸术',desc:'东汉蔡伦改进造纸术，用树皮、麻头等制纸，大大降低了造纸成本，推动了文化传播。',era:'junior-ancient',tag:'汉',tagColor:'#ffedd5',tagText:'#9a3412'},
+  {year:'200年',title:'官渡之战',desc:'曹操以少胜多击败袁绍，奠定了统一北方的基础，是三国时期的重要转折点。',era:'junior-ancient',tag:'三国',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'208年',title:'赤壁之战',desc:'孙刘联军以少胜多击败曹操，奠定三国鼎立局面。',era:'junior-ancient',tag:'三国',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'220年',title:'三国鼎立',desc:'曹丕代汉建魏，刘备建蜀汉，孙权建吴，三国鼎立局面正式形成。',era:'junior-ancient',tag:'三国',tagColor:'#fce7f3',tagText:'#be185d'},
+
+  // --- 初三（世界史·新航路开辟-工业革命+中国古代续）---
+  {year:'280年',title:'西晋统一',desc:'司马炎建立西晋，短暂统一全国。但八王之乱后国力衰退，北方陷入五胡十六国的混乱。',era:'junior-9',tag:'晋',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'317年',title:'东晋建立',desc:'西晋灭亡后，司马睿在建康（今南京）建立东晋，南方经济开始快速发展。',era:'junior-9',tag:'晋',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'420年',title:'南北朝时期',desc:'东晋灭亡后，南方经历宋、齐、梁、陈四朝，北方经历北魏等朝代，民族融合加速。',era:'junior-9',tag:'南北朝',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'589年',title:'隋朝统一全国',desc:'隋文帝杨坚统一南北朝，结束近300年的分裂局面。开凿大运河，创立科举制。',era:'junior-9',tag:'隋',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'907年',title:'唐朝灭亡 · 五代十国',desc:'黄巢起义后唐朝名存实亡，朱温篡唐建立后梁。此后进入五代十国的分裂时期。',era:'junior-9',tag:'五代',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'960年',title:'北宋统一',desc:'赵匡胤陈桥兵变建立北宋，结束五代十国分裂局面。推行重文轻武政策，经济文化高度繁荣。',era:'junior-9',tag:'宋',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1127年',title:'南宋建立',desc:'靖康之变后，赵构在临安（今杭州）建立南宋。南宋与金对峙，经济重心完成南移。',era:'junior-9',tag:'宋',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1206年',title:'蒙古帝国建立',desc:'成吉思汗统一蒙古各部，建立蒙古帝国。此后蒙古军队西征，建立了横跨欧亚的庞大帝国。',era:'junior-9',tag:'元',tagColor:'#e0f2fe',tagText:'#0c4a6e'},
+  {year:'1271年',title:'元朝建立',desc:'忽必烈改国号为元，定都大都（今北京），统一全国。实行行省制度，促进民族交融。',era:'junior-9',tag:'元',tagColor:'#e0f2fe',tagText:'#0c4a6e'},
+  {year:'1368年',title:'明朝建立',desc:'朱元璋推翻元朝建立明朝，废除丞相制度，设立锦衣卫和东厂等特务机构加强皇权。',era:'junior-9',tag:'明',tagColor:'#d1fae5',tagText:'#065f46'},
+  {year:'1405年',title:'郑和下西洋',desc:'明成祖派郑和七次下西洋，最远到达非洲东海岸，是世界航海史上的伟大壮举。',era:'junior-9',tag:'明',tagColor:'#d1fae5',tagText:'#065f46'},
+  {year:'1644年',title:'清军入关',desc:'李自成攻入北京，崇祯帝自缢。清军在吴三桂引下入关，逐步统一全国。',era:'junior-9',tag:'清前期',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'1689年',title:'《尼布楚条约》签订',desc:'中俄签订《尼布楚条约》，从法律上明确了中俄东段边界，是中国第一个平等的国际条约。',era:'junior-9',tag:'清前期',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'1776年',title:'美国独立',desc:'北美十三州殖民地发表《独立宣言》，脱离英国独立。华盛顿成为美国第一任总统。',era:'junior-9',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1789年',title:'法国大革命',desc:'巴黎人民攻占巴士底狱，法国大革命爆发，发表《人权宣言》，推翻了波旁王朝的封建统治。',era:'junior-9',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1818年',title:'马克思主义诞生',desc:'马克思、恩格斯发表《共产党宣言》，标志着马克思主义的诞生，无产阶级登上历史舞台。',era:'junior-9',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+
+  // --- 初二近代（中国近代史·1840-1949）---
+  {year:'1840年',title:'鸦片战争爆发',desc:'英国以禁烟运动为借口发动侵华战争，清政府战败，被迫签订《南京条约》，中国开始沦为半殖民地半封建社会。',era:'junior-modern',tag:'晚清',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'1851年',title:'太平天国运动',desc:'洪秀全领导金田起义，建立太平天国，颁布《天朝田亩制度》，是规模最大的农民起义。',era:'junior-modern',tag:'晚清',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'1856年',title:'第二次鸦片战争',desc:'英法联军发动侵华战争，火烧圆明园，签订《天津条约》《北京条约》，中国半殖民地化程度加深。',era:'junior-modern',tag:'晚清',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'1894年',title:'甲午中日战争',desc:'日本发动侵华战争，北洋水师全军覆没，签订《马关条约》，割台湾及赔款。',era:'junior-modern',tag:'晚清',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'1898年',title:'戊戌变法',desc:'康有为、梁启超等推动维新变法，持续103天后失败，谭嗣同等"戊戌六君子"遇难。',era:'junior-modern',tag:'晚清',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'1900年',title:'八国联军侵华',desc:'八国联军攻占北京，签订《辛丑条约》，中国完全沦为半殖民地半封建社会。',era:'junior-modern',tag:'晚清',tagColor:'#fecaca',tagText:'#991b1b'},
+  {year:'1911年',title:'辛亥革命',desc:'孙中山领导的革命推翻清朝统治，1912年中华民国成立，结束了两千多年的封建帝制。',era:'junior-modern',tag:'民国',tagColor:'#bfdbfe',tagText:'#1e40af'},
+  {year:'1915年',title:'新文化运动',desc:'陈独秀、胡适等人发起新文化运动，提倡民主与科学，反对封建思想文化。',era:'junior-modern',tag:'民国',tagColor:'#bfdbfe',tagText:'#1e40af'},
+  {year:'1919年',title:'五四运动',desc:'巴黎和会上中国外交失败引发五四运动，工人阶级登上政治舞台，标志着新民主主义革命的开端。',era:'junior-modern',tag:'民国',tagColor:'#bfdbfe',tagText:'#1e40af'},
+  {year:'1921年',title:'中国共产党成立',desc:'中共一大在上海召开，标志着中国共产党正式成立，中国革命面貌焕然一新。',era:'junior-modern',tag:'建党',tagColor:'#dcfce7',tagText:'#166534'},
+  {year:'1926年',title:'北伐战争',desc:'国共合作北伐，基本推翻了北洋军阀的统治，但1927年蒋介石发动政变，国共合作破裂。',era:'junior-modern',tag:'民国',tagColor:'#bfdbfe',tagText:'#1e40af'},
+  {year:'1934年',title:'红军长征',desc:'第五次反围剿失败后，红军开始长征，历经艰难险阻，1936年三大主力会师，保存了革命力量。',era:'junior-modern',tag:'革命',tagColor:'#dcfce7',tagText:'#166534'},
+  {year:'1937年',title:'全面抗战爆发',desc:'七七事变后抗日战争全面爆发，国共第二次合作。经历了淞沪会战、台儿庄战役、百团大战等。',era:'junior-modern',tag:'抗战',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'1945年',title:'抗日战争胜利',desc:'经过八年全面抗战，中国取得胜利，洗刷了近代以来的民族耻辱。台湾回归中国。',era:'junior-modern',tag:'抗战',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'1949年',title:'中华人民共和国成立',desc:'1949年10月1日，毛泽东在天安门城楼宣告中华人民共和国成立，中国人民从此站起来了。',era:'junior-modern',tag:'建国',tagColor:'#dcfce7',tagText:'#166534'},
+
+  // --- 高一古代（中国古代史深化·隋唐-清前期）---
+  {year:'581年',title:'隋朝建立',desc:'杨坚建立隋朝，统一南北。隋炀帝开通大运河，加强了南北经济文化交流。',era:'senior-ancient',tag:'隋',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'618年',title:'唐朝建立',desc:'李渊建立唐朝，随后出现"贞观之治"、"开元盛世"，是中国古代最繁荣的朝代之一。',era:'senior-ancient',tag:'唐',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'627年',title:'贞观之治',desc:'唐太宗李世民在位期间，虚心纳谏，轻徭薄赋，政治清明，经济繁荣，民族关系和谐。',era:'senior-ancient',tag:'唐',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'755年',title:'安史之乱',desc:'安禄山、史思明发动叛乱，唐朝由盛转衰。持续八年的战争严重削弱了唐朝国力。',era:'senior-ancient',tag:'唐',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'960年',title:'北宋建立',desc:'赵匡胤陈桥兵变建立宋朝，推行重文轻武政策，经济和文化高度繁荣。',era:'senior-ancient',tag:'宋',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1041年',title:'毕昇发明活字印刷术',desc:'北宋毕昇发明胶泥活字印刷术，比欧洲古腾堡早约400年，极大推动了文化传播。',era:'senior-ancient',tag:'宋',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1115年',title:'金朝建立',desc:'女真族完颜阿骨打建立金朝，1127年金灭北宋，史称"靖康之变"。',era:'senior-ancient',tag:'宋',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1271年',title:'元朝建立',desc:'忽必烈建立元朝，统一全国。行省制度对后世影响深远，马可波罗来华。',era:'senior-ancient',tag:'元',tagColor:'#e0f2fe',tagText:'#0c4a6e'},
+  {year:'1368年',title:'明朝建立',desc:'朱元璋推翻元朝建立明朝，废除丞相制度，设锦衣卫加强皇权。',era:'senior-ancient',tag:'明',tagColor:'#d1fae5',tagText:'#065f46'},
+  {year:'1405年',title:'郑和下西洋',desc:'明成祖派郑和七次下西洋，最远到达东非，比哥伦布航行早半个世纪，是世界航海史壮举。',era:'senior-ancient',tag:'明',tagColor:'#d1fae5',tagText:'#065f46'},
+  {year:'1644年',title:'清军入关',desc:'李自成攻入北京，崇祯帝自缢。清军在吴三桂引下入关，建立清朝。',era:'senior-ancient',tag:'明/清',tagColor:'#e0e7ff',tagText:'#3730a3'},
+  {year:'1689年',title:'《尼布楚条约》',desc:'中俄签订《尼布楚条约》，是中国历史上第一个平等的国际边界条约。',era:'senior-ancient',tag:'清',tagColor:'#e0e7ff',tagText:'#3730a3'},
+
+  // --- 高二近代（中国近代深化·工业革命-二战）---
+  {year:'1760年代',title:'工业革命',desc:'英国率先开始工业革命，蒸汽机的广泛应用彻底改变了生产方式，人类社会从农业文明进入工业文明。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1789年',title:'法国大革命',desc:'巴黎人民攻占巴士底狱，法国大革命爆发。发表《人权宣言》，推翻了波旁王朝。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1848年',title:'《共产党宣言》发表',desc:'马克思、恩格斯发表《共产党宣言》，标志着马克思主义的诞生。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1861年',title:'美国南北战争',desc:'林肯当选总统后南北战争爆发，最终北方获胜，废除了奴隶制度。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1868年',title:'日本明治维新',desc:'日本推翻幕府统治，推行全面西化改革，迅速走上资本主义道路。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1914年',title:'第一次世界大战',desc:'萨拉热窝事件引发第一次世界大战，历时四年多，造成巨大伤亡，深刻改变了世界格局。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1917年',title:'俄国十月革命',desc:'列宁领导布尔什维克发动十月革命，建立世界上第一个社会主义国家，鼓舞了全球被压迫民族。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1929年',title:'经济大危机',desc:'美国纽约股市崩盘引发全球经济大萧条，各国失业率飙升，加速了法西斯势力的崛起。',era:'senior-modern',tag:'世界',tagColor:'#f0f9ff',tagText:'#0c4a6e'},
+  {year:'1939年',title:'第二次世界大战全面爆发',desc:'德国闪击波兰，二战全面爆发。中国抗日战争成为世界反法西斯战争的重要组成部分。',era:'senior-modern',tag:'世界',tagColor:'#fef2f2',tagText:'#991b1b'},
+  {year:'1945年',title:'二战结束 · 联合国成立',desc:'日本投降，第二次世界大战结束。联合国成立，雅尔塔体系确立，世界进入冷战格局。',era:'senior-modern',tag:'世界',tagColor:'#dcfce7',tagText:'#166534'},
+
+  // --- 高三世界（世界历史深化·古代文明-当代）---
+  {year:'约前3500年',title:'古埃及文明',desc:'尼罗河流域出现古埃及文明，建造金字塔和狮身人面像，发明象形文字。',era:'senior-world',tag:'古文明',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'约前3000年',title:'两河流域文明',desc:'苏美尔人建立城邦，发明楔形文字和《汉谟拉比法典》，是已知最早的成文法典。',era:'senior-world',tag:'古文明',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'约前2500年',title:'古印度文明',desc:'印度河流域出现哈拉帕文明，后来雅利安人入侵建立种姓制度。佛教在此诞生。',era:'senior-world',tag:'古文明',tagColor:'#fef3c7',tagText:'#92400e'},
+  {year:'约前800年',title:'古希腊城邦兴起',desc:'雅典和斯巴达等城邦兴起，雅典发展出民主政治，苏格拉底、柏拉图、亚里士多德等哲学家影响深远。',era:'senior-world',tag:'古希腊',tagColor:'#dbeafe',tagText:'#1e40af'},
+  {year:'前509年',title:'罗马共和国建立',desc:'罗马从王政时代进入共和国时期，通过战争不断扩张，成为地中海霸主。',era:'senior-world',tag:'古罗马',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'前27年',title:'罗马帝国建立',desc:'屋大维建立罗马帝国，进入"罗马和平"时期。基督教在此期间兴起并传播。',era:'senior-world',tag:'古罗马',tagColor:'#fce7f3',tagText:'#be185d'},
+  {year:'476年',title:'西罗马帝国灭亡',desc:'日耳曼人入侵导致西罗马灭亡，欧洲进入中世纪，封建制度和基督教会主导欧洲。',era:'senior-world',tag:'中世纪',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1453年',title:'拜占庭帝国灭亡',desc:'奥斯曼帝国攻占君士坦丁堡，东罗马帝国灭亡，标志着中世纪的结束。',era:'senior-world',tag:'中世纪',tagColor:'#f3e8ff',tagText:'#6b21a8'},
+  {year:'1492年',title:'哥伦布发现新大陆',desc:'哥伦布横渡大西洋到达美洲，开启了大航海时代和欧洲殖民扩张。',era:'senior-world',tag:'大航海',tagColor:'#e0f2fe',tagText:'#0c4a6e'},
+  {year:'1687年',title:'牛顿发表《自然哲学的数学原理》',desc:'牛顿总结三大定律和万有引力定律，标志着近代科学的形成。',era:'senior-world',tag:'启蒙',tagColor:'#f0fdf4',tagText:'#166534'},
+  {year:'1789年',title:'美国宪法生效',desc:'美国联邦政府正式运作，三权分立原则确立，成为世界上第一部成文宪法。',era:'senior-world',tag:'革命',tagColor:'#fef2f2',tagText:'#991b1b'},
+  {year:'1947年',title:'印巴分治',desc:'英国撤出印度次大陆，印度和巴基斯坦分别独立，开启亚洲民族独立浪潮。',era:'senior-world',tag:'当代',tagColor:'#dcfce7',tagText:'#166534'},
+  {year:'1991年',title:'苏联解体',desc:'苏联宣布解体，冷战结束。两极格局终结，世界进入多极化发展新时期。',era:'senior-world',tag:'当代',tagColor:'#dcfce7',tagText:'#166534'},
+];
+
+function renderHistory(era, filter) {
+  var container = document.getElementById('historyContent');
+  container.innerHTML = '';
+  var filtered = historyEvents.filter(function(ev) {
+    var eraOk = (era === 'all' || era === ev.era || (era === 'ancient' && (ev.era === 'junior-ancient' || ev.era === 'senior-ancient')));
+    var filterOk = (!filter || ev.title.includes(filter) || ev.desc.includes(filter) || ev.year.includes(filter));
+    return eraOk && filterOk;
+  });
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px">暂无匹配的历史事件</p>';
+    return;
+  }
+  var timeline = document.createElement('div');
+  timeline.className = 'timeline';
+  filtered.forEach(function(ev) {
+    var item = document.createElement('div');
+    item.className = 'timeline-item';
+    item.innerHTML = '<div class="year">' + ev.year + '</div><h4>' + ev.title + '</h4><p>' + ev.desc + '</p><span class="dynasty-tag" style="background:' + ev.tagColor + ';color:' + ev.tagText + '">' + ev.tag + '</span>';
+    timeline.appendChild(item);
+  });
+  container.appendChild(timeline);
+}
+
+var currentHistEra = 'all';
+document.querySelectorAll('#histTabs .tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('#histTabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentHistEra = tab.dataset.era;
+    var filter = document.getElementById('histSearch').value;
+    renderHistory(currentHistEra, filter);
+  });
+});
+
+renderHistory('all', '');
+
+document.getElementById('histSearch').addEventListener('input', function(e) {
+  renderHistory(currentHistEra, e.target.value);
+});
+
+// ==================== History Quiz ====================
+var histQuestions = [
+  {q:'中国历史上第一个统一的多民族封建国家是？',opts:['周朝','秦朝','汉朝','唐朝'],ans:1},
+  {q:'被称为"书圣"的书法家是？',opts:['颜真卿','柳公权','王羲之','欧阳询'],ans:2},
+  {q:'百家争鸣中主张"兼爱""非攻"的是？',opts:['儒家','道家','墨家','法家'],ans:2},
+  {q:'丝绸之路的开辟者是谁？',opts:['张骞','班超','郑和','玄奘'],ans:0},
+  {q:'中国最后一个封建王朝是？',opts:['明朝','清朝','元朝','宋朝'],ans:1},
+  {q:'戊戌变法中壮烈牺牲的是谁？',opts:['康有为','梁启超','谭嗣同','严复'],ans:2},
+  {q:'中国共产党成立于哪一年？',opts:['1919年','1920年','1921年','1922年'],ans:2},
+];
+
+function shuffleArray(arr) {
+  var result = arr.slice();
+  for (var i = result.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = result[i]; result[i] = result[j]; result[j] = t;
+  }
+  return result;
+}
+
+function setupQuiz(qArr, qId, optId) {
+  var questions = shuffleArray(qArr);
+  var idx = 0;
+  function show() {
+    var q = questions[idx];
+    document.getElementById(qId).textContent = q.q;
+    var container = document.getElementById(optId);
+    container.innerHTML = '';
+    var correctText = q.opts[q.ans];
+    var shuffledOpts = shuffleArray(q.opts);
+    shuffledOpts.forEach(function(opt) {
+      var btn = document.createElement('button');
+      btn.className = 'quiz-option';
+      btn.textContent = opt;
+      btn.addEventListener('click', function() {
+        if (opt === correctText) {
+          btn.classList.add('correct');
+          setTimeout(function() {
+            idx = (idx + 1) % questions.length;
+            show();
+          }, 800);
+        } else {
+          btn.classList.add('wrong');
+        }
+      });
+      container.appendChild(btn);
+    });
+  }
+  show();
+}
+
+setupQuiz(chemQuestions, 'chemQ', 'chemOpts');
+setupQuiz(physQuestions, 'physQ', 'physOpts');
+setupQuiz(histQuestions, 'histQ', 'histOpts');
+
+</script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>

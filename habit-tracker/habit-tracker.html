@@ -1,0 +1,829 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Streakly · 习惯打卡</title>
+<style>
+  :root {
+    --bg: #f8f9fc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #e5a83b;
+    --accent-light: #f0d58c;
+    --accent-green: #5a9e7a;
+    --accent-red: #c47a7a;
+    --border: #e2e8f0;
+    --shadow: rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    padding-top: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    }
+  .container { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100vh; position: relative; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #64748b; text-decoration: none; font-size: 14px;
+    margin-bottom: 8px; cursor: pointer; font-family: inherit;
+    border: none; background: none; padding: 10px 12px;
+    min-height: 44px; border-radius: 10px;
+    transition: background 0.2s; margin-top: 0px; }
+  .back-btn { background: none; }
+  .back-btn:active { opacity: 0.6; }
+
+  /* Header */
+  .header { text-align: center; padding: 20px 0 12px; }
+  .header h1 { font-size: 28px; font-weight: 800; color: #1e293b; }
+  .header .subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 6px; min-height: 20px; }
+
+  /* Stats */
+  .stats-row { display: flex; gap: 10px; margin: 16px 0 20px; }
+  .stat-card {
+    flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 8px; text-align: center; transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .stat-card:active { transform: scale(0.98); }
+  .stats-row .stat-card:nth-child(1) { background: #fef9e7; border: 1px solid #f9e5a8; }
+  .stats-row .stat-card:nth-child(1) .num, .stats-row .stat-card:nth-child(1) .label { color: #92400e; }
+  .stats-row .stat-card:nth-child(2) { background: #f0f7ff; border: 1px solid #dbeafe; }
+  .stats-row .stat-card:nth-child(2) .num, .stats-row .stat-card:nth-child(2) .label { color: #1e40af; }
+  .stats-row .stat-card:nth-child(3) { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .stats-row .stat-card:nth-child(3) .num, .stats-row .stat-card:nth-child(3) .label { color: #166534; }
+  .stat-card .num { font-size: 22px; font-weight: 700; }
+  .stat-card .label { font-size: 11px; margin-top: 4px; }
+
+  /* Section title */
+  .section-title { font-size: 16px; font-weight: 700; margin: 8px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title::before { content: ""; display: inline-block; width: 4px; height: 16px; background: var(--accent); border-radius: 2px; }
+
+  /* Habit list */
+  .habit-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 100px; }
+  .habit-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; position: relative; transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 1px 3px var(--shadow);
+    overflow: hidden;
+  }
+  .habit-card::before {
+    content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 0 4px 4px 0;
+  }
+  .habit-list .habit-card:nth-child(4n+1)::before { background: var(--accent); }
+  .habit-list .habit-card:nth-child(4n+2)::before { background: #5b8ec4; }
+  .habit-list .habit-card:nth-child(4n+3)::before { background: var(--accent-green); }
+  .habit-list .habit-card:nth-child(4n+4)::before { background: #7aaccc; }
+  .habit-card:active { transform: scale(0.99); }
+  .habit-card .top { display: flex; justify-content: space-between; align-items: center; }
+  .habit-card .name { font-size: 16px; font-weight: 700; }
+  .habit-card .cycle { font-size: 11px; color: var(--text-secondary); background: rgba(229,168,59,0.1); padding: 2px 8px; border-radius: 20px; }
+  .habit-card .progress-wrap { margin-top: 12px; }
+  .habit-card .progress-bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+  .habit-card .progress-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.6s ease; width: 0; }
+  .habit-card .progress-text { font-size: 11px; color: var(--text-secondary); margin-top: 6px; display: flex; justify-content: space-between; }
+  .habit-card .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn {
+    flex: 1; border: none; border-radius: 12px; padding: 10px 0; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s; color: #fff; text-align: center;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: var(--accent); }
+  .btn-secondary { background: #f1f5f9; border: 1px solid var(--border); color: #64748b; }
+  .btn-success { background: var(--accent-green); }
+  .btn-danger { background: var(--accent-red); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Floating add button */
+  .fab {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--accent);
+    color: #fff; border: none; border-radius: 50px; padding: 14px 32px;
+    font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgba(229,168,59,0.3);
+    cursor: pointer; z-index: 50; display: flex; align-items: center; gap: 6px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .fab:active { transform: translateX(-50%) scale(0.95); box-shadow: 0 4px 12px rgba(127,90,240,0.25); }
+
+  /* Modal overlay */
+  .modal-overlay {
+    -webkit-position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+    display: none; align-items: flex-end; justify-content: center; z-index: 100;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .modal-overlay.active { display: flex; opacity: 1; }
+  .modal-sheet {
+    background: #ffffff; width: 100%; max-width: 480px; max-height: 90vh;
+    border-radius: 24px 24px 0 0; padding: 20px 16px 32px; overflow-y: auto;
+    transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+  }
+  .modal-overlay.active .modal-sheet { transform: translateY(0); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-header h3 { font-size: 18px; color: #1e293b; }
+  .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #f8f9fc; border: 1px solid #e2e8f0; color: #64748b; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* Form */
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: #64748b; margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%; background: #f8f9fc; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 10px 12px; color: #1e293b; font-size: 14px; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+  /* Calendar */
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .calendar-header button { background: #f8f9fc; border: 1px solid #e2e8f0; color: #1e293b; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+  .calendar-grid .dow { font-size: 11px; color: var(--text-secondary); padding: 6px 0; }
+  .calendar-grid .day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; font-size: 13px; font-weight: 600; background: #f8f9fc;
+    border: 1px solid transparent; cursor: pointer; transition: background 0.2s; position: relative;
+  }
+  .calendar-grid .day.done { background: #f8f9fc; color: #1e293b; border-color: transparent; }
+  .calendar-grid .day.done::after {
+    content: ""; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #4ade80);
+  }
+  .calendar-grid .day.today { border-color: #e5a83b; color: #e5a83b; background: #fef9e7; }
+  .calendar-grid .day.other { color: #94a3b8; opacity: 0.5; }
+
+  /* Year picker */
+  .year-picker { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; scrollbar-width: none; }
+  .year-picker::-webkit-scrollbar { display: none; }
+  .year-chip {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 20px; background: #f8f9fc;
+    border: 1px solid #e2e8f0; color: #64748b; font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .year-chip.active { background: #e5a83b; color: #fff; border-color: transparent; }
+
+  /* Chart container */
+  .chart-box { width: 100%; height: 220px; margin-top: 10px; }
+
+  /* Confetti canvas */
+  #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+  .empty-state svg { width: 80px; height: 80px; margin-bottom: 12px; opacity: 0.25; }
+  .empty-state p { font-size: 14px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab {
+    flex: 1; text-align: center; padding: 8px; border-radius: 10px; background: #f8f9fc;
+    border: 1px solid #e2e8f0; color: #64748b; font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .tab.active { background: rgba(229,168,59,0.08); color: #e5a83b; border-color: #e5a83b; }
+
+  /* Responsive */
+  @media (min-width: 768px) {
+    .container { padding: 24px; }
+    .stat-card { padding: 18px 12px; }
+    .stat-card .num { font-size: 26px; }
+  }
+
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .container { max-width: 100%; padding: 12px; }
+    .header { padding: 16px 0 8px; margin-top: 20px; }
+    .header h1 { font-size: 17px; }
+    .header .subtitle { font-size: 12px; margin-top: 4px; }
+    .stats-row { gap: 6px; margin: 12px 0 16px; }
+    .stat-card { padding: 10px 6px; border-radius: 12px; }
+    .stat-card .num { font-size: 15px; }
+    .stat-card .label { font-size: 10px; }
+    .section-title { font-size: 14px; margin: 6px 0 10px; }
+    .habit-list { gap: 10px; padding-bottom: 90px; }
+    .habit-card { padding: 14px 12px; border-radius: 10px; }
+    .habit-card .name { font-size: 14px; }
+    .habit-card .cycle { font-size: 10px; padding: 2px 6px; }
+    .habit-card .progress-wrap { margin-top: 10px; }
+    .habit-card .progress-bar-bg { height: 6px; }
+    .habit-card .progress-text { font-size: 10px; margin-top: 4px; }
+    .habit-card .actions { gap: 6px; margin-top: 10px; }
+    .btn { padding: 9px 0; font-size: 13px; border-radius: 10px; min-height: 44px; }
+    .fab { padding: 12px 24px; font-size: 14px; bottom: 20px; }
+    .modal-sheet { padding: 10px 14px 28px; border-radius: 12px 20px 0 0; }
+    .modal-header { margin-bottom: 12px; }
+    .modal-header h3 { font-size: 16px; }
+    .modal-close { width: 30px; height: 30px; font-size: 16px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { font-size: 12px; margin-bottom: 4px; }
+    .form-group input, .form-group select { padding: 10px 12px; font-size: 16px; border-radius: 8px; }
+    .calendar-header { margin-bottom: 8px; }
+    .calendar-header button { width: 28px; height: 28px; font-size: 14px; }
+    .calendar-grid { gap: 4px; }
+    .calendar-grid .dow { font-size: 10px; padding: 4px 0; }
+    .calendar-grid .day { font-size: 12px; border-radius: 8px; }
+    .tabs { gap: 4px; margin-bottom: 10px; }
+    .tab { padding: 6px; font-size: 12px; border-radius: 8px; }
+    .chart-box { height: 180px; margin-top: 8px; }
+    .year-picker { gap: 6px; }
+    .year-chip { padding: 4px 10px; font-size: 12px; }
+    .empty-state { padding: 10px 16px; }
+    .empty-state svg { width: 60px; height: 60px; }
+    .empty-state p { font-size: 13px; }
+  }
+
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="container">
+  <a class="back-btn" href="../index-v2.html">← 返回</a>
+  <div class="header">
+    <h1>Streakly · 习惯打卡</h1>
+    <p class="subtitle" id="quote">坚持，是通往卓越的必经之路。</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" id="stat-total">0</div>
+      <div class="label">总打卡天数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-streak">0</div>
+      <div class="label">连续打卡</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-rate">0%</div>
+      <div class="label">完成率</div>
+    </div>
+  </div>
+
+  <div class="section-title">我的打卡</div>
+  <div class="habit-list" id="habit-list"></div>
+</div>
+
+<button class="fab" id="btn-add" onclick="openAddModal()">+ 新建打卡</button>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3 id="add-title">新建打卡</h3>
+      <button class="modal-close" onclick="closeModal('modal-add')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label>打卡名称</label>
+      <input type="text" id="input-name" placeholder="例如：早起、阅读、运动" maxlength="20">
+    </div>
+    <div class="form-group">
+      <label>周期类型</label>
+      <select id="input-cycle" onchange="onCycleChange()">
+        <option value="365">1年</option>
+        <option value="30">1个月</option>
+        <option value="7">1周</option>
+        <option value="custom">自定义天数</option>
+      </select>
+    </div>
+    <div class="form-group" id="group-custom" style="display:none;">
+      <label>自定义天数</label>
+      <input type="number" id="input-custom" placeholder="输入天数" min="1" max="999">
+    </div>
+    <button class="btn btn-primary" style="width:100%; margin-top:4px;" onclick="saveHabit()">保存</button>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3 id="detail-name">打卡详情</h3>
+      <button class="modal-close" onclick="closeModal('modal-detail')">&times;</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('month')" id="tab-month">月视图</div>
+      <div class="tab" onclick="switchTab('year')" id="tab-year">年视图</div>
+      <div class="tab" onclick="switchTab('stats')" id="tab-stats">统计</div>
+    </div>
+
+    <div id="view-month">
+      <div class="calendar-header">
+        <button onclick="changeMonth(-1)">&#8249;</button>
+        <span id="cal-month-label" style="font-weight:700;"></span>
+        <button onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="calendar-grid" id="cal-grid"></div>
+    </div>
+
+    <div id="view-year" style="display:none;">
+      <div class="year-picker" id="year-picker"></div>
+      <div class="chart-box" id="year-chart"></div>
+    </div>
+
+    <div id="view-stats" style="display:none;">
+      <div class="chart-box" id="stats-chart"></div>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="stat-card" style="flex:1 1 40%;">
+          <div class="num" id="d-total">0</div>
+          <div class="label">累计打卡</div>
+        </div>
+        <div class="stat-card" style="flex:1 1 40%;">
+          <div class="num" id="d-streak">0</div>
+          <div class="label">当前连续</div>
+        </div>
+        <div class="stat-card" style="flex:1 1 40%;">
+          <div class="num" id="d-longest">0</div>
+          <div class="label">最长连续</div>
+        </div>
+        <div class="stat-card" style="flex:1 1 40%;">
+          <div class="num" id="d-rate">0%</div>
+          <div class="label">完成率</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px; display:flex; gap:8px;">
+      <button class="btn btn-danger" style="flex:1;" onclick="deleteHabit()">删除打卡</button>
+      <button class="btn btn-success" style="flex:1;" id="detail-check-btn" onclick="detailCheckIn()">今日打卡</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  const STORAGE_KEY = 'streakly-habits';
+  const quotes = [
+    "坚持，是通往卓越的必经之路。",
+    "每天进步一点点，终将成就非凡。",
+    "习惯的力量，超乎你的想象。",
+    "自律即自由，打卡即成长。",
+    "不积跬步，无以至千里。",
+    "今天的努力，是明天的实力。",
+    "让优秀成为一种习惯。",
+    "行动是治愈恐惧的良药。"
+  ];
+
+  let habits = [];
+  let currentDetailId = null;
+  let detailViewMonth = new Date();
+  let detailViewYear = new Date().getFullYear();
+  let yearChartInst = null;
+  let statsChartInst = null;
+  let editingId = null;
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) habits = JSON.parse(raw);
+    } catch (e) { habits = []; }
+    if (!Array.isArray(habits)) habits = [];
+  }
+
+  // 懒加载 echarts（只在需要图表时加载）
+  let echartsLoading = false;
+  let echartsLoaded = false;
+  function loadEcharts(cb) {
+    if (typeof echarts !== 'undefined') { cb(); return; }
+    if (echartsLoaded) { setTimeout(function() { if (typeof echarts !== 'undefined') cb(); }, 50); return; }
+    if (echartsLoading) { setTimeout(function() { loadEcharts(cb); }, 100); return; }
+    echartsLoading = true;
+    var s = document.createElement('script');
+    s.src = '../_shared/js/echarts.min.js';
+    s.onload = function() { echartsLoaded = true; cb(); };
+    s.onerror = function() { echartsLoading = false; };
+    document.head.appendChild(s);
+  }
+  function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+  }
+  function uuid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function parseDate(s) { const [y,m,day] = s.split('-').map(Number); return new Date(y,m-1,day); }
+  function dateKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function daysBetween(a,b) { return Math.round((b-a)/(1000*60*60*24)); }
+
+  function rotateQuote() {
+    const el = document.getElementById('quote');
+    let idx = Math.floor(Math.random()*quotes.length);
+    el.style.opacity = 0;
+    setTimeout(() => { el.textContent = quotes[idx]; el.style.opacity = 1; }, 400);
+  }
+  setInterval(rotateQuote, 8000);
+
+  function calcStats() {
+    let total = 0, streak = 0, rateSum = 0, count = 0;
+    const today = todayStr();
+    habits.forEach(h => {
+      const days = Object.keys(h.records || {}).length;
+      total += days;
+      let s = 0, cur = new Date();
+      while (true) {
+        const k = dateKey(cur);
+        if ((h.records || {})[k]) { s++; cur.setDate(cur.getDate()-1); }
+        else break;
+      }
+      streak = Math.max(streak, s);
+      const start = h.createdAt ? parseDate(h.createdAt) : new Date();
+      const elapsed = Math.max(1, daysBetween(start, new Date()) + 1);
+      rateSum += (days / elapsed);
+      count++;
+    });
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-streak').textContent = streak;
+    document.getElementById('stat-rate').textContent = count ? Math.round((rateSum/count)*100) + '%' : '0%';
+  }
+
+  function renderHabits() {
+    const list = document.getElementById('habit-list');
+    if (!habits.length) {
+      list.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg><p>还没有打卡项目，点击右下角新建一个吧！</p></div>';
+      calcStats();
+      return;
+    }
+    const today = todayStr();
+    list.innerHTML = habits.map(h => {
+      const records = h.records || {};
+      const doneToday = !!records[today];
+      const totalDays = Object.keys(records).length;
+      const start = h.createdAt ? parseDate(h.createdAt) : new Date();
+      const elapsed = Math.max(1, daysBetween(start, new Date()) + 1);
+      const progress = Math.min(100, Math.round((totalDays / Math.max(1, h.targetDays || 30)) * 100));
+      const cycleText = h.targetDays === 365 ? '1年' : h.targetDays === 30 ? '1个月' : h.targetDays === 7 ? '1周' : h.targetDays + '天';
+      return `
+        <div class="habit-card" onclick="openDetail('${h.id}')">
+          <div class="top">
+            <div class="name">${escapeHtml(h.name)}</div>
+            <div class="cycle">${cycleText}</div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+            <div class="progress-text"><span>进度 ${progress}%</span><span>${totalDays} / ${h.targetDays || 30} 天</span></div>
+          </div>
+          <div class="actions" onclick="event.stopPropagation()">
+            <button class="btn ${doneToday ? 'btn-success' : 'btn-primary'}" ${doneToday ? 'disabled' : ''} onclick="checkIn('${h.id}', this)">${doneToday ? '已打卡' : '今日打卡'}</button>
+            <button class="btn btn-secondary" onclick="openDetail('${h.id}')">详情</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    calcStats();
+  }
+
+  window.checkIn = function(id, btn) {
+    const h = habits.find(x => x.id === id);
+    if (!h) return;
+    const today = todayStr();
+    if (!h.records) h.records = {};
+    if (h.records[today]) return;
+    h.records[today] = true;
+    saveData();
+    renderHabits();
+    fireConfetti();
+  };
+
+  window.openAddModal = function() {
+    editingId = null;
+    document.getElementById('add-title').textContent = '新建打卡';
+    document.getElementById('input-name').value = '';
+    document.getElementById('input-cycle').value = '365';
+    document.getElementById('input-custom').value = '';
+    document.getElementById('group-custom').style.display = 'none';
+    openModal('modal-add');
+  };
+
+  window.onCycleChange = function() {
+    const v = document.getElementById('input-cycle').value;
+    document.getElementById('group-custom').style.display = v === 'custom' ? 'block' : 'none';
+  };
+
+  window.saveHabit = function() {
+    const name = document.getElementById('input-name').value.trim();
+    if (!name) { alert('请输入打卡名称'); return; }
+    let targetDays;
+    const cycle = document.getElementById('input-cycle').value;
+    if (cycle === 'custom') {
+      targetDays = parseInt(document.getElementById('input-custom').value, 10);
+      if (!targetDays || targetDays < 1) { alert('请输入有效的天数'); return; }
+    } else {
+      targetDays = parseInt(cycle, 10);
+    }
+    if (editingId) {
+      const h = habits.find(x => x.id === editingId);
+      if (h) { h.name = name; h.targetDays = targetDays; }
+    } else {
+      habits.push({ id: uuid(), name, targetDays, createdAt: todayStr(), records: {} });
+    }
+    saveData();
+    renderHabits();
+    closeModal('modal-add');
+  };
+
+  window.openDetail = function(id) {
+    currentDetailId = id;
+    const h = habits.find(x => x.id === id);
+    if (!h) return;
+    document.getElementById('detail-name').textContent = h.name;
+    const today = todayStr();
+    const doneToday = !!(h.records || {})[today];
+    const btn = document.getElementById('detail-check-btn');
+    btn.textContent = doneToday ? '已打卡' : '今日打卡';
+    btn.className = 'btn ' + (doneToday ? 'btn-success' : 'btn-primary');
+    btn.disabled = doneToday;
+    detailViewMonth = new Date();
+    detailViewYear = new Date().getFullYear();
+    switchTab('month');
+    openModal('modal-detail');
+  };
+
+  window.detailCheckIn = function() {
+    if (!currentDetailId) return;
+    window.checkIn(currentDetailId);
+    const h = habits.find(x => x.id === currentDetailId);
+    const done = !!(h.records || {})[todayStr()];
+    const btn = document.getElementById('detail-check-btn');
+    btn.textContent = done ? '已打卡' : '今日打卡';
+    btn.className = 'btn ' + (done ? 'btn-success' : 'btn-primary');
+    btn.disabled = done;
+    renderMonthCalendar();
+    updateDetailStats();
+  };
+
+  window.deleteHabit = function() {
+    if (!currentDetailId) return;
+    if (!confirm('确定要删除这个打卡项目吗？')) return;
+    habits = habits.filter(x => x.id !== currentDetailId);
+    saveData();
+    renderHabits();
+    closeModal('modal-detail');
+  };
+
+  window.switchTab = function(tab) {
+    document.getElementById('view-month').style.display = tab === 'month' ? 'block' : 'none';
+    document.getElementById('view-year').style.display = tab === 'year' ? 'block' : 'none';
+    document.getElementById('view-stats').style.display = tab === 'stats' ? 'block' : 'none';
+    ['month','year','stats'].forEach(t => {
+      document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+    });
+    if (tab === 'month') renderMonthCalendar();
+    if (tab === 'year') renderYearView();
+    if (tab === 'stats') renderStatsView();
+  };
+
+  window.changeMonth = function(delta) {
+    detailViewMonth.setMonth(detailViewMonth.getMonth() + delta);
+    renderMonthCalendar();
+  };
+
+  function renderMonthCalendar() {
+    const h = habits.find(x => x.id === currentDetailId);
+    if (!h) return;
+    const y = detailViewMonth.getFullYear(), m = detailViewMonth.getMonth();
+    document.getElementById('cal-month-label').textContent = y + '年' + (m+1) + '月';
+    const first = new Date(y,m,1);
+    const startDay = first.getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const prevDays = new Date(y,m,0).getDate();
+    const grid = document.getElementById('cal-grid');
+    let html = '';
+    const dow = ['日','一','二','三','四','五','六'];
+    dow.forEach(d => html += '<div class="dow">'+d+'</div>');
+    for (let i = startDay-1; i >= 0; i--) {
+      html += '<div class="day other">' + (prevDays - i) + '</div>';
+    }
+    const today = todayStr();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const done = (h.records || {})[key];
+      const isToday = key === today;
+      let cls = 'day' + (done ? ' done' : '') + (isToday ? ' today' : '');
+      html += '<div class="'+cls+'" onclick="toggleDate(\''+key+'\')">'+d+'</div>';
+    }
+    const totalCells = startDay + daysInMonth;
+    const nextFill = (7 - (totalCells % 7)) % 7;
+    for (let d = 1; d <= nextFill; d++) {
+      html += '<div class="day other">'+d+'</div>';
+    }
+    grid.innerHTML = html;
+  }
+
+  window.toggleDate = function(key) {
+    const h = habits.find(x => x.id === currentDetailId);
+    if (!h) return;
+    if (!h.records) h.records = {};
+    if (h.records[key]) delete h.records[key]; else h.records[key] = true;
+    saveData();
+    renderMonthCalendar();
+    renderHabits();
+    updateDetailStats();
+  };
+
+  function renderYearView() {
+    const h = habits.find(x => x.id === currentDetailId);
+    if (!h) return;
+    const currentY = new Date().getFullYear();
+    const picker = document.getElementById('year-picker');
+    let chips = '';
+    for (let y = currentY - 4; y <= currentY + 1; y++) {
+      chips += '<div class="year-chip ' + (y === detailViewYear ? 'active' : '') + '" onclick="selectYear('+y+')">' + y + '</div>';
+    }
+    picker.innerHTML = chips;
+    picker.scrollLeft = picker.scrollWidth;
+
+    const months = [];
+    const counts = [];
+    for (let m = 1; m <= 12; m++) {
+      months.push(m + '月');
+      let c = 0;
+      const dim = new Date(detailViewYear, m, 0).getDate();
+      for (let d = 1; d <= dim; d++) {
+        const key = detailViewYear + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        if ((h.records || {})[key]) c++;
+      }
+      counts.push(c);
+    }
+    loadEcharts(function() {
+      if (yearChartInst) yearChartInst.dispose();
+      yearChartInst = echarts.init(document.getElementById('year-chart'));
+      yearChartInst.setOption({
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(255,255,255,0.95)', borderColor: '#e2e8f0', textStyle: { color: '#1e293b' } },
+        grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+        xAxis: { type: 'category', data: months, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b' } },
+        yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
+        series: [{
+          data: counts, type: 'bar', barWidth: '50%',
+          itemStyle: { borderRadius: [6,6,0,0], color: '#e5a83b' }
+        }]
+      });
+    });
+  }
+
+  window.selectYear = function(y) {
+    detailViewYear = y;
+    renderYearView();
+  };
+
+  function renderStatsView() {
+    const h = habits.find(x => x.id === currentDetailId);
+    if (!h) return;
+    const records = h.records || {};
+    const keys = Object.keys(records).sort();
+    const total = keys.length;
+    let streak = 0, longest = 0, cur = 0;
+    const today = new Date();
+    const start = h.createdAt ? parseDate(h.createdAt) : new Date();
+    const elapsed = Math.max(1, daysBetween(start, today) + 1);
+
+    // current streak
+    let d = new Date();
+    while (true) {
+      const k = dateKey(d);
+      if (records[k]) { streak++; d.setDate(d.getDate()-1); } else break;
+    }
+    // longest streak
+    let prev = null;
+    keys.forEach(k => {
+      const dt = parseDate(k);
+      if (prev && daysBetween(prev, dt) === 1) { cur++; }
+      else { cur = 1; }
+      longest = Math.max(longest, cur);
+      prev = dt;
+    });
+
+    document.getElementById('d-total').textContent = total;
+    document.getElementById('d-streak').textContent = streak;
+    document.getElementById('d-longest').textContent = longest;
+    document.getElementById('d-rate').textContent = Math.round((total/elapsed)*100) + '%';
+
+    // weekly trend
+    const weeks = [];
+    const weekData = [];
+    for (let i = 6; i >= 0; i--) {
+      const mon = new Date();
+      mon.setDate(mon.getDate() - i*7);
+      const monKey = dateKey(mon);
+      weeks.push(monKey.slice(5) + '周');
+      let c = 0;
+      for (let j = 0; j < 7; j++) {
+        const dd = new Date(mon); dd.setDate(dd.getDate() + j);
+        if (records[dateKey(dd)]) c++;
+      }
+      weekData.push(c);
+    }
+    loadEcharts(function() {
+      if (statsChartInst) statsChartInst.dispose();
+      statsChartInst = echarts.init(document.getElementById('stats-chart'));
+      statsChartInst.setOption({
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(255,255,255,0.95)', borderColor: '#e2e8f0', textStyle: { color: '#1e293b' } },
+        grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+        xAxis: { type: 'category', data: weeks, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b' } },
+        yAxis: { type: 'value', max: 7, axisLine: { show: false }, splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
+        series: [{
+          data: weekData, type: 'line', smooth: true, symbol: 'circle', symbolSize: 8,
+          lineStyle: { color: '#22c55e', width: 3 },
+          itemStyle: { color: '#22c55e', borderColor: '#ffffff', borderWidth: 2 },
+          areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(34,197,94,0.2)'},{offset:1,color:'rgba(34,197,94,0)'}]) }
+        }]
+      });
+    });
+  }
+
+  function updateDetailStats() {
+    if (document.getElementById('view-stats').style.display !== 'none') renderStatsView();
+  }
+
+  function openModal(id) {
+    const el = document.getElementById(id);
+    el.style.display = 'flex';
+    requestAnimationFrame(() => el.classList.add('active'));
+  }
+  window.closeModal = function(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    setTimeout(() => { el.style.display = 'none'; }, 300);
+  };
+
+  function escapeHtml(t) {
+    const div = document.createElement('div'); div.textContent = t; return div.innerHTML;
+  }
+
+  // Confetti
+  function fireConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colors = ['#e5a83b','#e5a83b','#5a9e7a','#c47a7a','#f0d58c','#e2e8f0'];
+    const pieces = [];
+    for (let i = 0; i < 120; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * -canvas.height,
+        w: Math.random() * 8 + 4,
+        h: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: Math.random() * 3 + 2,
+        rot: Math.random() * 360,
+        vrot: (Math.random() - 0.5) * 10
+      });
+    }
+    let start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      let alive = false;
+      pieces.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+        if (p.y < canvas.height + 20) alive = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      });
+      if (alive && ts - start < 4000) requestAnimationFrame(step); else ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Touch swipe for month calendar
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', e => {
+    const diff = e.changedTouches[0].screenX - touchStartX;
+    if (document.getElementById('view-month').style.display !== 'none' && Math.abs(diff) > 50) {
+      changeMonth(diff > 0 ? -1 : 1);
+    }
+  });
+
+  // Init
+  loadData();
+  renderHabits();
+})();
+</script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>

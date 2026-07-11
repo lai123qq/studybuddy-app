@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>倒数日 · CountDown</title>
+  <style>
+    @font-face { font-family: 'Bricolage'; src: url('../_shared/fonts/BricolageGrotesque-Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Bricolage'; src: url('../_shared/fonts/BricolageGrotesque-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+    :root {
+      --bg: #f8f9fc;
+      --surface: #ffffff;
+      --surface-light: #f1f5f9;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --accent: #4a90d9;
+      --accent-hover: #3a7bc8;
+      --danger: #ff6b6b;
+      --danger-hover: #e05555;
+      --success: #6bcb77;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.08);
+      --transition: 0.25s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Bricolage', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 16px;
+      line-height: 1.5;
+      }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      min-height: 44px;
+      border-radius: 10px;
+      transition: color var(--transition), background var(--transition);
+    }
+
+    .back:hover {
+      color: var(--text);
+      background: rgba(232,96,122,0.08);
+    }
+
+    .head {
+      margin-bottom: 20px; margin-top: 24px;
+    }
+
+    .head h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px 20px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      min-height: 48px;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, #4a90d9, #7ab8f0);
+      color: #fff;
+      width: 100%;
+    }
+
+    #addBtn {
+      margin-bottom: 20px;
+    }
+
+    .btn.primary:hover {
+      background: linear-gradient(135deg, #3a7bc8, #4a90d9);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(232, 96, 122, 0.3);
+    }
+
+    .btn.secondary {
+      background: var(--surface-light);
+      color: var(--text);
+    }
+
+    .btn.secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .btn.danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn.danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .event-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .event-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      padding-top: 24px;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+
+    .event-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4a90d9, #7ab8f0, #a8d4ff);
+      border-radius: 14px 14px 0 0;
+    }
+
+    .event-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      border-color: var(--accent);
+    }
+
+    .event-card .category-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tag-study { background: linear-gradient(135deg, #4a90d9, #7ab8f0); color: #fff; }
+    .tag-life  { background: linear-gradient(135deg, #6bcb77, #8ed99a); color: #fff; }
+    .tag-holiday { background: linear-gradient(135deg, #ffb74d, #ffd180); color: #fff; }
+    .tag-other { background: linear-gradient(135deg, #94a3b8, #b0bec5); color: #fff; }
+
+    .event-card .event-name {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    .event-card .days-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .event-card .days-number {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #4a90d9, #7ab8f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .event-card .days-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .event-card .event-date {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .event-card.past .days-number {
+      background: none;
+      -webkit-background-clip: unset;
+      -webkit-text-fill-color: var(--text-secondary);
+      background-clip: unset;
+    }
+
+    .event-card.past .days-label {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 100%;
+      padding: 20px;
+      animation: modalIn 0.25s ease;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-content h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .modal-content input:focus,
+    .modal-content select:focus,
+    .modal-content textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .modal-content textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .modal-content select {
+      cursor: pointer;
+    }
+
+    .modal-content select option {
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+      align-items: center;
+    }
+
+    .modal-actions .btn {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    /* Date picker */
+    .date-picker {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .date-picker select {
+      margin-bottom: 0;
+      padding: 14px 10px;
+      font-size: 15px;
+    }
+
+    /* Color picker */
+    .color-picker {
+      margin-bottom: 14px;
+    }
+    .color-picker label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .color-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .color-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 0;
+    }
+    .color-btn:hover {
+      transform: scale(1.1);
+    }
+    .color-btn.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px var(--surface-light), 0 0 0 4px var(--accent);
+    }
+
+    @media (max-width: 480px) {
+      body { font-size: 16px; padding: 28px 16px 48px; }
+      .app { max-width: 100%; }
+      .head h1 { font-size: 28px; }
+      .subtitle { font-size: 16px; }
+      .back { font-size: 15px; margin-bottom: 14px; }
+      .btn { padding: 14px 20px; font-size: 16px; min-height: 48px; border-radius: var(--radius-sm); }
+      .event-list { gap: 12px; }
+      .event-card { padding: 16px 20px; padding-top: 24px; border-radius: 14px; }
+      .event-card .event-name { font-size: 17px; margin-bottom: 14px; }
+      .event-card .days-number { font-size: 48px; }
+      .event-card .days-label { font-size: 16px; }
+      .event-card .event-date { font-size: 14px; }
+      .event-card .category-tag { font-size: 12px; padding: 4px 12px; margin-bottom: 12px; }
+      .modal-content { max-width: 100%; padding: 20px; border-radius: 14px; }
+      .modal-content h3 { font-size: 18px; margin-bottom: 16px; }
+      .modal-content input,
+      .modal-content select,
+      .modal-content textarea { padding: 14px 16px; font-size: 16px; margin-bottom: 14px; }
+      .modal-actions { gap: 8px; }
+      .date-picker { gap: 10px; margin-bottom: 14px; }
+      .date-picker select { padding: 14px 10px; font-size: 15px; }
+      .color-options { gap: 8px; }
+      .color-btn { width: 40px; height: 40px; }
+      .empty-state { padding: 60px 20px; }
+      .empty-state svg { width: 72px; height: 72px; }
+      .empty-state p { font-size: 15px; }
+    }
+  
+  /* ====== 主题：深色模式 ====== */
+  body.theme-dark { background: #0f0f23 !important; color: #e2e8f0 !important; }
+  body.theme-dark *, body.theme-dark *::before, body.theme-dark *::after { border-color: rgba(124,107,255,0.15); }
+  body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
+  body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
+  body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  /* ====== 主题：中国风 ====== */
+  body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
+  body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
+  body.theme-chinese .head, body.theme-chinese .header, body.theme-chinese .app-header, body.theme-chinese h1, body.theme-chinese h2, body.theme-chinese h3 { color: #2c1810 !important; }
+  body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
+  body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
+  /* ====== 主题：彩色 ====== */
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+</style>
+<script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
+</head>
+<body>
+  <div class="app">
+    <a href="../index-v2.html" class="back">&#8592; 返回</a>
+    <div class="head">
+      <h1>倒数日</h1>
+      <p class="subtitle">记录每一个重要时刻</p>
+    </div>
+    <button class="btn primary" id="addBtn">+ 添加倒数日</button>
+    <div class="event-list" id="eventList">
+      <div class="empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <p>还没有倒数日，点击上方按钮添加一个吧</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加/编辑弹窗 -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">添加倒数日</h3>
+      <input type="text" id="eventName" placeholder="事件名称（如：高考、生日）">
+      <div class="date-picker" id="datePicker">
+        <select id="yearPick"><option value="">年</option></select>
+        <select id="monthPick"><option value="">月</option></select>
+        <select id="dayPick"><option value="">日</option></select>
+      </div>
+      <input type="date" id="eventDate" style="display:none;">
+      <div class="color-picker" id="colorPicker">
+        <label>卡片颜色</label>
+        <div class="color-options">
+          <button type="button" class="color-btn active" data-color="purple" style="background:#4a90d9;"></button>
+          <button type="button" class="color-btn" data-color="blue" style="background:#4a9eff;"></button>
+          <button type="button" class="color-btn" data-color="green" style="background:#6bcb77;"></button>
+          <button type="button" class="color-btn" data-color="orange" style="background:#ffb74d;"></button>
+          <button type="button" class="color-btn" data-color="pink" style="background:#ff7eb3;"></button>
+          <button type="button" class="color-btn" data-color="red" style="background:#ff6b6b;"></button>
+        </div>
+      </div>
+      <select id="eventCategory">
+        <option value="study">学习</option>
+        <option value="life">生活</option>
+        <option value="holiday">节日</option>
+        <option value="other">其他</option>
+      </select>
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelBtn">取消</button>
+        <button class="btn danger" id="deleteBtn" style="display:none;">删除</button>
+        <button class="btn primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="assets/app.js"></script>
+<script>
+// 主题继承
+(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
+</script>
+</body>
+</html>
