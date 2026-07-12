@@ -388,15 +388,22 @@
   body.theme-chinese .bottom-nav-item { color: #a09080; }
   body.theme-chinese .bottom-nav-item.active { color: #8b4513; }
 
-  /* AI 今日建议 */
-  .ai-suggest { display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(135deg, #f0f7ff, #e8f4fd);
-    border: 1px solid #dbeafe; border-radius: 14px;
-    padding: 14px 16px; margin-bottom: 20px;
-    animation: slideUp 0.5s ease; cursor: pointer; }
-  .ai-suggest-icon { font-size: 22px; flex-shrink: 0; }
-  .ai-suggest-text { font-size: 13px; color: #475569; line-height: 1.5; font-weight: 500; }
-  .ai-suggest-arrow { font-size: 14px; color: #94a3b8; flex-shrink: 0; margin-left: auto; }
+  /* AI 助手入口 */
+  .ai-suggest { display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none; border-radius: 16px;
+    padding: 18px 20px; margin-bottom: 20px;
+    animation: slideUp 0.5s ease; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+    position: relative; overflow: hidden; }
+  .ai-suggest::before { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent); }
+  .ai-suggest-icon { font-size: 32px; flex-shrink: 0; position: relative; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+  .ai-suggest-text { font-size: 14px; color: #fff; line-height: 1.5; font-weight: 600; position: relative; }
+  .ai-suggest-text small { display: block; font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 400; margin-top: 2px; }
+  .ai-suggest-arrow { font-size: 20px; color: rgba(255,255,255,0.9); flex-shrink: 0; margin-left: auto; position: relative; }
+  .ai-suggest-hint { display: inline-block; margin-left: 8px; padding: 2px 8px; background: rgba(255,255,255,0.25); border-radius: 999px; font-size: 10px; color: #fff; font-weight: 500; animation: hintBlink 1.5s infinite; }
+  @keyframes hintBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
   @media (min-width: 520px) {
     .app { padding: 44px 24px 100px; }
@@ -432,12 +439,13 @@
     <div class="stat"><div class="v" id="s3">—</div><div class="l">待考倒计时</div></div>
   </div>
 
-  <!-- AI 今日建议 -->
-  <div class="ai-suggest" id="aiSuggest">
+  <!-- AI 助手入口 -->
+  <a class="ai-suggest" id="aiSuggest" href="ai-assistant.html" style="text-decoration:none;">
     <div class="ai-suggest-icon">🤖</div>
-    <div class="ai-suggest-text" id="aiSuggestText">正在分析你的学习数据...</div>
+    <div class="ai-suggest-text" id="aiSuggestText">AI 学习助手 · 点击使用<small>全科问答 · 智能跳转工具 · 知识点速查</small></div>
+    <div class="ai-suggest-hint">👆 点这里</div>
     <div class="ai-suggest-arrow">›</div>
-  </div>
+  </a>
 
   <!-- 效率 -->
   <div class="section-label" id="sectionLabel">效率</div>
@@ -577,6 +585,16 @@
       </div>
       <div class="arrow">›</div>
     </a>
+    <a class="app-card" data-href="ai-assistant.html" style="--bar:#6366f1;--icon-bg:#eef2ff;">
+      <div class="accent-bar"></div>
+      <div class="icon">🤖</div>
+      <div class="body">
+        <h3>AI 学习助手</h3>
+        <p>全科智能问答 · 自动跳转工具 · 知识点速查</p>
+      </div>
+      <div class="badge">NEW</div>
+      <div class="arrow">›</div>
+    </a>
   </div>
 
   <!-- 数据 -->
@@ -673,6 +691,20 @@
 </div>
 
 <script>
+  // 记录全局使用天数（供闪卡等工具读取）
+  (function() {
+    var UK = 'studybuddy_usage';
+    try {
+      var u = JSON.parse(localStorage.getItem(UK) || '{}');
+      var today = new Date().toISOString().slice(0, 10);
+      if (!u.firstDay) u.firstDay = today;
+      if (!u.days) u.days = {};
+      u.days[today] = true;
+      u.totalDays = Object.keys(u.days).length;
+      localStorage.setItem(UK, JSON.stringify(u));
+    } catch (e) {}
+  })();
+
   // 读取 3 个 app 的数据统计(显示在主页)
   function readStat(key, field, def) {
     try {

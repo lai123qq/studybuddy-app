@@ -749,6 +749,7 @@
    */
   function applyRate(card, q) {
     normalizeCard(card);
+    card.lastReview = now();  // 所有评分都记录复习时间
     if (q === 1) {
       // 不认识:立刻加到本组末尾再来一次
       card.rep = 0;
@@ -761,12 +762,11 @@
       card.skip = true;
       card.due = now();
     } else {
-      // 认识:明天再来
+      // 认识:按间隔调度
       card.rep = (card.rep || 0) + 1;
       card.ef = Math.min(3.2, (card.ef || 2.5) + 0.08);
       card.interval = card.rep === 1 ? 1 : Math.max(1, Math.round((card.interval || 1) * card.ef));
       card.due = addDays(now(), card.interval);
-      card.lastReview = now();
       card.skip = false;
     }
   }
@@ -840,20 +840,48 @@
     var deck = state.decks.find(function (d) { return d.id === activeDeckId; });
     if (!deck) { studyQueue = []; return; }
     var t = now();
+
+    // 判断昨天是否使用过（从全局使用记录读取）
+    var yesterdayUsed = false;
+    try {
+      var u = JSON.parse(localStorage.getItem('studybuddy_usage') || '{}');
+      var y = new Date(); y.setDate(y.getDate() - 1);
+      var yKey = y.toISOString().slice(0, 10);
+      yesterdayUsed = !!(u.days && u.days[yKey]);
+    } catch (e) {}
+
     studyQueue = deck.cards.filter(function (c) {
       // 已经认识且 due > 今天末尾 → 跳过(明天再出现)
       var dayEnd = new Date(); dayEnd.setHours(23, 59, 59, 999);
       if (c.lastReview && c.due > dayEnd.getTime() && !c.skip) return false;
       return c.due <= t || c.lastReview == null;   // 还没学过也排上
     });
-    studyQueue.sort(function (a, b) {
-      // 不认识再来 > 越早到期 > 越早加入
-      var aIsReview = a.due <= t && a.lastReview;
-      var bIsReview = b.due <= t && b.lastReview;
-      if (aIsReview !== bIsReview) return aIsReview ? -1 : 1;
-      if (a.due !== b.due) return a.due - b.due;
-      return (a.added || 0) - (b.added || 0);
-    });
+
+    // 如果昨天用过，把昨天复习过且今天到期的卡片标记为"昨日复习"优先显示
+    if (yesterdayUsed) {
+      var yesterdayStart = new Date(); yesterdayStart.setDate(yesterdayStart.getDate() - 1); yesterdayStart.setHours(0, 0, 0, 0);
+      var yesterdayEnd = new Date(); yesterdayEnd.setDate(yesterdayEnd.getDate() - 1); yesterdayEnd.setHours(23, 59, 59, 999);
+      studyQueue.sort(function (a, b) {
+        var aYesterday = a.lastReview && a.lastReview >= yesterdayStart.getTime() && a.lastReview <= yesterdayEnd.getTime();
+        var bYesterday = b.lastReview && b.lastReview >= yesterdayStart.getTime() && b.lastReview <= yesterdayEnd.getTime();
+        // 昨天复习过的优先
+        if (aYesterday !== bYesterday) return aYesterday ? -1 : 1;
+        // 不认识再来 > 越早到期 > 越早加入
+        var aIsReview = a.due <= t && a.lastReview;
+        var bIsReview = b.due <= t && b.lastReview;
+        if (aIsReview !== bIsReview) return aIsReview ? -1 : 1;
+        if (a.due !== b.due) return a.due - b.due;
+        return (a.added || 0) - (b.added || 0);
+      });
+    } else {
+      studyQueue.sort(function (a, b) {
+        var aIsReview = a.due <= t && a.lastReview;
+        var bIsReview = b.due <= t && b.lastReview;
+        if (aIsReview !== bIsReview) return aIsReview ? -1 : 1;
+        if (a.due !== b.due) return a.due - b.due;
+        return (a.added || 0) - (b.added || 0);
+      });
+    }
     totalForSession = studyQueue.length;
     doneThisSession = 0;
     updateProgress();
