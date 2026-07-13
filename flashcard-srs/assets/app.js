@@ -841,13 +841,13 @@
     if (!deck) { studyQueue = []; return; }
     var t = now();
 
-    // 判断昨天是否使用过（从全局使用记录读取）
+    // 判断昨天是否使用过（从自身 dailyLog 读取）
     var yesterdayUsed = false;
     try {
-      var u = JSON.parse(localStorage.getItem('studybuddy_usage') || '{}');
       var y = new Date(); y.setDate(y.getDate() - 1);
-      var yKey = y.toISOString().slice(0, 10);
-      yesterdayUsed = !!(u.days && u.days[yKey]);
+      var yKey = todayKey(); // 今天
+      var ydKey = y.toISOString().slice(0, 10); // 昨天
+      yesterdayUsed = !!(state.dailyLog && state.dailyLog[ydKey]);
     } catch (e) {}
 
     studyQueue = deck.cards.filter(function (c) {
