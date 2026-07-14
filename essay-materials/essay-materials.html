@@ -43,20 +43,15 @@
     gap: 12px;
   }
   .back-btn {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: transform .15s, background .2s;
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 10px 14px; border-radius: 10px; min-height: 44px;
+    background: transparent; cursor: pointer; font-family: inherit;
+    margin-bottom: 8px; transition: background 0.2s; border: none;
   }
-  .back-btn:active { transform: scale(0.94); background: var(--primary-light); }
-  .back-btn svg { width: 20px; height: 20px; stroke: var(--text-main); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .back-btn:hover { background: rgba(100,116,139,0.08); }
+  .back-btn:active { opacity: 0.6; }
+  .back-btn svg { width: 20px; height: 20px; }
   .header-title {
     font-size: 18px;
     font-weight: 600;
@@ -392,6 +387,7 @@
   /* ====== 主题：彩色 ====== */
   body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
 </style>
+<script src="../_shared/js/utils.js"></script>
 <script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
 </head>
 <body>
@@ -399,7 +395,7 @@
 <header class="header">
   <div class="header-inner">
     <a class="back-btn" href="../index-v2.html" aria-label="返回">
-      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </a>
     <div class="header-title">作文素材</div>
   </div>
@@ -476,7 +472,7 @@
   };
 
   const quotes = [
-    // ====== 励志成长 (13) ======
+    // ====== 励志成长 (18) ======
     {text: "宝剑锋从磨砺出，梅花香自苦寒来。", source: "《警世贤文》", cat: "励志成长"},
     {text: "不积跬步，无以至千里；不积小流，无以成江海。", source: "荀子《劝学》", cat: "励志成长"},
     {text: "锲而舍之，朽木不折；锲而不舍，金石可镂。", source: "荀子《劝学》", cat: "励志成长"},
@@ -490,6 +486,11 @@
     {text: "我从来不曾有过幸运，将来也永远不指望幸运，我的最高原则是：不论对任何困难都决不屈服。", source: "居里夫人", cat: "励志成长"},
     {text: "千淘万漉虽辛苦，吹尽狂沙始到金。", source: "刘禹锡", cat: "励志成长"},
     {text: "没有一个冬天不可逾越，没有一个春天不会来临。", source: "雪莱", cat: "励志成长"},
+    {text: '坚持的力量：海伦·凯勒双目失明却学会了读书写字，最终成为著名作家。她说："只要朝着阳光，便不会看见阴影。"', source: "海伦·凯勒", cat: "励志成长"},
+    {text: '细节决定成败：1967年苏联宇航员科马洛夫驾驶联盟1号飞船返航时，因一个小零件故障导致降落伞无法打开，飞船坠毁。一个细节的疏忽，代价是生命。', source: "历史事件", cat: "励志成长"},
+    {text: '逆风飞翔：马云高考三次落榜，求职被拒30多次，创业初期无人看好。他说："今天很残酷，明天更残酷，后天很美好。"', source: "马云", cat: "励志成长"},
+    {text: '真正的勇气：曼德拉在南非监狱度过了27年，出狱后没有报复，而是选择宽恕与和解。他说："勇敢不是没有恐惧，而是战胜恐惧。"', source: "曼德拉", cat: "励志成长"},
+    {text: '平凡的伟大：袁隆平一生扎根稻田，研究杂交水稻，解决了亿万人的温饱问题。他说："我毕生的追求就是让所有人远离饥饿。"', source: "袁隆平", cat: "励志成长"},
     // ====== 亲情友情 (13) ======
     {text: "谁言寸草心，报得三春晖。", source: "孟郊《游子吟》", cat: "亲情友情"},
     {text: "独在异乡为异客，每逢佳节倍思亲。", source: "王维《九月九日忆山东兄弟》", cat: "亲情友情"},
@@ -504,7 +505,7 @@
     {text: "家是世界上唯一隐藏人类缺点与失败的地方，同时也蕴藏着甜蜜的爱。", source: "萧伯纳", cat: "亲情友情"},
     {text: "妈妈说，人最好不要错过两种东西：最后一班回家的车和一个深爱你的人。", source: "张嘉佳", cat: "亲情友情"},
     {text: "我慢慢地、慢慢地了解到，所谓父女母子一场，只不过意味着，你和他的缘分就是今生今世不断地在目送他的背影渐行渐远。", source: "龙应台", cat: "亲情友情"},
-    // ====== 环保自然 (12) ======
+    // ====== 环保自然 (16) ======
     {text: "人法地，地法天，天法道，道法自然。", source: "老子《道德经》", cat: "环保自然"},
     {text: "天地与我并生，而万物与我为一。", source: "庄子《齐物论》", cat: "环保自然"},
     {text: "竭泽而渔，岂不获得？而明年无鱼。", source: "《吕氏春秋》", cat: "环保自然"},
@@ -517,7 +518,11 @@
     {text: "我们不是继承了父辈的地球，而是借用了儿孙的地球。", source: "联合国环境方案", cat: "环保自然"},
     {text: "绿水青山就是金山银山。", source: "习近平", cat: "环保自然"},
     {text: "大自然从不吝啬，她赐予我们阳光、雨露和四季，只是人类忘记了感恩。", source: "珍·古道尔", cat: "环保自然"},
-    // ====== 科技创新 (13) ======
+    {text: '竹子的智慧：竹子前四年只长3厘米，但从第五年开始每天长30厘米，六周就能长到15米。前四年在土壤里扎根数百平米，为后来的爆发做准备。', source: "自然启示", cat: "环保自然"},
+    {text: '水的力量：老子说"上善若水"。水看似柔弱，却能滴水穿石；水不争，却能汇聚成江河大海。最柔弱的东西往往蕴含最强大的力量。', source: "老子《道德经》", cat: "环保自然"},
+    {text: '花开有时：昙花只在夜间开放数小时，却美得惊心动魄。每种花都有自己的花期，不必羡慕别人的绽放，你的时节终会到来。', source: "自然启示", cat: "环保自然"},
+    {text: '大树与风：没有经历过风的小树，根系浅薄，稍有风雨便会倒下。那些经历过无数次暴风雨的大树，根系深深扎入大地，再大的风也吹不倒。', source: "自然启示", cat: "环保自然"},
+    // ====== 科技创新 (16) ======
     {text: "苟日新，日日新，又日新。", source: "《礼记·大学》", cat: "科技创新"},
     {text: "穷则变，变则通，通则久。", source: "《周易·系辞下》", cat: "科技创新"},
     {text: "想像力比知识更重要，因为知识是有限的，而想像力概括着世界上的一切。", source: "爱因斯坦", cat: "科技创新"},
@@ -531,6 +536,9 @@
     {text: "5G时代正在到来，万物互联不再是想象，而是正在发生的现实。", source: "科技前沿", cat: "科技创新"},
     {text: "嫦娥五号成功带回月球土壤，这是人类时隔44年再次实现月球采样返回。", source: "科技成就", cat: "科技创新"},
     {text: "芯片是现代工业的粮食，核心技术必须掌握在自己手中。", source: "科技评论", cat: "科技创新"},
+    {text: '中国航天：从"东方红一号"到"天宫空间站"，中国航天人用半个多世纪实现了从跟跑到并跑再到领跑的跨越。星辰大海，是中国人永恒的追求。', source: "科技成就", cat: "科技创新"},
+    {text: '5G时代：华为在5G技术上的突破，让中国从通信技术的追随者变成了引领者。任正非说："华为没有秘密，就一个字——傻。"像阿甘一样坚持。', source: "任正非", cat: "科技创新"},
+    {text: '青蒿素的故事：屠呦呦从古籍中获取灵感，历经190次失败后成功提取青蒿素，拯救了数百万疟疾患者的生命。她是中国首位诺贝尔生理学或医学奖得主。', source: "屠呦呦", cat: "科技创新"},
     // ====== 传统文化 (13) ======
     {text: "博学之，审问之，慎思之，明辨之，笃行之。", source: "《礼记·中庸》", cat: "传统文化"},
     {text: "温故而知新，可以为师矣。", source: "《论语·为政》", cat: "传统文化"},
@@ -559,7 +567,7 @@
     {text: "纵有疾风起，人生不言弃。", source: "保尔·瓦莱里", cat: "人生哲理"},
     {text: "心之所向，素履以往，生如逆旅，一苇以航。", source: "七堇年", cat: "人生哲理"},
     {text: "我们都在阴沟里，但仍有人仰望星空。", source: "王尔德", cat: "人生哲理"},
-    // ====== 家国情怀 (13) ======
+    // ====== 家国情怀 (16) ======
     {text: "天下兴亡，匹夫有责。", source: "顾炎武", cat: "家国情怀"},
     {text: "先天下之忧而忧，后天下之乐而乐。", source: "范仲淹《岳阳楼记》", cat: "家国情怀"},
     {text: "苟利国家生死以，岂因祸福避趋之。", source: "林则徐", cat: "家国情怀"},
@@ -572,7 +580,10 @@
     {text: "只要还有一口气，我就要站在讲台上，倾尽全力奉献所有。", source: "张桂梅", cat: "家国情怀"},
     {text: "一块blanket改变不了世界，但我们可以改变自己脚下的土地。", source: "屠呦呦", cat: "家国情怀"},
     {text: "我的中国心，一颗永远为中国跳动的赤子之心。", source: "奥运精神", cat: "家国情怀"},
-    {text: "此时此刻，我仿佛看到了当年的长征路，我们这代人的长征，是科技兴国的长征。", source: "航天员", cat: "家国情怀"}
+    {text: "此时此刻，我仿佛看到了当年的长征路，我们这代人的长征，是科技兴国的长征。", source: "航天员", cat: "家国情怀"},
+    {text: '清澈的爱，只为中国：2020年加勒万河谷冲突中，陈红军、陈祥榕等烈士为国捐躯。陈祥榕在日记中写道："清澈的爱，只为中国。"那年他年仅19岁。', source: "陈祥榕", cat: "家国情怀"},
+    {text: '两弹一星精神：邓稼先隐姓埋名28年，在戈壁荒漠中研究原子弹。临终前他说："假如生命终结后可以再生，我仍选择中国，选择核事业。"', source: "邓稼先", cat: "家国情怀"},
+    {text: '脱贫攻坚：黄文秀研究生毕业后放弃大城市工作，回到家乡广西百色担任驻村第一书记，在扶贫路上不幸遇难，年仅30岁。她用生命诠释了共产党员的初心。', source: "黄文秀", cat: "家国情怀"}
   ];
 
   // Add IDs
@@ -585,20 +596,14 @@
   let favorites = [];
 
   // Load favorites
-  try {
-    const raw = localStorage.getItem('essay_favorites');
-    if (raw) favorites = JSON.parse(raw);
-  } catch(e) { favorites = []; }
+  favorites = SBUtils.storageGet('essay_favorites', []);
 
   function saveFav() {
-    try { localStorage.setItem('essay_favorites', JSON.stringify(favorites)); } catch(e) {}
+    SBUtils.storageSet('essay_favorites', favorites);
   }
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+  function showToast(msg, type) {
+    SBUtils.showToast(msg, type);
   }
 
   function getDailySeed() {
@@ -748,7 +753,7 @@
   (function(){
     var card = document.getElementById('dailyCard');
     var dots = document.querySelectorAll('.color-dot');
-    var saved = localStorage.getItem('essay_daily_color') || 'default';
+    var saved = SBUtils.storageGet('essay_daily_color', 'default');
     if (saved !== 'default') {
       card.setAttribute('data-theme', saved);
       dots.forEach(function(d) {
@@ -765,15 +770,11 @@
         }
         dots.forEach(function(d) { d.classList.remove('active'); });
         this.classList.add('active');
-        localStorage.setItem('essay_daily_color', color);
+        SBUtils.storageSet('essay_daily_color', color);
       });
     });
   })();
 })();
-</script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
 </script>
 </body>
 </html>

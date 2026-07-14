@@ -31,13 +31,14 @@
   .container { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100vh; position: relative; }
   .back-btn {
     display: inline-flex; align-items: center; gap: 4px;
-    color: #64748b; text-decoration: none; font-size: 14px;
-    margin-bottom: 8px; cursor: pointer; font-family: inherit;
-    border: none; background: none; padding: 10px 12px;
-    min-height: 44px; border-radius: 10px;
-    transition: background 0.2s; margin-top: 0px; }
-  .back-btn { background: none; }
+    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 10px 14px; border-radius: 10px; min-height: 44px;
+    background: transparent; cursor: pointer; font-family: inherit;
+    margin-bottom: 8px; transition: background 0.2s; border: none;
+  }
+  .back-btn:hover { background: rgba(100,116,139,0.08); }
   .back-btn:active { opacity: 0.6; }
+  .back-btn svg { width: 20px; height: 20px; }
 
   /* Header */
   .header { text-align: center; padding: 20px 0 12px; }
@@ -250,6 +251,7 @@
   /* ====== 主题：彩色 ====== */
   body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
 </style>
+<script src="../_shared/js/utils.js"></script>
 <script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
 </head>
 <body>
@@ -391,10 +393,7 @@
   let editingId = null;
 
   function loadData() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) habits = JSON.parse(raw);
-    } catch (e) { habits = []; }
+    habits = SBUtils.storageGet(STORAGE_KEY, []);
     if (!Array.isArray(habits)) habits = [];
   }
 
@@ -413,7 +412,7 @@
     document.head.appendChild(s);
   }
   function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+    SBUtils.storageSet(STORAGE_KEY, habits);
   }
   function uuid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
@@ -517,12 +516,12 @@
 
   window.saveHabit = function() {
     const name = document.getElementById('input-name').value.trim();
-    if (!name) { alert('请输入打卡名称'); return; }
+    if (!name) { SBUtils.showToast('请输入打卡名称', 'warn'); return; }
     let targetDays;
     const cycle = document.getElementById('input-cycle').value;
     if (cycle === 'custom') {
       targetDays = parseInt(document.getElementById('input-custom').value, 10);
-      if (!targetDays || targetDays < 1) { alert('请输入有效的天数'); return; }
+      if (!targetDays || targetDays < 1) { SBUtils.showToast('请输入有效的天数', 'warn'); return; }
     } else {
       targetDays = parseInt(cycle, 10);
     }
@@ -820,10 +819,6 @@
   loadData();
   renderHabits();
 })();
-</script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
 </script>
 </body>
 </html>

@@ -5,16 +5,11 @@
   var STORAGE_KEY = 'studybuddy_countdown_events';
 
   function loadEvents() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
+    return SBUtils.storageGet(STORAGE_KEY, []);
   }
 
   function saveEvents(events) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    SBUtils.storageSet(STORAGE_KEY, events);
   }
 
   function generateId() {
@@ -263,11 +258,11 @@
     var category = eventCategory.value;
 
     if (!name) {
-      alert('请输入事件名称');
+      SBUtils.showToast('请输入事件名称', 'warn');
       return;
     }
     if (!date) {
-      alert('请选择目标日期');
+      SBUtils.showToast('请选择目标日期', 'warn');
       return;
     }
 
@@ -304,7 +299,7 @@
     if (!confirm('确定要删除这个倒数日吗？')) return;
     var ev = events.find(function (e) { return e.id === editingId; });
     if (ev && ev.name === '春节') {
-      localStorage.setItem('studybuddy_countdown_spring_dismissed', '1');
+      SBUtils.storageSet('studybuddy_countdown_spring_dismissed', '1');
     }
     events = events.filter(function (e) { return e.id !== editingId; });
     saveEvents(events);
@@ -357,7 +352,7 @@
 
   // 首次使用时自动添加春节倒数日（用户删除后不再出现）
   var PREF_KEY = 'studybuddy_countdown_spring_dismissed';
-  if (events.length === 0 && !localStorage.getItem(PREF_KEY)) {
+  if (events.length === 0 && !SBUtils.storageGet(PREF_KEY)) {
     var now = new Date();
     var nextYear = now.getFullYear() + 1;
     var springFestivalDate = nextYear + '-02-06';

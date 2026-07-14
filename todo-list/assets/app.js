@@ -58,55 +58,38 @@
         },
 
         loadState: function() {
-            try {
-                var saved = localStorage.getItem('taskflow_' + this.todayKey);
-                if (saved) {
-                    this.todos = JSON.parse(saved);
-                    // 兼容旧数据：没有 quadrant 的默认为 q4
-                    for (var i = 0; i < this.todos.length; i++) {
-                        if (!this.todos[i].quadrant) {
-                            this.todos[i].quadrant = 'q4';
-                        }
+            var saved = SBUtils.storageGet('taskflow_' + this.todayKey, null);
+            if (saved) {
+                this.todos = saved;
+                // 兼容旧数据：没有 quadrant 的默认为 q4
+                for (var i = 0; i < this.todos.length; i++) {
+                    if (!this.todos[i].quadrant) {
+                        this.todos[i].quadrant = 'q4';
                     }
-                    this.saveState();
                 }
-            } catch (e) {
-                console.error('加载待办失败：', e);
+                this.saveState();
             }
         },
 
         saveState: function() {
-            try {
-                localStorage.setItem('taskflow_' + this.todayKey, JSON.stringify(this.todos));
-            } catch (e) {
-                console.error('保存待办失败：', e);
-            }
+            SBUtils.storageSet('taskflow_' + this.todayKey, this.todos);
         },
 
         loadTemplates: function() {
-            try {
-                var saved = localStorage.getItem('taskflow_templates');
-                if (saved) {
-                    this.templates = JSON.parse(saved);
-                }
-            } catch (e) {
-                console.error('加载模板失败：', e);
+            var saved = SBUtils.storageGet('taskflow_templates', null);
+            if (saved) {
+                this.templates = saved;
             }
         },
 
         saveTemplates: function() {
-            try {
-                localStorage.setItem('taskflow_templates', JSON.stringify(this.templates));
-            } catch (e) {
-                console.error('保存模板失败：', e);
-            }
+            SBUtils.storageSet('taskflow_templates', this.templates);
         },
 
-        addTodo: function(text, time, quadrant) {
+        addTodo: function(text, quadrant) {
             var todo = {
                 id: generateId(),
                 text: text.trim(),
-                time: time || null,
                 quadrant: quadrant || this.currentQuadrant || 'q1',
                 completed: false,
                 createdAt: Date.now()
@@ -164,7 +147,6 @@
             for (var i = 0; i < this.todos.length; i++) {
                 template.items.push({
                     text: this.todos[i].text,
-                    time: this.todos[i].time || null,
                     quadrant: this.todos[i].quadrant || 'q1',
                     completed: false
                 });
@@ -190,7 +172,6 @@
                             this.todos.push({
                                 id: generateId(),
                                 text: template.items[j].text,
-                                time: template.items[j].time || null,
                                 quadrant: template.items[j].quadrant || 'q1',
                                 completed: false,
                                 createdAt: Date.now()
@@ -283,15 +264,12 @@
                 return;
             }
 
-            // 按象限排序，再按时间排序
+            // 按象限排序
             var order = { q1: 0, q2: 1, q3: 2, q4: 3 };
             var sortedTodos = AppState.todos.slice().sort(function(a, b) {
                 var qa = order[a.quadrant] !== undefined ? order[a.quadrant] : 3;
                 var qb = order[b.quadrant] !== undefined ? order[b.quadrant] : 3;
                 if (qa !== qb) return qa - qb;
-                if (a.time && b.time) return a.time.localeCompare(b.time);
-                if (a.time && !b.time) return -1;
-                if (!a.time && b.time) return 1;
                 return a.createdAt - b.createdAt;
             });
 
@@ -303,7 +281,6 @@
                 item.dataset.id = todo.id;
 
                 var checkIcon = todo.completed ? '✓' : '';
-                var timeHtml = todo.time ? '<div class="text-time">⏰ ' + todo.time + '</div>' : '';
                 var tagHtml = '<span class="q-tag ' + q + '">' + QUADRANT_TAGS[q] + '</span>';
 
                 item.innerHTML =
@@ -311,7 +288,6 @@
                     '<div class="todo-text">' +
                         tagHtml +
                         '<div class="text-main">' + this.escapeHtml(todo.text) + '</div>' +
-                        timeHtml +
                     '</div>' +
                     '<button class="todo-delete" data-action="delete">×</button>';
 
@@ -336,11 +312,8 @@
                     continue;
                 }
 
-                // 按时间排序
+                // 按创建时间排序
                 todos.sort(function(a, b) {
-                    if (a.time && b.time) return a.time.localeCompare(b.time);
-                    if (a.time && !b.time) return -1;
-                    if (!a.time && b.time) return 1;
                     return a.createdAt - b.createdAt;
                 });
 
@@ -351,11 +324,10 @@
                     mi.dataset.id = todo.id;
 
                     var checkIcon = todo.completed ? '✓' : '';
-                    var timeStr = todo.time ? ' ⏰' + todo.time : '';
 
                     mi.innerHTML =
                         '<div class="mi-check' + (todo.completed ? ' checked' : '') + '">' + checkIcon + '</div>' +
-                        '<div class="mi-text">' + this.escapeHtml(todo.text) + timeStr + '</div>' +
+                        '<div class="mi-text">' + this.escapeHtml(todo.text) + '</div>' +
                         '<button class="mi-del" data-action="mi-delete">×</button>';
 
                     itemsContainer.appendChild(mi);
@@ -438,149 +410,12 @@
             var addBtn = document.getElementById('addBtn');
             var todoInput = document.getElementById('todoInput');
 
-            // 时间选择器弹窗
-            var timePickerBtn = document.getElementById('timePickerBtn');
-            var timePickerPopover = document.getElementById('timePickerPopover');
-            var popoverTimeInput = document.getElementById('popoverTimeInput');
-            var popoverTimeStart = document.getElementById('popoverTimeStart');
-            var popoverTimeEnd = document.getElementById('popoverTimeEnd');
-            var popoverConfirm = document.getElementById('popoverConfirm');
-            var popoverClear = document.getElementById('popoverClear');
-            var selectedTimeDisplay = document.getElementById('selectedTimeDisplay');
-            var timeModeTabs = document.getElementById('timeModeTabs');
-            var singleTimeInput = document.getElementById('singleTimeInput');
-            var rangeTimeInput = document.getElementById('rangeTimeInput');
-            var currentSelectedTime = null;
-            var currentTimeMode = 'single';
-
-            // 更新时间显示
-            function updateTimeDisplay() {
-                if (currentSelectedTime) {
-                    if (selectedTimeDisplay) {
-                        selectedTimeDisplay.textContent = currentSelectedTime;
-                        selectedTimeDisplay.classList.add('show');
-                    }
-                    if (timePickerBtn) timePickerBtn.classList.add('has-time');
-                } else {
-                    if (selectedTimeDisplay) selectedTimeDisplay.classList.remove('show');
-                    if (timePickerBtn) timePickerBtn.classList.remove('has-time');
-                }
-            }
-
-            // 切换时间模式
-            if (timeModeTabs) {
-                timeModeTabs.addEventListener('click', function(e) {
-                    var tab = e.target.closest('.time-mode-tab');
-                    if (!tab) return;
-
-                    var tabs = timeModeTabs.querySelectorAll('.time-mode-tab');
-                    for (var i = 0; i < tabs.length; i++) {
-                        tabs[i].classList.remove('active');
-                    }
-                    tab.classList.add('active');
-
-                    currentTimeMode = tab.dataset.mode;
-                    if (currentTimeMode === 'single') {
-                        if (singleTimeInput) singleTimeInput.style.display = 'flex';
-                        if (rangeTimeInput) rangeTimeInput.style.display = 'none';
-                    } else {
-                        if (singleTimeInput) singleTimeInput.style.display = 'none';
-                        if (rangeTimeInput) rangeTimeInput.style.display = 'flex';
-                    }
-                });
-            }
-
-            // 打开/关闭时间弹窗
-            if (timePickerBtn && timePickerPopover) {
-                timePickerBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var isShown = timePickerPopover.classList.contains('show');
-                    if (isShown) {
-                        timePickerPopover.classList.remove('show');
-                    } else {
-                        timePickerPopover.classList.add('show');
-                        // 恢复之前选择的时间
-                        if (currentSelectedTime) {
-                            if (currentSelectedTime.indexOf('-') !== -1) {
-                                var parts = currentSelectedTime.split('-');
-                                if (popoverTimeStart) popoverTimeStart.value = parts[0];
-                                if (popoverTimeEnd) popoverTimeEnd.value = parts[1];
-                                currentTimeMode = 'range';
-                                if (singleTimeInput) singleTimeInput.style.display = 'none';
-                                if (rangeTimeInput) rangeTimeInput.style.display = 'flex';
-                                var tabs = timeModeTabs.querySelectorAll('.time-mode-tab');
-                                for (var i = 0; i < tabs.length; i++) {
-                                    tabs[i].classList.remove('active');
-                                    if (tabs[i].dataset.mode === 'range') {
-                                        tabs[i].classList.add('active');
-                                    }
-                                }
-                            } else {
-                                if (popoverTimeInput) popoverTimeInput.value = currentSelectedTime;
-                                currentTimeMode = 'single';
-                                if (singleTimeInput) singleTimeInput.style.display = 'flex';
-                                if (rangeTimeInput) rangeTimeInput.style.display = 'none';
-                                var tabs = timeModeTabs.querySelectorAll('.time-mode-tab');
-                                for (var i = 0; i < tabs.length; i++) {
-                                    tabs[i].classList.remove('active');
-                                    if (tabs[i].dataset.mode === 'single') {
-                                        tabs[i].classList.add('active');
-                                    }
-                                }
-                            }
-                        }
-                        if (popoverTimeInput && currentTimeMode === 'single') {
-                            popoverTimeInput.focus();
-                        }
-                    }
-                });
-
-                document.addEventListener('click', function(e) {
-                    if (!timePickerPopover.contains(e.target) && e.target !== timePickerBtn) {
-                        timePickerPopover.classList.remove('show');
-                    }
-                });
-            }
-
-            // 确定时间
-            if (popoverConfirm) {
-                popoverConfirm.addEventListener('click', function() {
-                    if (currentTimeMode === 'single') {
-                        if (popoverTimeInput && popoverTimeInput.value) {
-                            currentSelectedTime = popoverTimeInput.value;
-                        }
-                    } else {
-                        if (popoverTimeStart && popoverTimeStart.value && popoverTimeEnd && popoverTimeEnd.value) {
-                            currentSelectedTime = popoverTimeStart.value + '-' + popoverTimeEnd.value;
-                        }
-                    }
-                    updateTimeDisplay();
-                    if (timePickerPopover) timePickerPopover.classList.remove('show');
-                });
-            }
-
-            // 清除时间
-            if (popoverClear) {
-                popoverClear.addEventListener('click', function() {
-                    currentSelectedTime = null;
-                    if (popoverTimeInput) popoverTimeInput.value = '';
-                    if (popoverTimeStart) popoverTimeStart.value = '';
-                    if (popoverTimeEnd) popoverTimeEnd.value = '';
-                    updateTimeDisplay();
-                    if (timePickerPopover) timePickerPopover.classList.remove('show');
-                });
-            }
-
             if (addBtn && todoInput) {
                 addBtn.addEventListener('click', function() {
                     var text = todoInput.value.trim();
                     if (!text) return;
-                    var time = currentSelectedTime || null;
-                    AppState.addTodo(text, time, AppState.currentQuadrant);
+                    AppState.addTodo(text, AppState.currentQuadrant);
                     todoInput.value = '';
-                    currentSelectedTime = null;
-                    updateTimeDisplay();
-                    if (popoverTimeInput) popoverTimeInput.value = '';
                     self.renderTodoList();
                     self.renderMatrix();
                     self.updateProgress();
@@ -738,7 +573,7 @@
             if (saveTemplateBtn && templateInputArea) {
                 saveTemplateBtn.addEventListener('click', function() {
                     if (AppState.todos.length === 0) {
-                        alert('当前没有待办事项，无法保存模板');
+                        SBUtils.showToast('当前没有待办事项，无法保存模板', 'warn');
                         return;
                     }
                     templateInputArea.style.display = 'flex';
@@ -750,14 +585,14 @@
                 confirmSaveTemplate.addEventListener('click', function() {
                     var name = templateNameInput.value.trim();
                     if (!name) {
-                        alert('请输入模板名称');
+                        SBUtils.showToast('请输入模板名称', 'warn');
                         return;
                     }
                     AppState.saveAsTemplate(name);
                     templateNameInput.value = '';
                     templateInputArea.style.display = 'none';
                     self.renderTemplates();
-                    alert('模板已保存！');
+                    SBUtils.showToast('模板已保存！', 'success');
                 });
 
                 templateNameInput.addEventListener('keydown', function(e) {

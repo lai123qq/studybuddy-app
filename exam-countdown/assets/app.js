@@ -12,13 +12,8 @@
   var ink = style.getPropertyValue('--ink').trim();
   var muted = style.getPropertyValue('--muted').trim();
   var rule = style.getPropertyValue('--rule').trim();
-  var toast = document.getElementById('toast');
-
-  function showToast(text) {
-    toast.textContent = text;
-    toast.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+  function showToast(text, type) {
+    SBUtils.showToast(text, type);
   }
 
   /* ---------- State ---------- */
@@ -31,8 +26,8 @@
   if (!state.mocks) state.mocks = [];   // {id, exam, score, date}
   saveState();
 
-  function loadState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
-  function saveState() { localStorage.setItem(KEY, JSON.stringify(state)); }
+  function loadState() { return SBUtils.storageGet(KEY, {}); }
+  function saveState() { SBUtils.storageSet(KEY, state); }
   function pad(n) { return String(n).padStart(2, '0'); }
   function nid() { return 'w' + Math.random().toString(36).slice(2, 8); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }

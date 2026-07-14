@@ -45,24 +45,16 @@
       margin: 0 auto;
     }
 
-    .back {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 14px;
-      margin-bottom: 12px;
-      padding: 10px 12px;
-      min-height: 44px;
-      border-radius: 10px;
-      transition: color var(--transition), background var(--transition);
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 10px 14px; border-radius: 10px; min-height: 44px;
+      background: transparent; cursor: pointer; font-family: inherit;
+      margin-bottom: 8px; transition: background 0.2s; border: none;
     }
-
-    .back:hover {
-      color: var(--text);
-      background: rgba(232,96,122,0.08);
-    }
+    .back-btn:hover { background: rgba(100,116,139,0.08); }
+    .back-btn:active { opacity: 0.6; }
+    .back-btn svg { width: 20px; height: 20px; }
 
     .head {
       margin-bottom: 20px; margin-top: 24px;
@@ -379,7 +371,6 @@
       .app { max-width: 100%; }
       .head h1 { font-size: 28px; }
       .subtitle { font-size: 16px; }
-      .back { font-size: 15px; margin-bottom: 14px; }
       .btn { padding: 14px 20px; font-size: 16px; min-height: 48px; border-radius: var(--radius-sm); }
       .event-list { gap: 12px; }
       .event-card { padding: 16px 20px; padding-top: 24px; border-radius: 14px; }
@@ -418,11 +409,12 @@
   /* ====== 主题：彩色 ====== */
   body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
 </style>
+<script defer src="../_shared/js/utils.js"></script>
 <script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
 </head>
 <body>
   <div class="app">
-    <a href="../index-v2.html" class="back">&#8592; 返回</a>
+    <a class="back-btn" href="../index-v2.html">&#8592; 返回</a>
     <div class="head">
       <h1>倒数日</h1>
       <p class="subtitle">记录每一个重要时刻</p>
@@ -478,9 +470,5 @@
   </div>
 
   <script defer src="assets/app.js"></script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
-</script>
 </body>
 </html>

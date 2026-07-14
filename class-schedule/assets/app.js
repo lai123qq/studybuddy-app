@@ -52,30 +52,22 @@
         },
 
         loadState: function() {
-            try {
-                var saved = localStorage.getItem('classmate_courses');
-                if (saved) this.courses = JSON.parse(saved);
-                var savedTime = localStorage.getItem('classmate_times');
-                if (savedTime) this.timeSlots = JSON.parse(savedTime);
-                var savedCount = localStorage.getItem('classmate_periodCount');
-                if (savedCount) this.periodCount = parseInt(savedCount) || 8;
-                var savedDays = localStorage.getItem('classmate_visibleDays');
-                if (savedDays) { try { this.visibleDays = JSON.parse(savedDays); } catch (e) {} }
-                this.ensureTimeSlots();
-            } catch (e) {
-                console.error('加载失败：', e);
-            }
+            var saved = SBUtils.storageGet('classmate_courses', null);
+            if (saved) this.courses = saved;
+            var savedTime = SBUtils.storageGet('classmate_times', null);
+            if (savedTime) this.timeSlots = savedTime;
+            var savedCount = SBUtils.storageGet('classmate_periodCount', null);
+            if (savedCount) this.periodCount = parseInt(savedCount) || 8;
+            var savedDays = SBUtils.storageGet('classmate_visibleDays', null);
+            if (savedDays) { try { this.visibleDays = savedDays; } catch (e) {} }
+            this.ensureTimeSlots();
         },
 
         saveState: function() {
-            try {
-                localStorage.setItem('classmate_courses', JSON.stringify(this.courses));
-                localStorage.setItem('classmate_times', JSON.stringify(this.timeSlots));
-                localStorage.setItem('classmate_periodCount', String(this.periodCount));
-                localStorage.setItem('classmate_visibleDays', JSON.stringify(this.visibleDays));
-            } catch (e) {
-                console.error('保存失败：', e);
-            }
+            SBUtils.storageSet('classmate_courses', this.courses);
+            SBUtils.storageSet('classmate_times', this.timeSlots);
+            SBUtils.storageSet('classmate_periodCount', String(this.periodCount));
+            SBUtils.storageSet('classmate_visibleDays', this.visibleDays);
         },
 
         ensureTimeSlots: function() {
@@ -459,7 +451,7 @@
                         self.hideCourseModal();
                         self.renderSchedule();
                     } else {
-                        alert(result.error);
+                        SBUtils.showToast(result.error, 'error');
                     }
                 });
             }
@@ -570,7 +562,7 @@
                     checkboxes.forEach(function(cb) {
                         if (cb.checked) selected.push(parseInt(cb.value));
                     });
-                    if (selected.length === 0) { alert('至少选择一天'); return; }
+                    if (selected.length === 0) { SBUtils.showToast('至少选择一天', 'warn'); return; }
                     AppState.setVisibleDays(selected);
                     daysModal.classList.remove('show');
                     self.renderSchedule();

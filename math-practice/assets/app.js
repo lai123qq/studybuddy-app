@@ -1658,32 +1658,23 @@
          * 从 localStorage 加载状态
          */
         loadState: function() {
-            try {
-                var saved = localStorage.getItem('mathPractice_state');
-                if (saved) {
-                    var state = JSON.parse(saved);
-                    this.stats = state.stats || this.stats;
-                    this.wrongQuestions = state.wrongQuestions || [];
-                    if (state.lastGrade) this.lastGrade = state.lastGrade;
-                    if (state.lastType) this.lastType = state.lastType;
-                }
-            } catch (e) {
-                console.error('加载状态失败：', e);
+            var state = SBUtils.storageGet('mathPractice_state', null);
+            if (state) {
+                this.stats = state.stats || this.stats;
+                this.wrongQuestions = state.wrongQuestions || [];
+                if (state.lastGrade) this.lastGrade = state.lastGrade;
+                if (state.lastType) this.lastType = state.lastType;
             }
         },
 
         saveState: function() {
-            try {
-                var state = {
-                    stats: this.stats,
-                    wrongQuestions: this.wrongQuestions,
-                    lastGrade: this.lastGrade,
-                    lastType: this.lastType
-                };
-                localStorage.setItem('mathPractice_state', JSON.stringify(state));
-            } catch (e) {
-                console.error('保存状态失败：', e);
-            }
+            var state = {
+                stats: this.stats,
+                wrongQuestions: this.wrongQuestions,
+                lastGrade: this.lastGrade,
+                lastType: this.lastType
+            };
+            SBUtils.storageSet('mathPractice_state', state);
         },
 
         // ---------- 练习功能 ----------

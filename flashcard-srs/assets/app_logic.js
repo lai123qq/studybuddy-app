@@ -37,14 +37,7 @@ function genId() { return Date.now().toString(36) + '_' + Math.random().toString
 function cardId(front, back) { return front + '|' + back; }
 
 /* ---------- 日期工具 ---------- */
-function daysFromNow(n) {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  d.setHours(0,0,0,0);
-  return d.getTime();
-}
 function isSameDay(ts) { return new Date(ts).toDateString() === todayDateStr; }
-function tomorrowTs() { return daysFromNow(1); }
 
 /* ---------- 提示 ---------- */
 function showToast(msg, cls) {
@@ -63,28 +56,7 @@ function showErr(msg) {
   setTimeout(function() { el.classList.remove('show'); }, 2500);
 }
 
-/* ==================== SM-2 算法 ==================== */
-function sm2(quality, card) {
-  var ef = card.easeFactor || 2.5;
-  var rep = card.repetitions || 0;
-  var interval = card.interval || 0;
-  if (quality < 3) { rep = 0; interval = 0; }
-  else {
-    if (rep === 0) interval = 1;
-    else if (rep === 1) interval = 6;
-    else interval = Math.round((card.interval || 1) * ef);
-    rep++;
-  }
-  var newEf = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if (newEf < 1.3) newEf = 1.3;
-  card.easeFactor = newEf;
-  card.repetitions = rep;
-  card.interval = interval;
-  card.nextReview = daysFromNow(interval);
-  card.lastReview = Date.now();
-  card.reviewedCount = (card.reviewedCount || 0) + 1;
-  return card;
-}
+
 
 /* ==================== 卡组管理 ==================== */
 function loadCards() {
@@ -104,9 +76,9 @@ function addCard(front, back, deck, source) {
   if (existing) return existing;
   var c = {
     id: id, front: front, back: back, deck: deck || '自定义',
-    easeFactor: 2.5, interval: 0, repetitions: 0,
-    nextReview: Date.now(), createdAt: Date.now(), lastReview: 0,
-    reviewedCount: 0, source: source || 'custom'
+    createdAt: Date.now(), lastReview: 0,
+    reviewedCount: 0, source: source || 'custom',
+    mastered: false, learnCount: 0, wrongCount: 0
   };
   cards.push(c);
   addedCardIds.add(id);
@@ -117,22 +89,13 @@ function addCard(front, back, deck, source) {
 
 function getCardsByDeck(deckName) { return cards.filter(function(c) { return c.deck === deckName; }); }
 
-function getDueCards(deckName) {
-  var now = Date.now();
-  if (deckName) return cards.filter(function(c) { return c.deck === deckName && c.nextReview <= now; });
-  return cards.filter(function(c) { return c.nextReview <= now; });
-}
 
 function getStats() {
-  var now = Date.now();
   var total = cards.length;
-  var due = cards.filter(function(c) { return c.nextReview <= now; }).length;
-  var mastered = cards.filter(function(c) { return c.repetitions >= 5 && c.interval >= 21; }).length;
+  var mastered = cards.filter(function(c) { return c.mastered; }).length;
   var reviewedToday = cards.filter(function(c) { return c.lastReview && isSameDay(c.lastReview); }).length;
-  var dueTomorrow = cards.filter(function(c) { return c.nextReview > now && c.nextReview <= daysFromNow(1); }).length;
-  var dueWeek = cards.filter(function(c) { return c.nextReview > now && c.nextReview <= daysFromNow(7); }).length;
   var mastery = total > 0 ? Math.round(mastered / total * 100) : 0;
-  return { total:total, due:due, mastered:mastered, mastery:mastery, reviewedToday:reviewedToday, dueTomorrow:dueTomorrow, dueWeek:dueWeek };
+  return { total: total, mastered: mastered, mastery: mastery, reviewedToday: reviewedToday };
 }
 
 function getDecksWithCount() {
@@ -144,8 +107,8 @@ function getDecksWithCount() {
 function resetDeckProgress(deckName) {
   cards.forEach(function(c) {
     if (c.deck === deckName) {
-      c.easeFactor = 2.5; c.interval = 0; c.repetitions = 0;
-      c.nextReview = Date.now(); c.lastReview = 0; c.reviewedCount = 0;
+      c.mastered = false; c.learnCount = 0; c.wrongCount = 0;
+      c.lastReview = 0; c.reviewedCount = 0;
     }
   });
   saveCards();
@@ -162,7 +125,10 @@ function shuffle(arr) {
 
 /* ==================== 学习会话管理 ==================== */
 function startStudySession(deckName) {
-  studyQueue = shuffle(getDueCards(deckName));
+  var pool = deckName 
+    ? cards.filter(function(c) { return c.deck === deckName && !c.mastered; })
+    : cards.filter(function(c) { return !c.mastered; });
+  studyQueue = shuffle(pool);
   currentStudyIdx = 0;
   isFlipped = false;
   studySessionActive = studyQueue.length > 0;
@@ -197,20 +163,179 @@ function flipCard() {
   wrap.classList.toggle('flipped', isFlipped);
 }
 
-function rateCard(quality) {
+function rateCard(learned) {
   if (currentStudyIdx < 0 || currentStudyIdx >= studyQueue.length) return;
   if (!isFlipped) { showToast('请先点击卡片翻面查看答案', 'warn'); return; }
   var card = studyQueue[currentStudyIdx];
-  sm2(quality, card);
-  goalCompletion = Math.min(goalCompletion + 1, dailyGoal);
-  saveGoalCompletion();
-  if (quality < 3) {
+  card.lastReview = Date.now();
+  card.reviewedCount = (card.reviewedCount || 0) + 1;
+
+  if (learned) {
+    // 学会了，进入测试
+    card.learnCount = (card.learnCount || 0) + 1;
+    startQuiz(card);
+  } else {
+    // 没学会，移到队列末尾
+    card.wrongCount = (card.wrongCount || 0) + 1;
     studyQueue.push(card);
     studyQueue.splice(currentStudyIdx, 1);
-  } else { currentStudyIdx++; }
+    saveCards();
+    if (currentStudyIdx >= studyQueue.length) { currentStudyIdx = studyQueue.length; showCard(-1); }
+    else { showCard(currentStudyIdx); }
+    refreshAll();
+  }
+}
+
+/* ==================== 测试模式 ==================== */
+
+// 全局测试状态
+var quizCard = null;
+var quizOptions = [];
+var quizAnswered = false;
+var spellAnswered = false;
+var quizCorrect = false;
+var spellCorrect = false;
+
+function startQuiz(card) {
+  quizCard = card;
+  quizAnswered = false;
+  spellAnswered = false;
+  quizCorrect = false;
+  spellCorrect = false;
+
+  // 生成选择题：从同卡组其他卡片抽3个干扰项
+  var others = cards.filter(function(c) {
+    return c.deck === card.deck && c.id !== card.id;
+  });
+  var distractors = shuffle(others.slice()).slice(0, 3);
+  quizOptions = shuffle([card].concat(distractors));
+
+  // 显示测试面板，隐藏学习卡片
+  document.getElementById('flashcardWrap').style.display = 'none';
+  document.getElementById('quizPanel').style.display = 'block';
+  document.getElementById('spellPanel').style.display = 'none';
+
+  // 渲染选择题
+  document.getElementById('quizQuestion').textContent = card.back;
+  var optsHtml = '';
+  quizOptions.forEach(function(opt, idx) {
+    optsHtml += '<button class="quiz-opt" data-idx="' + idx + '" onclick="pickQuiz(' + idx + ')">' + escHtml(opt.front) + '</button>';
+  });
+  document.getElementById('quizOptions').innerHTML = optsHtml;
+  document.getElementById('quizResult').textContent = '';
+  document.getElementById('quizResult').className = '';
+
+  // 重置拼写区
+  var spellInput = document.getElementById('spellInput');
+  if (spellInput) { spellInput.value = ''; spellInput.disabled = false; spellInput.style.borderColor = ''; }
+  document.getElementById('spellResult').textContent = '';
+  document.getElementById('spellHint').style.display = 'none';
+}
+
+function pickQuiz(idx) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  var chosen = quizOptions[idx];
+  var correct = chosen.id === quizCard.id;
+  quizCorrect = correct;
+
+  // 标记选项颜色
+  var btns = document.querySelectorAll('.quiz-opt');
+  btns.forEach(function(btn, i) {
+    btn.disabled = true;
+    if (quizOptions[i].id === quizCard.id) btn.classList.add('correct');
+    else if (i === idx && !correct) btn.classList.add('wrong');
+  });
+
+  var resultEl = document.getElementById('quizResult');
+  if (correct) {
+    resultEl.textContent = '✅ 选择正确！接下来拼写这个单词。';
+    resultEl.className = 'quiz-result ok';
+    // 显示拼写面板
+    document.getElementById('spellPanel').style.display = 'block';
+    document.getElementById('spellPrompt').textContent = '请拼写：' + quizCard.back;
+    setTimeout(function() { document.getElementById('spellInput').focus(); }, 100);
+  } else {
+    resultEl.textContent = '❌ 选择错误。正确答案是：' + quizCard.front;
+    resultEl.className = 'quiz-result err';
+    // 答错，显示继续按钮
+    document.getElementById('quizNextBtn').style.display = 'inline-flex';
+    document.getElementById('quizNextBtn').textContent = '继续学习';
+  }
+}
+
+function checkSpell() {
+  if (spellAnswered) return;
+  var input = document.getElementById('spellInput');
+  if (!input) return;
+  var val = input.value.trim().toLowerCase();
+  var correct = val === quizCard.front.toLowerCase();
+  spellCorrect = correct;
+  spellAnswered = true;
+  input.disabled = true;
+
+  var resultEl = document.getElementById('spellResult');
+  if (correct) {
+    input.style.borderColor = '#22c55e';
+    resultEl.textContent = '✅ 拼写正确！';
+    resultEl.className = 'quiz-result ok';
+  } else {
+    input.style.borderColor = '#ef4444';
+    resultEl.textContent = '❌ 拼写错误。正确答案是：' + quizCard.front;
+    resultEl.className = 'quiz-result err';
+  }
+
+  // 显示继续按钮
+  document.getElementById('quizNextBtn').style.display = 'inline-flex';
+  document.getElementById('quizNextBtn').textContent = correct ? '下一词' : '继续学习';
+}
+
+function showSpellHint() {
+  var input = document.getElementById('spellInput');
+  if (!input || spellAnswered) return;
+  var val = input.value;
+  var answer = quizCard.front;
+  var hint = answer.slice(0, Math.min(val.length + 1, answer.length));
+  input.value = hint;
+  document.getElementById('spellHint').style.display = 'block';
+}
+
+function finishQuiz() {
+  // 判断是否通过测试
+  var passed = quizCorrect && spellCorrect;
+
+  if (passed) {
+    quizCard.mastered = true;
+    quizCard.learnCount = (quizCard.learnCount || 0) + 1;
+    goalCompletion = Math.min(goalCompletion + 1, dailyGoal);
+    saveGoalCompletion();
+    showToast('🎉 掌握 +' + quizCard.front);
+  } else {
+    quizCard.wrongCount = (quizCard.wrongCount || 0) + 1;
+    quizCard.mastered = false;
+    // 将卡片移到队列末尾
+    if (studyQueue.indexOf(quizCard) === -1) {
+      studyQueue.push(quizCard);
+    }
+    showToast('再试一次：' + quizCard.front, 'warn');
+  }
+
   saveCards();
-  if (currentStudyIdx >= studyQueue.length) { currentStudyIdx = studyQueue.length; showCard(-1); }
-  else { showCard(currentStudyIdx); }
+
+  // 恢复学习界面
+  document.getElementById('quizPanel').style.display = 'none';
+  document.getElementById('spellPanel').style.display = 'none';
+  document.getElementById('flashcardWrap').style.display = 'flex';
+  document.getElementById('quizNextBtn').style.display = 'none';
+
+  // 继续下一个
+  if (passed) currentStudyIdx++;
+  if (currentStudyIdx >= studyQueue.length) {
+    currentStudyIdx = studyQueue.length;
+    showCard(-1);
+  } else {
+    showCard(currentStudyIdx);
+  }
   refreshAll();
 }
 
@@ -223,18 +348,15 @@ function renderDecks() {
     el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">还没有卡片，去词库中导入吧</div>';
     return;
   }
-  var now = Date.now();
   var html = '';
   var activeDeck = document.querySelector('.deck-item.active');
   var activeName = activeDeck ? activeDeck.getAttribute('data-deck') : null;
   deckCounts.forEach(function(d) {
-    var dueCount = cards.filter(function(c) { return c.deck === d.name && c.nextReview <= now; }).length;
-    var masteredCount = cards.filter(function(c) { return c.deck === d.name && c.repetitions >= 5 && c.interval >= 21; }).length;
+    var masteredCount = cards.filter(function(c) { return c.deck === d.name && c.mastered; }).length;
     var pct = d.count > 0 ? Math.round(masteredCount / d.count * 100) : 0;
     html += '<div class="deck-item' + (d.name === activeName ? ' active' : '') + '" data-deck="' + escHtml(d.name) + '">';
     html += '<div><span class="name">' + escHtml(d.name) + '</span>';
     html += '<div style="font-size:11px;color:var(--muted);margin-top:2px;">';
-    if (dueCount > 0) html += '<span style="color:var(--accent);">待复习' + dueCount + '</span> 路 ';
     html += '已掌握' + masteredCount + '/' + d.count + ' (' + pct + '%)</div></div>';
     html += '<div style="width:40px;height:40px;border-radius:50%;border:3px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;position:relative;">';
     html += '<span style="color:var(--accent);">' + pct + '%</span>';
@@ -257,18 +379,12 @@ function renderDecks() {
 function updateStats(s) {
   if (!s) s = getStats();
   document.getElementById('stat-total').textContent = s.total;
-  document.getElementById('stat-due').textContent = s.due;
   document.getElementById('stat-streak').textContent = streak;
   document.getElementById('stat-mastery').textContent = s.mastery + '%';
+  var masteredEl = document.getElementById('stat-mastered');
+  if (masteredEl) masteredEl.textContent = s.mastered;
 }
 
-function updateDuePredictions(s) {
-  if (!s) s = getStats();
-  document.getElementById('due-today').textContent = s.due;
-  document.getElementById('due-tomorrow').textContent = s.dueTomorrow;
-  document.getElementById('due-week').textContent = s.dueWeek;
-  document.getElementById('due-mastered').textContent = s.mastered;
-}
 
 function updateGoalRing() {
   var pct = Math.min(goalCompletion / dailyGoal * 100, 100);
@@ -326,8 +442,8 @@ function updateChart() {
     var mCount = 0, dCount = 0, tCount = 0;
     cards.forEach(function(c) {
       if (c.createdAt <= dayEnd) tCount++;
-      if (c.repetitions >= 5 && c.interval >= 21 && c.lastReview <= dayEnd) mCount++;
-      if (c.nextReview <= dayEnd) dCount++;
+      if (c.mastered && c.lastReview <= dayEnd) mCount++;
+      if (!c.mastered) dCount++;
     });
     masteredData.push(tCount > 0 ? Math.round(mCount / tCount * 100) : 0);
     dueData.push(dCount);
@@ -564,7 +680,7 @@ function populateDeckSelects() {
 function updatePreview(s) {
   var el = document.getElementById('preview'); if (!el) return;
   if (!s) s = getStats();
-  el.textContent = '当前共' + s.total + ' 张卡片，今天已复习' + s.reviewedToday + ' 张，待复习' + s.due + ' 张';
+  el.textContent = '当前共' + s.total + ' 张卡片，今天已复习' + s.reviewedToday + ' 张，已掌握' + s.mastered + ' 张';
 }
 
 /* ==================== 刷新UI ==================== */
@@ -572,7 +688,6 @@ function refreshAll() {
   var s = getStats();
   updateStats(s);
   updateGoalRing();
-  updateDuePredictions(s);
   updatePreview(s);
   renderDecks();
 }
@@ -595,9 +710,6 @@ function bindEvents() {
   });
   var flashcard = document.getElementById('flashcard');
   if (flashcard) flashcard.addEventListener('click', function() { flipCard(); });
-  document.querySelectorAll('.rate-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() { rateCard(parseInt(btn.getAttribute('data-rate'))); });
-  });
   var resetBtn = document.getElementById('resetBtn');
   if (resetBtn) resetBtn.addEventListener('click', function() {
     var active = document.querySelector('.deck-item.active');
@@ -795,7 +907,7 @@ function bindEvents() {
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
     if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); flipCard(); }
-    if (e.key === '1') rateCard(1); if (e.key === '2') rateCard(2); if (e.key === '3') rateCard(3);
+    if (e.key === '1') rateCard(false); if (e.key === '2') rateCard(false); if (e.key === '3') rateCard(true);
   });
   window.addEventListener('resize', function() { if (chartInstance) chartInstance.resize(); });
 }
@@ -805,13 +917,6 @@ function init() {
   var lastDate = localStorage.getItem('recalleum-last-date');
   var today = new Date().toDateString();
   if (lastDate !== today) {
-    if (lastDate) {
-      var yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-      if (lastDate === yesterday.toDateString()) {
-        var reviewedYesterday = cards.some(function(c) { return c.lastReview && new Date(c.lastReview).toDateString() === lastDate; });
-        if (reviewedYesterday) { streak++; saveStreak(); }
-      } else { streak = 0; saveStreak(); }
-    }
     goalCompletion = 0; saveGoalCompletion();
     localStorage.setItem('recalleum-last-date', today);
   }
@@ -822,11 +927,11 @@ function init() {
   middleManager.populateUnits();
   oldMiddleManager.populateUnits();
   refreshAll();
-  var dueDecks = [];
-  cards.forEach(function(c) { if (c.nextReview <= Date.now() && dueDecks.indexOf(c.deck) === -1) dueDecks.push(c.deck); });
-  if (dueDecks.length > 0) {
+  var decksWithUnmastered = [];
+  cards.forEach(function(c) { if (!c.mastered && decksWithUnmastered.indexOf(c.deck) === -1) decksWithUnmastered.push(c.deck); });
+  if (decksWithUnmastered.length > 0) {
     document.querySelectorAll('.deck-item').forEach(function(item) {
-      if (item.getAttribute('data-deck') === dueDecks[0]) { item.classList.add('active'); startStudySession(dueDecks[0]); }
+      if (item.getAttribute('data-deck') === decksWithUnmastered[0]) { item.classList.add('active'); startStudySession(decksWithUnmastered[0]); }
     });
   } else {
     var items = document.querySelectorAll('.deck-item');

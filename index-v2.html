@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Study Buddy · 学生学习搭子</title>
+<script src="./_shared/js/utils.js"></script>
 <style>
   @font-face { font-family: 'Bricolage'; src: url('./_shared/fonts/BricolageGrotesque-Regular.ttf') format('truetype'); font-display: swap; }
   @font-face { font-family: 'Bricolage'; src: url('./_shared/fonts/BricolageGrotesque-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
@@ -90,17 +91,27 @@
   .stat .l { font-size: 11px; color: #94a3b8; margin-top: 4px; font-weight: 500; }
 
   .section-label {
-    font-size: 13px; font-weight: 700; color: #64748b;
+    font-size: 13px; font-weight: 700; color: #6366f1;
     text-transform: uppercase; letter-spacing: 0.08em;
     margin-bottom: 14px;
+    padding-bottom: 8px;
+    position: relative;
+    transition: color 0.2s;
+  }
+  .section-label::after {
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 24px; height: 2.5px; border-radius: 2px;
+    background: #6366f1;
+    transition: width 0.3s ease;
   }
 
   /* Category sections */
-  .category-section { display: none; flex-direction: column; gap: 12px; margin-bottom: 32px; animation: fadeIn 0.25s ease; }
+  .category-section { display: none; flex-direction: column; gap: 10px; margin-bottom: 32px; animation: fadeIn 0.25s ease; }
   .category-section.active { display: flex; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes cardSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-  .apps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .apps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
 
   .app-card {
     display: flex; align-items: center; gap: 14px;
@@ -112,19 +123,26 @@
     background: #ffffff;
     border: 1px solid #e8ecf2;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    animation: cardSlideUp 0.35s ease both;
   }
-  .app-card:active { transform: scale(0.98); background: #f8f9fc; }
+  .app-card:nth-child(1) { animation-delay: 0s; }
+  .app-card:nth-child(2) { animation-delay: 0.03s; }
+  .app-card:nth-child(3) { animation-delay: 0.06s; }
+  .app-card:nth-child(4) { animation-delay: 0.09s; }
+  .app-card:nth-child(5) { animation-delay: 0.12s; }
+  .app-card:active { transform: scale(0.97); background: #f8f9fc; }
   .app-card .accent-bar {
     position: absolute; left: 0; top: 0; bottom: 0;
     width: 3px; border-radius: 0 3px 3px 0;
     background: var(--bar, #6366f1);
   }
   .app-card .icon {
-    width: 40px; height: 40px; border-radius: 10px;
+    width: 44px; height: 44px; border-radius: 50%;
     background: var(--icon-bg, #f1f0ff);
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     font-size: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   }
   .app-card .body {
     flex: 1; min-width: 0;
@@ -172,20 +190,29 @@
   }
   .bottom-nav-item {
     flex: 1; display: flex; flex-direction: column; align-items: center;
-    gap: 2px; padding: 4px 0; cursor: pointer;
+    gap: 2px; padding: 4px 0 6px; cursor: pointer;
     border: none; background: none; font-family: inherit;
-    transition: all 0.2s; color: #94a3b8;
+    transition: all 0.2s; color: #b0b8c8;
+    position: relative;
   }
   .bottom-nav-item .nav-icon {
     width: 24px; height: 24px; font-size: 20px;
     display: flex; align-items: center; justify-content: center;
-    transition: transform 0.2s;
+    transition: transform 0.2s, filter 0.2s;
+    filter: grayscale(0.3);
   }
   .bottom-nav-item .nav-label {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.02em;
+    transition: font-weight 0.2s;
   }
   .bottom-nav-item.active { color: #6366f1; }
-  .bottom-nav-item.active .nav-icon { transform: scale(1.1); }
+  .bottom-nav-item.active .nav-icon { transform: scale(1.1); filter: grayscale(0); }
+  .bottom-nav-item.active .nav-label { font-weight: 700; }
+  .bottom-nav-item.active::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 2.5px; border-radius: 2px;
+    background: #6366f1;
+  }
   .bottom-nav-item:active { opacity: 0.7; }
 
   .footer {
@@ -204,19 +231,19 @@
     background: #6366f1; border-radius: 2px;
   }
   .welcome-banner {
-    background: linear-gradient(135deg, #f0f7ff, #e8f4fd);
-    border: 1px solid #dbeafe; border-radius: 16px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    border: none; border-radius: 20px;
     padding: 28px 20px; text-align: center; margin-bottom: 20px;
     animation: slideUp 0.5s ease;
   }
   .welcome-icon { font-size: 40px; margin-bottom: 12px; }
-  .welcome-title { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
-  .welcome-text { font-size: 13px; color: #64748b; margin-bottom: 18px; }
+  .welcome-title { font-size: 20px; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
+  .welcome-text { font-size: 13px; color: rgba(255,255,255,0.85); margin-bottom: 18px; }
   .welcome-actions { display: flex; flex-direction: column; gap: 8px; }
   .welcome-btn {
     display: block; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700;
-    background: #fff; color: #1e293b; text-decoration: none;
-    border: 1px solid #e2e8f0; transition: transform 0.15s, box-shadow 0.15s;
+    background: rgba(255,255,255,0.95); color: #1e293b; text-decoration: none;
+    border: none; transition: transform 0.15s, box-shadow 0.15s;
   }
   .welcome-btn:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .dash-ov-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px; }
@@ -328,12 +355,13 @@
   body.theme-dark .head .greeting,
   body.theme-dark .head .subtitle { color: #94a3b8; }
   body.theme-dark .stat {
-    background: rgba(30,41,59,0.6);
-    border-color: rgba(124,107,255,0.15);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    background: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #334155;
   }
-  body.theme-dark .stat .v { color: #f8fafc; }
-  body.theme-dark .section-label { color: #94a3b8; }
+  body.theme-dark .stat .v { color: #f1f5f9; }
+  body.theme-dark .section-label { color: #a78bfa; }
+  body.theme-dark .section-label::after { background: #a78bfa; }
   body.theme-dark .footer { color: #64748b; border-color: rgba(124,107,255,0.1); }
   body.theme-dark .footer b { color: #a78bfa; }
   body.theme-dark .bottom-nav {
@@ -343,6 +371,7 @@
   }
   body.theme-dark .bottom-nav-item { color: #64748b; }
   body.theme-dark .bottom-nav-item.active { color: #a78bfa; }
+  body.theme-dark .bottom-nav-item.active::after { background: #a78bfa; }
 
   /* Theme: Colorful */
   body.theme-colorful {
@@ -352,7 +381,7 @@
   body.theme-colorful .stat {
     background: rgba(255,255,255,0.7);
     backdrop-filter: blur(8px);
-    border-color: rgba(255,255,255,0.5);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
   }
 
   /* Theme: Chinese */
@@ -368,13 +397,15 @@
   body.theme-chinese .head .greeting,
   body.theme-chinese .head .subtitle { color: #8b7355; }
   body.theme-chinese .stat {
-    background: #faf6f0;
-    border: 1px solid #e8ddd0;
-    box-shadow: 0 2px 8px rgba(139,115,85,0.08);
+    background: #fffbf0;
+    box-shadow: 0 1px 3px rgba(139,115,85,0.06), 0 4px 12px rgba(139,115,85,0.04);
+    border-color: #e8dcc8;
     border-radius: 12px;
   }
-  body.theme-chinese .stat .v { color: #8b4513; }
-  body.theme-chinese .section-label { color: #8b7355; letter-spacing: 0.12em; }
+  body.theme-chinese .stat .v { color: #2c1810; }
+  body.theme-chinese .stat .l { color: #8b7355; }
+  body.theme-chinese .section-label { color: #8b4513; letter-spacing: 0.12em; }
+  body.theme-chinese .section-label::after { background: #8b4513; }
   body.theme-chinese .app-card {
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.06);
@@ -409,14 +440,18 @@
     .app { padding: 44px 24px 100px; }
     .stats { gap: 14px; }
     .stat { padding: 20px 14px; }
-    .stat .v { font-size: 26px; }
+    .stat .v { font-size: 32px; }
     .apps { gap: 14px; }
     .app-card { padding: 22px 20px; border-radius: 20px; }
-    .app-card .icon { width: 54px; height: 54px; font-size: 28px; }
+    .app-card .icon { width: 52px; height: 52px; font-size: 24px; }
     .app-card .body h3 { font-size: 17px; }
     .app-card .body p { -webkit-line-clamp: 2; }
   }
 </style>
+<script>
+// 禁用浏览器默认滚动恢复，由自己控制
+try { history.scrollRestoration = 'manual'; } catch(e) {}
+</script>
 </head>
 <body>
 <div class="app">
@@ -436,7 +471,7 @@
   <div class="stats" id="stats">
     <div class="stat"><div class="v" id="s1">—</div><div class="l">专注次数</div></div>
     <div class="stat"><div class="v" id="s2">—</div><div class="l">闪卡记忆</div></div>
-    <div class="stat"><div class="v" id="s3">—</div><div class="l">待考倒计时</div></div>
+    <div class="stat"><div class="v" id="s3">—</div><div class="l">使用天数</div></div>
   </div>
 
   <!-- AI 助手入口 -->
@@ -524,15 +559,6 @@
       <div class="body">
         <h3>Recalleum 闪卡记忆</h3>
         <p>雅思 100 词 + 小学 1-6 年级 · 3 键就够用</p>
-      </div>
-      <div class="arrow">›</div>
-    </a>
-    <a class="app-card" data-href="vocab-builder/vocab-builder.html" style="--bar:#6c8ee8;--icon-bg:#eef2fc;">
-      <div class="accent-bar"></div>
-      <div class="icon">📝</div>
-      <div class="body">
-        <h3>VocabBuilder 英语单词本</h3>
-        <p>中高考四六级词库 · 浏览测验拼写三模式</p>
       </div>
       <div class="arrow">›</div>
     </a>
@@ -691,21 +717,8 @@
 </div>
 
 <script>
-  // 记录全局使用天数（供闪卡等工具读取）
-  (function() {
-    var UK = 'studybuddy_usage';
-    try {
-      var u = JSON.parse(localStorage.getItem(UK) || '{}');
-      var today = new Date().toISOString().slice(0, 10);
-      if (!u.firstDay) u.firstDay = today;
-      if (!u.days) u.days = {};
-      u.days[today] = true;
-      u.totalDays = Object.keys(u.days).length;
-      localStorage.setItem(UK, JSON.stringify(u));
-    } catch (e) {}
-  })();
-
   // 读取 3 个 app 的数据统计(显示在主页)
+  // 注：使用统计由 _shared/js/utils.js 的 SBUtils.trackUsage() 自动执行
   function readStat(key, field, def) {
     try {
       var s = JSON.parse(localStorage.getItem(key) || '{}');
@@ -718,38 +731,23 @@
     var sessions = (pf.sessionCount) || 0;
     document.getElementById('s1').textContent = sessions;
   } catch (e) { console.error('s1 error', e); }
-  // 闪卡:已学卡片数
+  // 闪卡:今日已学单词数
   try {
+    var todayKey = new Date().toISOString().slice(0, 10);
     var rv = JSON.parse(localStorage.getItem('recalleum_v3') || '{}');
-    var learnedCards = 0;
-    if (rv && rv.decks) {
-      rv.decks.forEach(function(dk) {
-        if (dk.cards) {
-          dk.cards.forEach(function(c) {
-            if (c.rep > 0 || c.interval > 0) learnedCards++;
-          });
-        }
-      });
-    }
-    document.getElementById('s2').textContent = learnedCards;
+    var todayCount = (rv && rv.dailyLog && rv.dailyLog[todayKey]) || 0;
+    // 加上词库学习的今日数量
+    try {
+      var vd = JSON.parse(localStorage.getItem('vb_daily_goal') || '{}');
+      if (vd && vd.date === todayKey) todayCount += (vd.count || 0);
+    } catch(e2) {}
+    document.getElementById('s2').textContent = todayCount;
   } catch (e) { console.error('s2 error', e); }
-  // 倒计时:最近一场考试天数
+  // 使用天数
   try {
-    var pp = JSON.parse(localStorage.getItem('pinpoint_v3') || '{}');
-    var exams = pp.exams || [];
-    if (exams.length) {
-      var nearest = exams.filter(function (e) { return e.date > Date.now(); })
-                          .sort(function (a, b) { return a.date - b.date; })[0];
-      if (nearest) {
-        var days = Math.max(0, Math.ceil((nearest.date - Date.now()) / 86400000));
-        document.getElementById('s3').textContent = days + ' 天';
-      } else {
-        document.getElementById('s3').textContent = '已考完';
-      }
-    } else {
-      document.getElementById('s3').textContent = '未添加';
-    }
-  } catch (e) { console.error('s3 error', e); }
+    var u = JSON.parse(localStorage.getItem('studybuddy_usage') || '{}');
+    document.getElementById('s3').textContent = (u.totalDays || 1) + ' 天';
+  } catch (e) { document.getElementById('s3').textContent = '1 天'; }
   // 打卡:今日已打卡 （已移除：仅保留数据读取，首页无s4卡片）
   try {
     var sh = JSON.parse(localStorage.getItem('streakly-habits') || '[]');
@@ -873,13 +871,10 @@
   try{var tt=sj('taskflow_'+today,[]);if(Array.isArray(tt)){todo.todayTotal=tt.length;tt.forEach(function(t){if(t.completed||t.done)todo.todayDone++;});tt.filter(function(t){return t.completed||t.done;}).slice(-3).forEach(function(t){acts.push({icon:'✅',bg:'rgba(44,182,125,0.12)',title:'完成待办: '+(t.text||t.title||'任务'),meta:t.category||t.tag||'',time:today});});}for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('taskflow_')===0){var it=sj(k,[]);if(Array.isArray(it)){todo.allTotal+=it.length;it.forEach(function(t){if(t.completed||t.done)todo.allDone++;});}}} }catch(e){console.error('dash todo',e);}
   // 闪卡
   var flash={totalCards:0,learnedCards:0,streak:0,todayDone:0,todayGoal:0};
-  try{var rv=sj('recalleum_v3',null);if(rv&&rv.decks){rv.decks.forEach(function(dk){if(dk.cards){flash.totalCards+=dk.cards.length;dk.cards.forEach(function(c){if(c.rep>0||c.interval>0)flash.learnedCards++;});}});flash.streak=rv.streak||0;flash.todayGoal=rv.goalTarget||0;flash.todayDone=rv.goalDone||0;}}catch(e){console.error('dash flash',e);}
+  try{var rv=sj('recalleum_v3',null);if(rv&&rv.decks){rv.decks.forEach(function(dk){if(dk.cards){flash.totalCards+=dk.cards.length;dk.cards.forEach(function(c){if(c.rep>0||c.interval>0)flash.learnedCards++;});}});flash.streak=rv.streak||0;flash.todayGoal=rv.goalTarget||0;var tk=new Date().toISOString().slice(0,10);flash.todayDone=(rv.dailyLog&&rv.dailyLog[tk])||0;try{var vd=sj('vb_daily_goal',{});if(vd&&vd.date===tk)flash.todayDone+=(vd.count||0);}catch(e2){}}catch(e){console.error('dash flash',e);}
   // 考试倒计时
   var exam={exams:[],mocks:[]};
   try{var ep=sj('pinpoint_v3',{});if(Array.isArray(ep.exams)){exam.exams=ep.exams.slice(0,5).map(function(e){var rm=0;if(e.date){var todayUTC=new Date(Date.UTC(today.split('-')[0], today.split('-')[1]-1, today.split('-')[2]));var df=new Date(e.date).getTime()-todayUTC.getTime();rm=Math.ceil(df/86400000);}return{name:e.name||e.exam||'考试',days:rm};});exam.exams.forEach(function(e){if(e.days>=0)acts.push({icon:'🎓',bg:'rgba(228,88,88,0.12)',title:(e.days===0?'今天考试':e.days+'天后: '+e.name),meta:'倒计时',time:today});});}if(Array.isArray(ep.mocks)){exam.mocks=ep.mocks.slice(-3).map(function(m){return{name:m.exam||m.name||'模考',score:m.score||0};});}}catch(e){console.error('dash exam',e);}
-  // 单词本
-  var vocab={streak:0,libs:[]};
-  try{vocab.streak=Number(sj('vb_streak',0))||0;var lm={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k)continue;var m;if((m=k.match(/^vb_learned_(.+)$/))){lm[m[1]]=lm[m[1]]||{};var learnedArr=sj(k,[]);lm[m[1]].learned=Array.isArray(learnedArr)?learnedArr.length:0;}if((m=k.match(/^vb_total_(.+)$/))){lm[m[1]]=lm[m[1]]||{};lm[m[1]].total=Number(sj(k,0))||0;}}Object.keys(lm).forEach(function(lib){vocab.libs.push({name:lib,learned:lm[lib].learned||0,total:lm[lib].total||0});});}catch(e){console.error('dash vocab',e);}
   // 数学训练
   var math={total:0,correct:0};
   try{var ms=sj('mathPractice_state',{});if(ms.stats){math.total=Number(ms.stats.totalQuestions)||0;math.correct=Number(ms.stats.correctCount)||0;}}catch(e){console.error('dash math',e);}
@@ -908,9 +903,7 @@
   if(habit.todayTotal>0)rtc('习惯打卡','🔥','rgba(127,90,240,0.12)',ss(habit.todayDone+'/'+habit.todayTotal,'今日打卡','#7f5af0')+ss(habit.longestStreak,'最长连续(天)','#7f5af0'));
   if(todo.allTotal>0){var ar=todo.allTotal>0?Math.round((todo.allDone/todo.allTotal)*100):0;rtc('待办清单','✅','rgba(44,182,125,0.12)',ss(todo.todayDone+'/'+todo.todayTotal,'今日完成','#2cb67d')+ss(ar+'%','总完成率','#2cb67d'));}
   if(exam.exams.length>0){var nr=exam.exams.reduce(function(a,b){return a.days<b.days?a:b;});rtc('考试倒计时','🎓','rgba(228,88,88,0.12)',ss(nr.days,'最近考试(天)','#e45858')+ss(exam.exams.length,'考试数量','#e45858'));}
-  if(flash.totalCards>0||flash.streak>0)rtc('闪卡记忆','📚','rgba(59,130,246,0.12)',ss(flash.learnedCards+'/'+flash.totalCards,'已学/总卡片','#3b82f6')+ss(flash.streak,'连续天数','#3b82f6'));
-  var totalLearned=0;vocab.libs.forEach(function(l){totalLearned+=l.learned;});
-  if(vocab.streak>0||vocab.libs.length>0)rtc('英语单词本','🇬🇧','rgba(6,182,212,0.12)',ss(totalLearned,'已学单词','#06b6d4')+ss(vocab.libs.length,'词库数量','#06b6d4'));
+  if(flash.totalCards>0||flash.streak>0)rtc('闪卡记忆','📚','rgba(59,130,246,0.12)',ss(flash.todayDone+'/'+flash.todayGoal,'今日/目标','#3b82f6')+ss(flash.learnedCards,'累计已学','#3b82f6'));
   if(math.total>0)rtc('数学训练','📐','rgba(236,72,153,0.12)',ss(math.correct+'/'+math.total,'正确/总题数','#ec4899'));
   if(!hasAny)tg.innerHTML='<div class="dash-empty">暂无数据，去使用对应工具吧</div>';
   // 最近活动
@@ -922,9 +915,9 @@
   // 计算各维度分数
   var todoScore=todo.allTotal>0?Math.round((todo.allDone/todo.allTotal)*100):0;
   var mathScore=math.total>0?Math.round((math.correct/math.total)*100):0;
-  var flashScore=flash.totalCards>0?Math.round((flash.learnedCards/flash.totalCards)*100):0;
+  var flashScore=flash.todayGoal>0?Math.min(100,Math.round((flash.todayDone/flash.todayGoal)*100)):0;
   var habitScore=habit.todayTotal>0?Math.round((habit.todayDone/habit.todayTotal)*100):0;
-  var totalUsed=0;if(pomo.sessionCount>0)totalUsed++;if(habit.todayTotal>0)totalUsed++;if(todo.allTotal>0)totalUsed++;if(math.total>0)totalUsed++;if(flash.totalCards>0)totalUsed++;if(vocab.streak>0)totalUsed++;if(exam.exams.length>0)totalUsed++;
+  var totalUsed=0;if(pomo.sessionCount>0)totalUsed++;if(habit.todayTotal>0)totalUsed++;if(todo.allTotal>0)totalUsed++;if(math.total>0)totalUsed++;if(flash.totalCards>0)totalUsed++;if(exam.exams.length>0)totalUsed++;
 
   // 紧急提醒
   if(exam.exams.length>0){var nr=exam.exams[0];for(var ei=1;ei<exam.exams.length;ei++){if(exam.exams[ei].days>=0&&exam.exams[ei].days<nr.days)nr=exam.exams[ei];}if(nr.days>=0&&nr.days<=7){suggestions.push({text:'📅 '+(nr.days===0?'今天是「'+nr.name+'」考试日！':'距「'+nr.name+'」还有 '+nr.days+' 天，建议每天用英语闪卡背单词'),link:'exam-countdown/exam-countdown.html'});}}
@@ -938,8 +931,6 @@
   else if(habit.todayTotal>0&&habitScore>=50){suggestions.push({text:'🔥 习惯打卡完成 '+habitScore+'%，还剩 '+(habit.todayTotal-habit.todayDone)+' 项，坚持住',link:'habit-tracker/habit-tracker.html'});}
   if(flash.todayGoal>0&&flash.todayDone===0){suggestions.push({text:'📚 英语闪卡今日目标 '+flash.todayGoal+' 张还没开始，趁记忆新鲜赶紧复习',link:'flashcard-srs/flashcard-srs.html'});}
   else if(flash.todayGoal>0&&flash.todayDone<flash.todayGoal){suggestions.push({text:'📚 英语闪卡已完成 '+flash.todayDone+'/'+flash.todayGoal+'，再坚持 '+Math.min(5,flash.todayGoal-flash.todayDone)+' 张完成目标',link:'flashcard-srs/flashcard-srs.html'});}
-  if(vocab.streak>=7){suggestions.push({text:'📖 单词学习连续 '+vocab.streak+' 天，对比上周多了 '+(vocab.streak-7)+' 天，坚持就是胜利',link:'vocab-builder/vocab-builder.html'});}
-  else if(vocab.streak>=3){suggestions.push({text:'📖 单词学习连续 '+vocab.streak+' 天，再坚持 4 天就一周了！',link:'vocab-builder/vocab-builder.html'});}
 
 
   // 新手引导
@@ -963,10 +954,25 @@
   var achEl=document.getElementById('dashAchieve');
   badges.forEach(function(b){var it=document.createElement('div');it.className='dash-achieve-item'+(b.ok?'':' locked');it.innerHTML='<span class="dash-ach-icon">'+b.e+'</span><div class="dash-ach-name">'+b.n+'</div><div class="dash-ach-desc">'+b.d+'</div>';achEl.appendChild(it);});
 })();
-// 页面返回时自动刷新数据
-window.addEventListener('pageshow', function(e) {
-  if (e.persisted) { location.reload(); }
-});
+// 保存/恢复滚动位置
+(function() {
+  // 点击任何链接跳转前保存滚动位置
+  document.addEventListener('click', function(e) {
+    var a = e.target.closest('a');
+    if (a && a.href) {
+      try { sessionStorage.setItem('sb_scroll', String(window.scrollY)); } catch(e) {}
+    }
+  }, true);
+  // pagehide 兜底
+  window.addEventListener('pagehide', function() {
+    try { sessionStorage.setItem('sb_scroll', String(window.scrollY)); } catch(e) {}
+  });
+  // DOM 渲染完后恢复滚动位置（无隐藏，直接跳）
+  try {
+    var s = parseInt(sessionStorage.getItem('sb_scroll') || '0');
+    if (s > 0) window.scrollTo(0, s);
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>

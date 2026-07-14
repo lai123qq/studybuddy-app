@@ -7,33 +7,51 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
-  
+    background: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column;
+    max-width: 480px; margin: 0 auto; }
+
   .header { display: flex; align-items: center; padding: 12px 16px; background: #fff;
     border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
-  .back-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: #f1f5f9;
-    font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .back-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #64748b; text-decoration: none; width: 36px; height: 36px; padding: 0;
+    border-radius: 10px; background: transparent; cursor: pointer; font-family: inherit;
+    transition: background 0.2s; border: none; flex-shrink: 0;
+  }
+  .back-btn:hover { background: rgba(100,116,139,0.08); }
+  .back-btn:active { opacity: 0.6; }
+  .back-btn svg { width: 20px; height: 20px; }
   .header-title { flex: 1; text-align: center; font-size: 16px; font-weight: 700; }
   .header-title span { color: #6366f1; }
-  
-  .system-prompt { background: linear-gradient(135deg, #eef2ff, #e0e7ff); border: 1px solid #c7d2fe;
-    border-radius: 12px; margin: 12px 16px; padding: 14px 16px; }
+  .clear-chat {
+    width: 36px; height: 36px; border-radius: 10px; border: none; background: transparent;
+    color: #94a3b8; font-size: 13px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: background 0.2s;
+  }
+  .clear-chat:hover { background: rgba(239,68,68,0.08); color: #ef4444; }
+
+  .system-prompt { background: linear-gradient(135deg, #f5f3ff, #eef2ff); border: 1px solid #ddd6fe;
+    border-radius: 16px; margin: 12px 16px; padding: 14px 16px; position: relative; padding-left: 19px; }
+  .system-prompt::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; border-radius: 2px; background: linear-gradient(to bottom, #6366f1, #8b5cf6); }
   .system-prompt-tag { display: inline-block; background: #6366f1; color: #fff; font-size: 11px;
     padding: 2px 8px; border-radius: 6px; font-weight: 600; margin-bottom: 8px; }
   .system-prompt-text { font-size: 12px; color: #4338ca; line-height: 1.7; }
   .system-prompt-text b { color: #312e81; }
-  
+
   .quick-actions { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
   .quick-actions::-webkit-scrollbar { display: none; }
   .quick-btn { flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: 1px solid #e2e8f0;
     background: #fff; font-size: 13px; color: #475569; cursor: pointer; white-space: nowrap;
     transition: all 0.2s; }
-  .quick-btn:hover, .quick-btn:active { background: #6366f1; color: #fff; border-color: #6366f1; }
-  
+  .quick-btn:hover { background: #6366f1; color: #fff; border-color: #6366f1; transform: scale(1.02); }
+  .quick-btn:active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    border-color: #6366f1; transform: scale(0.95); }
+
   .chat-area { flex: 1; overflow-y: auto; padding: 8px 16px 16px; }
   .chat-area::-webkit-scrollbar { width: 4px; }
   .chat-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
-  
+
   .msg { display: flex; gap: 10px; margin-bottom: 16px; animation: fadeIn 0.3s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .msg.user { flex-direction: row-reverse; }
@@ -41,70 +59,99 @@
     justify-content: center; font-size: 16px; flex-shrink: 0; }
   .msg.assistant .msg-avatar { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
   .msg.user .msg-avatar { background: #f1f5f9; color: #64748b; }
-  .msg-bubble { max-width: 80%; padding: 12px 16px; border-radius: 16px; font-size: 14px;
+  .msg-bubble { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px;
     line-height: 1.7; word-break: break-word; }
-  .msg.assistant .msg-bubble { background: #fff; border: 1px solid #e2e8f0; border-top-left-radius: 4px; }
-  .msg.user .msg-bubble { background: #6366f1; color: #fff; border-top-right-radius: 4px; }
+  .msg.assistant .msg-bubble { background: #fff; border: 1px solid #e2e8f0; border-top-left-radius: 4px;
+    position: relative; padding-left: 17px; }
+  .msg.assistant .msg-bubble::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 2px; background: linear-gradient(to bottom, #6366f1, #8b5cf6); }
+  .msg.user .msg-bubble { background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; border-top-right-radius: 4px; }
   .msg-bubble code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
   .msg-bubble .tool-link { display: inline-block; background: #eef2ff; color: #4f46e5; padding: 6px 12px;
     border-radius: 8px; margin-top: 8px; font-size: 13px; text-decoration: none; font-weight: 500; }
   .msg-bubble .tool-link:hover { background: #e0e7ff; }
-  
+  .typing-indicator { display: flex; gap: 4px; padding: 16px; }
+  .typing-indicator span { width: 8px; height: 8px; background: #cbd5e1; border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out both; }
+  .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+  .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+  @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
   .input-area { padding: 12px 16px 24px; background: #fff; border-top: 1px solid #e2e8f0; }
   .input-row { display: flex; gap: 10px; align-items: flex-end; }
   .input-box { flex: 1; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 14px;
     font-size: 15px; resize: none; outline: none; max-height: 120px; line-height: 1.5;
     font-family: inherit; transition: border-color 0.2s; }
-  .input-box:focus { border-color: #6366f1; }
+  .input-box:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
   .send-btn { width: 44px; height: 44px; border-radius: 12px; border: none;
-    background: #6366f1; color: #fff; font-size: 18px; cursor: pointer;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 18px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    transition: background 0.2s; }
-  .send-btn:active { background: #4f46e5; }
-  .send-btn:disabled { background: #c7d2fe; cursor: not-allowed; }
-  
-  body.dark { background: #0f172a; color: #e2e8f0; }
-  body.dark .header { background: #1e293b; border-color: #334155; }
-  body.dark .back-btn { background: #334155; color: #e2e8f0; }
-  body.dark .system-prompt { background: linear-gradient(135deg, #1e1b4b, #312e81); border-color: #4338ca; }
-  body.dark .system-prompt-tag { background: #4f46e5; }
-  body.dark .system-prompt-text { color: #c7d2fe; }
-  body.dark .system-prompt-text b { color: #e0e7ff; }
-  body.dark .quick-btn { background: #1e293b; border-color: #334155; color: #94a3b8; }
-  body.dark .quick-btn:hover, body.dark .quick-btn:active { background: #6366f1; color: #fff; }
-  body.dark .msg.assistant .msg-bubble { background: #1e293b; border-color: #334155; }
-  body.dark .msg.user .msg-bubble { background: #6366f1; }
-  body.dark .msg.user .msg-avatar { background: #334155; color: #94a3b8; }
-  body.dark .input-area { background: #1e293b; border-color: #334155; }
-  body.dark .input-box { background: #0f172a; border-color: #334155; color: #e2e8f0; }
-  body.dark .input-box:focus { border-color: #6366f1; }
-  body.dark .msg-bubble code { background: rgba(255,255,255,0.08); }
-  body.dark .msg-bubble .tool-link { background: #312e81; color: #a5b4fc; }
+    transition: background 0.2s, transform 0.2s; }
+  .send-btn:hover { transform: scale(1.05); }
+  .send-btn:active { transform: scale(0.95); background: #4f46e5; }
+  .send-btn:disabled { background: linear-gradient(135deg, #c7d2fe, #a5b4fc); cursor: not-allowed; transform: none; }
+
+  body.theme-dark { background: #0f172a; color: #e2e8f0; }
+  html.theme-dark { background: #0f172a; }
+  body.theme-dark .header { background: #1e293b; border-color: #334155; }
+  body.theme-dark .system-prompt { background: linear-gradient(135deg, #1e1b4b, #312e81); border-color: #4338ca; }
+  body.theme-dark .system-prompt-tag { background: #4f46e5; }
+  body.theme-dark .system-prompt-text { color: #c7d2fe; }
+  body.theme-dark .system-prompt-text b { color: #e0e7ff; }
+  body.theme-dark .quick-btn { background: #1e293b; border-color: #334155; color: #94a3b8; }
+  body.theme-dark .quick-btn:hover { background: #6366f1; color: #fff; border-color: #6366f1; }
+  body.theme-dark .msg.assistant .msg-bubble { background: #1e293b; border-color: #334155; }
+  body.theme-dark .msg.user .msg-bubble { background: linear-gradient(135deg, #6366f1, #818cf8); }
+  body.theme-dark .msg.user .msg-avatar { background: #334155; color: #94a3b8; }
+  body.theme-dark .input-area { background: #1e293b; border-color: #334155; }
+  body.theme-dark .input-box { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+  body.theme-dark .input-box:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+  body.theme-dark .msg-bubble code { background: rgba(255,255,255,0.08); }
+  body.theme-dark .msg-bubble .tool-link { background: #312e81; color: #a5b4fc; }
+
+  body.theme-chinese { background: #f5f0e8; color: #3d3d3d; }
+  body.theme-chinese .header { background: #fffbf0; border-color: #e8dcc8; }
+  body.theme-chinese .system-prompt { background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #d97706; }
+  body.theme-chinese .system-prompt::before { background: linear-gradient(to bottom, #d97706, #f59e0b); }
+  body.theme-chinese .system-prompt-tag { background: #d97706; }
+  body.theme-chinese .system-prompt-text { color: #92400e; }
+  body.theme-chinese .system-prompt-text b { color: #78350f; }
+  body.theme-chinese .msg.assistant .msg-bubble { background: #fffbf0; border-color: #e8dcc8; }
+  body.theme-chinese .msg.assistant .msg-bubble::before { background: linear-gradient(to bottom, #d97706, #f59e0b); }
+  body.theme-chinese .input-area { background: #fffbf0; border-color: #e8dcc8; }
+  body.theme-chinese .input-box { background: #fff; border-color: #e8dcc8; color: #3d3d3d; }
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%); color: #1e293b; }
+  body.theme-colorful .header { background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); }
+  body.theme-colorful .msg.assistant .msg-bubble { background: rgba(255,255,255,0.8); }
+  body.theme-colorful .input-area { background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); }
 </style>
 </head>
 <body>
 <div class="header">
-  <button class="back-btn" onclick="history.back()">←</button>
+  <a class="back-btn" href="index-v2.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </a>
   <div class="header-title"><span>AI</span> 学习助手</div>
-  <div style="width:36px"></div>
+  <button class="clear-chat" onclick="clearHistory()" title="清空对话">🗑</button>
 </div>
 
 <div class="system-prompt">
   <div class="system-prompt-tag">System Prompt</div>
   <div class="system-prompt-text">
-    你是全科学习助手，依托内置工具库为用户答疑，严格遵循内置功能边界：<br>
-    <b>1. 时间规划类</b>：调用课程表、番茄钟、习惯打卡、考试倒计时，协助规划学习日程<br>
-    <b>2. 英语背诵</b>：使用闪卡记忆模式，生成单词卡、自测、复盘单词<br>
-    <b>3. 数学需求</b>：提供对应难度计算题训练，自动批改、整理错题<br>
-    <b>4. 知识点查询</b>：优先调取内置地理、物理、化学、历史标准化知识点<br>
-    <b>5. 语文需求</b>：调取古诗原文、注释、译文、赏析，提供写作素材、文言知识点<br>
-    所有输出贴合中小学学习场景，讲解通俗易懂，不超纲，同步联动工具内置功能辅助学习。
+    我是全科学习助手，依托内置工具库为你答疑：<br>
+    <b>1. 时间规划</b>：课程表、番茄钟、习惯打卡、考试倒计时<br>
+    <b>2. 英语背诵</b>：闪卡记忆，SM-2算法安排复习<br>
+    <b>3. 数学训练</b>：60+题型自动出题、批改、错题本<br>
+    <b>4. 知识点</b>：地理、物理、化学、历史、古诗、作文素材<br>
+    所有输出贴合中小学场景，讲解通俗易懂，不超纲。
   </div>
 </div>
 
 <div class="quick-actions" id="quickActions">
   <button class="quick-btn" data-q="帮我安排今天的学习">📅 规划日程</button>
-  <button class="quick-btn" data-q="给我出5道初一数学计算题">📐 数学训练</button>
+  <button class="quick-btn" data-q="数学训练">📐 数学训练</button>
   <button class="quick-btn" data-q="帮我背诵英语单词">📝 英语闪卡</button>
   <button class="quick-btn" data-q="查询中国地理知识">🌍 地理知识</button>
   <button class="quick-btn" data-q="背诵静夜思的原文和赏析">📖 古诗赏析</button>
@@ -113,12 +160,7 @@
   <button class="quick-btn" data-q="给我一些作文素材">✍️ 写作素材</button>
 </div>
 
-<div class="chat-area" id="chatArea">
-  <div class="msg assistant">
-    <div class="msg-avatar">🤖</div>
-    <div class="msg-bubble">你好！我是 StudyBuddy AI 学习助手，可以帮你规划学习日程、背单词、练数学、查知识点。请问有什么可以帮你的？</div>
-  </div>
-</div>
+<div class="chat-area" id="chatArea"></div>
 
 <div class="input-area">
   <div class="input-row">
@@ -132,107 +174,168 @@
   var chatArea = document.getElementById('chatArea');
   var inputBox = document.getElementById('inputBox');
   var sendBtn = document.getElementById('sendBtn');
+  var HISTORY_KEY = 'ai_chat_history';
 
+  // ========== 工具路由 ==========
   var toolRoutes = {
-    '日程': { tool: '课程表', link: 'class-schedule/class-schedule.html', tip: '可以帮你查看和编辑每周课程安排' },
-    '番茄': { tool: '番茄钟', link: 'pomodoro-station-v5/pomodoro-station.html', tip: '25分钟专注+5分钟休息，高效学习好帮手' },
-    '打卡': { tool: '习惯打卡', link: 'habit-tracker/habit-tracker.html', tip: '每天打卡记录，养成好习惯' },
-    '倒计时': { tool: '考试倒计时', link: 'countdown/countdown.html', tip: '设置考试日期，查看冲刺计划和模考走势' },
-    '单词': { tool: '闪卡记忆', link: 'flashcard-srs/flashcard-srs.html', tip: '选择词库，用间隔重复法高效背单词' },
-    '闪卡': { tool: '闪卡记忆', link: 'flashcard-srs/flashcard-srs.html', tip: 'SM-2算法自动安排复习时间' },
-    '计算题': { tool: '数学训练', link: 'math-practice/math-practice.html', tip: '从小学到高中，60+种题型自动出题批改' },
-    '数学': { tool: '数学训练', link: 'math-practice/math-practice.html', tip: '选择年级和难度，自动出题+批改+错题本' },
-    '错题': { tool: '错题本', link: 'math-practice/math-practice.html', tip: '查看错题记录，针对性复习' },
-    '地理': { tool: '地理知识库', link: 'geo-hub/geo-hub.html', tip: '中国地理、世界地理、气候洋流一网打尽' },
-    '物理': { tool: '物理公式', link: 'science-hub/science-hub.html', tip: '力学、电学、光学等公式速查' },
-    '化学': { tool: '化学元素', link: 'science-hub/science-hub.html', tip: '元素周期表、化学反应、化学式查询' },
-    '历史': { tool: '历史时间线', link: 'science-hub/science-hub.html', tip: '从古代到近代的重要历史事件' },
-    '古诗': { tool: '文言文助手', link: 'classical-chinese/classical-chinese.html', tip: '小学到高中古诗文，含原文、注释、译文、赏析' },
-    '文言': { tool: '文言文助手', link: 'classical-chinese/classical-chinese.html', tip: '原文+注释+译文+赏析，全面理解文言文' },
-    '作文': { tool: '写作素材', link: 'essay-materials/essay-materials.html', tip: '90篇精选素材，按主题分类，一键复制' },
-    '素材': { tool: '写作素材', link: 'essay-materials/essay-materials.html', tip: '名言好句、人物素材、时事热点' },
-    '待办': { tool: '待办清单', link: 'todo-list/todo-list.html', tip: '列出今天要做的事，完成一项勾掉一项' },
-    '单位': { tool: '单位换算', link: 'unit-converter/unit-converter.html', tip: '13大类单位实时换算，支持长度面积体积温度等' },
+    '日程': { tool: '课程表', link: 'class-schedule/class-schedule.html', tip: '查看和编辑每周课程安排' },
+    '课程': { tool: '课程表', link: 'class-schedule/class-schedule.html', tip: '管理你的课程时间表' },
+    '番茄': { tool: '番茄钟', link: 'pomodoro-station-v5/pomodoro-station.html', tip: '25分钟专注+5分钟休息' },
+    '专注': { tool: '番茄钟', link: 'pomodoro-station-v5/pomodoro-station.html', tip: '开启高效专注模式' },
+    '打卡': { tool: '习惯打卡', link: 'habit-tracker/habit-tracker.html', tip: '每天打卡养成好习惯' },
+    '习惯': { tool: '习惯打卡', link: 'habit-tracker/habit-tracker.html', tip: '追踪你的每日习惯' },
+    '倒计时': { tool: '考试倒计时', link: 'countdown/countdown.html', tip: '设置考试日期冲刺计划' },
+    '考试': { tool: '考试倒计时', link: 'countdown/countdown.html', tip: '查看倒计时和复习计划' },
+    '单词': { tool: '闪卡记忆', link: 'flashcard-srs/flashcard-srs.html', tip: '间隔重复法高效背单词' },
+    '闪卡': { tool: '闪卡记忆', link: 'flashcard-srs/flashcard-srs.html', tip: 'SM-2算法智能安排复习' },
+    '背诵': { tool: '闪卡记忆', link: 'flashcard-srs/flashcard-srs.html', tip: '用闪卡科学记忆知识点' },
+    '计算题': { tool: '数学训练', link: 'math-practice/math-practice.html', tip: '60+种题型自动出题批改' },
+    '数学': { tool: '数学训练', link: 'math-practice/math-practice.html', tip: '选择年级难度自动练习' },
+    '做题': { tool: '数学训练', link: 'math-practice/math-practice.html', tip: '从题库中生成练习题' },
+    '错题': { tool: '数学训练', link: 'math-practice/math-practice.html', tip: '查看错题针对性复习' },
+    '地理': { tool: '地理知识库', link: 'geo-hub/geo-hub.html', tip: '中国地理、世界地理速查' },
+    '物理': { tool: '物理公式', link: 'science-hub/science-hub.html', tip: '力学、电学、光学公式' },
+    '化学': { tool: '化学元素', link: 'science-hub/science-hub.html', tip: '元素周期表、化学反应' },
+    '历史': { tool: '历史时间线', link: 'science-hub/science-hub.html', tip: '重要历史事件速查' },
+    '古诗': { tool: '文言文助手', link: 'classical-chinese/classical-chinese.html', tip: '原文+注释+译文+赏析' },
+    '文言': { tool: '文言文助手', link: 'classical-chinese/classical-chinese.html', tip: '全面理解文言文内容' },
+    '诗词': { tool: '文言文助手', link: 'classical-chinese/classical-chinese.html', tip: '古诗词学习助手' },
+    '作文': { tool: '写作素材', link: 'essay-materials/essay-materials.html', tip: '90篇精选素材分类' },
+    '素材': { tool: '写作素材', link: 'essay-materials/essay-materials.html', tip: '名言好句人物素材' },
+    '写作': { tool: '写作素材', link: 'essay-materials/essay-materials.html', tip: '丰富你的作文内容' },
+    '待办': { tool: '待办清单', link: 'todo-list/todo-list.html', tip: '列出今日任务清单' },
+    '任务': { tool: '待办清单', link: 'todo-list/todo-list.html', tip: '管理学习任务' },
+    '单位': { tool: '单位换算', link: 'unit-converter/unit-converter.html', tip: '13大类单位实时换算' },
+    '换算': { tool: '单位换算', link: 'unit-converter/unit-converter.html', tip: '快速单位转换工具' },
   };
 
-  var knowledgeBase = {
-    '静夜思': { title: '静夜思', author: '李白', dynasty: '唐',
-      text: '床前明月光，疑是地上霜。\n举头望明月，低头思故乡。',
-      annotation: '床：井栏，一说指窗。疑：好像。举头：抬头。',
-      translation: '明亮的月光洒在井栏上，好像地上泛起了一层白霜。我抬起头来，看那天窗外空中的明月，不由得低头沉思，想起远方的家乡。',
-      analysis: '这首诗写的是在寂静的月夜思念家乡的感受。诗的前两句写诗人在作客他乡的特定环境中一刹那间所产生的错觉。后两句通过动作神态的刻画，深化思乡之情。全诗运用比喻、衬托等手法，明白如话，却意味深长，真切地表达了作客异乡的思乡之情。' },
-    '牛顿': { title: '牛顿运动定律', category: '物理',
-      content: '第一定律（惯性定律）：物体不受力或合外力为零时，保持静止或匀速直线运动状态。\n\n第二定律：F=ma，物体的加速度与所受合外力成正比，与质量成反比。\n\n第三定律：作用力与反作用力大小相等、方向相反、作用在不同物体上。',
-      tip: '考试常考：惯性现象解释、F=ma计算、作用力反作用力辨析' },
-    '元素周期表': { title: '化学元素周期表', category: '化学',
-      content: '元素周期表按原子序数排列，共7个周期、18个族。\n\n前20号元素：H氢 He氦 Li锂 Be铍 B硼 C碳 N氮 O氧 F氟 Ne氖 Na钠 Mg镁 Al铝 Si硅 P磷 S硫 Cl氯 Ar氩 K钾 Ca钙。\n\n记忆口诀：氢氦锂铍硼，碳氮氧氟氖。钠镁铝硅磷，硫氯氩钾钙。',
-      tip: '重点掌握：前20号元素符号、原子结构、金属性/非金属性递变规律' }
-  };
+  // ========== 知识库 ==========
+  // 无内置知识库，仅提供工具导航服务
 
-  function matchTool(question) {
-    for (var key in toolRoutes) {
-      if (question.indexOf(key) !== -1) return toolRoutes[key];
+  // ========== 意图引擎 ==========
+  function detectIntent(text) {
+    text = text.toLowerCase();
+    var intents = {
+      greeting: ['你好', 'hi', 'hello', '在吗', '在嘛', '你好啊', '嗨'],
+      schedule: ['规划', '安排', '计划', '日程', '时间表', '怎么学'],
+      toolQuery: ['打开', '进入', '使用', '去', '跳转'],
+      knowledge: ['什么是', '介绍一下', '讲解', '解释一下', '怎么理解', '什么意思'],
+      exercise: ['出题', '练习', '做题', '来几道', '给我几道题', '测试'],
+      help: ['怎么', '如何', '怎样', '为什么', '是什么'],
+      thanks: ['谢谢', '感谢', '多谢', '谢了'],
+    };
+    for (var intent in intents) {
+      for (var i = 0; i < intents[intent].length; i++) {
+        if (text.indexOf(intents[intent][i]) !== -1) return intent;
+      }
     }
-    return null;
+    return 'general';
   }
 
-  function matchKnowledge(question) {
-    for (var key in knowledgeBase) {
-      if (question.indexOf(key) !== -1) return knowledgeBase[key];
+  // ========== 模糊匹配工具 ==========
+  function matchTool(text) {
+    var best = null, bestScore = 0;
+    for (var key in toolRoutes) {
+      var score = fuzzyScore(text, key);
+      if (score > bestScore) { bestScore = score; best = toolRoutes[key]; best.matched = key; }
     }
-    return null;
+    return bestScore >= 0.6 ? best : null;
+  }
+
+  function fuzzyScore(text, keyword) {
+    text = text.toLowerCase();
+    keyword = keyword.toLowerCase();
+    if (text === keyword) return 1;
+    if (text.indexOf(keyword) !== -1) return 0.9;
+    // 编辑距离简化版：允许1个字符差异
+    if (keyword.length > 2) {
+      for (var i = 0; i < keyword.length; i++) {
+        var alt = keyword.slice(0, i) + keyword.slice(i + 1);
+        if (text.indexOf(alt) !== -1) return 0.7;
+      }
+    }
+    return 0;
+  }
+
+  // ========== 上下文系统 ==========
+  function getHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    } catch(e) { return []; }
+  }
+
+  function saveHistory(history) {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-10)));
+    } catch(e) {}
+  }
+
+  function addToHistory(role, text) {
+    var h = getHistory();
+    h.push({ role: role, text: text, time: Date.now() });
+    saveHistory(h);
+  }
+
+  window.clearHistory = function() {
+    try { localStorage.removeItem(HISTORY_KEY); } catch(e) {}
+    chatArea.innerHTML = '';
+    addWelcomeMessage();
+  };
+
+  // ========== 回复生成 ==========
+  var openers = ['没问题！', '好的！', '明白！', '收到！', '好的呀～'];
+  var transitions = ['让我来告诉你：', '这是相关内容：', '给你整理好了：', '来看看这个：'];
+  var followups = ['还有其他想问的吗？', '需要我再详细讲讲吗？', '要不要试试相关练习？', '对这个知识点还有疑问吗？'];
+
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
   }
 
   function generateResponse(question) {
+    var intent = detectIntent(question);
     var tool = matchTool(question);
-    var knowledge = matchKnowledge(question);
-
     var response = '';
 
-    if (knowledge) {
-      if (knowledge.annotation) {
-        response += '📚 **' + knowledge.title + '**（' + (knowledge.dynasty || knowledge.category) + '）\n\n';
-        response += '【原文】\n' + knowledge.text + '\n\n';
-        response += '【注释】\n' + knowledge.annotation + '\n\n';
-        response += '【译文】\n' + knowledge.translation + '\n\n';
-        response += '【赏析】\n' + knowledge.analysis;
-      } else {
-        response += '📖 **' + knowledge.title + '**\n\n' + knowledge.content;
-        if (knowledge.tip) response += '\n\n💡 ' + knowledge.tip;
-      }
-      response += '\n\n🔗 想要了解更多？打开对应工具深入学习吧！';
-    }
-
+    // 工具推荐
     if (tool) {
-      if (response) response += '\n\n';
+      response += pickRandom(openers) + '\n\n';
       response += '💡 为你推荐 **' + tool.tool + '**\n' + tool.tip;
       response += '\n\n<a class="tool-link" href="' + tool.link + '">👉 去使用</a>';
     }
 
+    // 意图回复
     if (!response) {
-      if (question.indexOf('你好') !== -1 || question.indexOf('hi') !== -1) {
-        response = '你好！我是 StudyBuddy AI 学习助手 🎓\n\n我可以帮你：\n📅 规划学习日程\n📝 背英语单词\n📐 练数学题\n🌍 查地理/物理/化学/历史知识\n📖 背古诗、找作文素材\n\n直接告诉我你的需求吧！';
-      } else if (question.indexOf('规划') !== -1 || question.indexOf('安排') !== -1) {
+      if (intent === 'greeting') {
+        var hour = new Date().getHours();
+        var greet = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+        response = greet + '！我是 StudyBuddy AI 学习助手 🎓\n\n我可以帮你：\n📅 规划学习日程和时间安排\n📝 用闪卡背单词、背知识点\n📐 数学练习和错题复习\n🌍 查询地理、物理、化学知识点\n📖 古诗词赏析和作文素材\n\n直接告诉我你想学什么，或者点击下方快捷按钮！';
+      } else if (intent === 'schedule') {
         var today = new Date();
         var weekDay = ['日','一','二','三','四','五','六'][today.getDay()];
-        response = '📅 今天的日期：' + today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日 星期' + weekDay + '\n\n';
-        response += '建议学习安排：\n\n';
-        response += '🕐 8:00-9:30 ｜ 英语单词背诵（闪卡复习）\n';
-        response += '🕐 9:40-11:10 ｜ 数学练习（计算题训练）\n';
-        response += '🕐 14:00-15:00 ｜ 番茄钟专注复习（25min×2）\n';
-        response += '🕐 15:10-16:10 ｜ 知识点查漏补缺\n';
-        response += '🕐 19:00-19:30 ｜ 习惯打卡 + 总结\n\n';
-        response += '💡 你可以打开课程表自定义，用番茄钟计时，完成后打卡记录！';
+        response = '📅 今天是 ' + today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日 星期' + weekDay + '\n\n';
+        response += '建议今日学习安排：\n\n';
+        response += '🌅 8:00-9:30 ｜ 英语单词闪卡复习\n';
+        response += '📐 9:40-11:10 ｜ 数学计算题训练\n';
+        response += '☕ 11:10-14:00 ｜ 午休+自由活动\n';
+        response += '🍅 14:00-15:30 ｜ 番茄钟专注复习（25min×3）\n';
+        response += '📚 15:40-16:40 ｜ 知识点查漏补缺\n';
+        response += '🌙 19:00-19:30 ｜ 习惯打卡 + 今日总结\n\n';
+        response += '💡 可以根据自己的实际情况调整哦！';
         response += '\n\n<a class="tool-link" href="class-schedule/class-schedule.html">打开课程表 →</a>';
         response += ' <a class="tool-link" href="pomodoro-station-v5/pomodoro-station.html">打开番茄钟 →</a>';
+      } else if (intent === 'thanks') {
+        response = '不客气！有问题随时找我 😊 祝你学习进步！';
+      } else if (intent === 'exercise') {
+        response = '好的！来练练手吧 💪\n\n你可以打开数学训练工具，里面有60+种题型，从小学到高中全覆盖，还能自动批改和记录错题本！\n\n<a class="tool-link" href="math-practice/math-practice.html">打开数学训练 →</a>';
       } else {
-        response = '这个问题我不太确定怎么回答 🤔 你可以试试更具体的学习问题，比如：\n\n📝 "帮我背单词"\n📐 "出几道数学题"\n📅 "规划今天的学习"\n📖 "背诵静夜思"\n\n或者直接告诉我你想学什么科目！';
+        response = '这个问题我暂时不太确定 🤔 你可以试试更具体的问题，比如：\n\n📖 "背诵静夜思"\n⚛️ "牛顿运动定律是什么"\n🧪 "前20号元素有哪些"\n\n或者直接点击下方快捷按钮，我会为你推荐合适的工具！';
       }
     }
 
     return response;
   }
 
+  // ========== 消息渲染 ==========
   function addMessage(text, isUser) {
     var msgDiv = document.createElement('div');
     msgDiv.className = 'msg ' + (isUser ? 'user' : 'assistant');
@@ -241,7 +344,7 @@
     avatar.textContent = isUser ? '🙋' : '🤖';
     var bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
-    bubble.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/_(.*?)_/g, '<i>$1</i>');
+    bubble.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/_(.+?)_/g, '<i>$1</i>');
     msgDiv.appendChild(avatar);
     msgDiv.appendChild(bubble);
     chatArea.appendChild(msgDiv);
@@ -249,46 +352,101 @@
     return bubble;
   }
 
+  function showTyping() {
+    var div = document.createElement('div');
+    div.className = 'msg assistant';
+    div.id = 'typingMsg';
+    div.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    return div;
+  }
+
+  function removeTyping() {
+    var t = document.getElementById('typingMsg');
+    if (t) t.remove();
+  }
+
+  function typewriter(text, bubble) {
+    var plain = text;
+    var i = 0;
+    var speed = 15;
+    bubble.innerHTML = '';
+    var timer = setInterval(function() {
+      i += 3;
+      if (i >= plain.length) {
+        bubble.innerHTML = plain.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/_(.+?)_/g, '<i>$1</i>');
+        clearInterval(timer);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      } else {
+        bubble.textContent = plain.substring(0, i) + '▌';
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+    }, speed);
+    return timer;
+  }
+
+  // ========== 发送消息 ==========
   window.sendMessage = function() {
     var text = inputBox.value.trim();
     if (!text) return;
     addMessage(text, true);
+    addToHistory('user', text);
     inputBox.value = '';
     inputBox.style.height = 'auto';
     sendBtn.disabled = true;
 
+    var typing = showTyping();
+
     setTimeout(function() {
+      removeTyping();
       var response = generateResponse(text);
-      var bubble = addMessage(response, false);
+      var bubble = addMessage('', false);
+      typewriter(response, bubble);
+      addToHistory('assistant', response);
       sendBtn.disabled = false;
 
+      // 自动跳转（推荐工具时）
       var tool = matchTool(text);
-      if (tool && !matchKnowledge(text)) {
-        var countdown = 3;
-        var notice = document.createElement('div');
-        notice.style.cssText = 'margin-top:8px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:6px;';
-        notice.innerHTML = '⏳ <span id="autoJumpText">' + countdown + ' 秒后自动跳转到 ' + tool.tool + '...</span><button style="margin-left:auto;background:#f59e0b;color:#fff;border:none;padding:2px 10px;border-radius:6px;font-size:12px;cursor:pointer;" id="cancelJump">取消</button>';
-        bubble.appendChild(notice);
+      if (tool && detectIntent(text) !== 'greeting') {
+        setTimeout(function() {
+          var countdown = 4;
+          var notice = document.createElement('div');
+          notice.style.cssText = 'margin-top:8px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:6px;';
+          var txtSpan = document.createElement('span');
+          txtSpan.textContent = countdown + ' 秒后自动跳转到 ' + tool.tool + '...';
+          var cancelBtn = document.createElement('button');
+          cancelBtn.textContent = '取消';
+          cancelBtn.style.cssText = 'margin-left:auto;background:#f59e0b;color:#fff;border:none;padding:2px 10px;border-radius:6px;font-size:12px;cursor:pointer;';
+          notice.appendChild(txtSpan);
+          notice.appendChild(cancelBtn);
+          bubble.appendChild(notice);
 
-        var jumpTimer = setInterval(function() {
-          countdown--;
-          var txt = document.getElementById('autoJumpText');
-          if (txt) txt.textContent = countdown + ' 秒后自动跳转到 ' + tool.tool + '...';
-          if (countdown <= 0) {
+          var jumpTimer = setInterval(function() {
+            countdown--;
+            txtSpan.textContent = countdown + ' 秒后自动跳转到 ' + tool.tool + '...';
+            if (countdown <= 0) {
+              clearInterval(jumpTimer);
+              window.location.href = tool.link;
+            }
+          }, 1000);
+
+          cancelBtn.addEventListener('click', function() {
             clearInterval(jumpTimer);
-            window.location.href = tool.link;
-          }
-        }, 1000);
-
-        var cancelBtn = document.getElementById('cancelJump');
-        if (cancelBtn) cancelBtn.addEventListener('click', function() {
-          clearInterval(jumpTimer);
-          notice.remove();
-        });
+            notice.remove();
+          });
+        }, response.length * 15 + 500);
       }
-    }, 500 + Math.random() * 500);
+    }, 600 + Math.random() * 400);
   };
 
+  function addWelcomeMessage() {
+    var hour = new Date().getHours();
+    var greet = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+    addMessage(greet + '！我是 StudyBuddy AI 学习助手，可以帮你规划学习、背单词、练数学、查知识点。请问有什么可以帮你的？', false);
+  }
+
+  // ========== 初始化 ==========
   var quickBtns = document.querySelectorAll('.quick-btn');
   for (var i = 0; i < quickBtns.length; i++) {
     quickBtns[i].addEventListener('click', function() {
@@ -308,11 +466,19 @@
     }
   });
 
-  if (localStorage.getItem('studybuddy-theme') === 'dark' ||
-      (localStorage.getItem('studybuddy-theme') || 'light') === 'dark') {
-    document.body.classList.add('dark');
+  // 恢复历史对话或显示欢迎语
+  var history = getHistory();
+  if (history.length > 0) {
+    for (var j = 0; j < history.length; j++) {
+      addMessage(history[j].text, history[j].role === 'user');
+    }
+  } else {
+    addWelcomeMessage();
   }
+
+  (function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
 })();
 </script>
+<script>(function(){try{var u=JSON.parse(localStorage.getItem('studybuddy_usage')||'{}');var today=new Date().toISOString().slice(0,10);if(!u.firstDay)u.firstDay=today;if(!u.days)u.days={};u.days[today]=true;u.totalDays=Object.keys(u.days).length;localStorage.setItem('studybuddy_usage',JSON.stringify(u));}catch(e){}})();</script>
 </body>
 </html>

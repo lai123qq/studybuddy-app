@@ -32,12 +32,12 @@
   var isFlipped = false;
   var totalForSession = 0;
   var doneThisSession = 0;
-  var toast = document.getElementById('toast');
+  var toast = null; // 使用 SBUtils.showToast, 保留变量以防外部引用
 
   function loadState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
   function saveState() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { showToast('本地存储空间不足,请先导出或清理数据', 'warn'); }
+    catch (e) { SBUtils.showToast('本地存储空间不足,请先导出或清理数据', 'warn'); }
   }
   function nid() { return 'c' + Math.random().toString(36).slice(2, 9); }
   function now() { return Date.now(); }
@@ -61,17 +61,52 @@
       d.cards = Array.isArray(d.cards) ? d.cards.map(normalizeCard) : [];
     });
     state.goalTarget = state.goalTarget || 20;
-    state.goalDone = state.goalDone || 0;
+    state.goalDoneDate = state.goalDoneDate || '';
+    if (state.goalDoneDate !== todayKey()) {
+      state.goalDone = 0;
+      state.goalDoneDate = todayKey();
+    }
     state.history = Array.isArray(state.history) ? state.history : [];
     state.dailyLog = state.dailyLog || {};
   }
 
-  function showToast(text, type) {
-    if (!toast) return;
-    toast.textContent = text;
-    toast.className = 'toast show ' + (type || '');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+
+  /* 收起/展开单词列表 */
+  function toggleVocab(listId, btn) {
+    var el = document.getElementById(listId);
+    if (!el) return;
+    var isCollapsed = el.classList.toggle('collapsed');
+    btn.textContent = isCollapsed ? '展开单词' : '收起单词';
+  }
+
+  /* 清除已导入卡片 */
+  function clearVocabCards(type) {
+    if (!confirm('确定要清除该词库已导入的卡片吗？')) return;
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      var decks = data.decks || [];
+      var removed = 0;
+      decks.forEach(function (d) {
+        if (!d.cards) return;
+        var before = d.cards.length;
+        d.cards = d.cards.filter(function (c) {
+          if (type === 'ielts') return !c._src || c._src !== 'vocab';
+          if (type === 'grade') return !c._src || c._src !== 'grade';
+          if (type === 'middle') return !c._src || (c._src !== 'vocab' && c._src !== 'middle');
+          if (type === 'oldMiddle') return !c._src || c._src !== 'oldMiddle';
+          if (type === 'highSchool') return !c._src || c._src !== 'highSchool';
+          return true;
+        });
+        removed += before - d.cards.length;
+      });
+      localStorage.setItem(KEY, JSON.stringify(data));
+      SBUtils.showToast('已清除 ' + removed + ' 张卡片');
+      location.reload();
+    } catch (e) {
+      SBUtils.showToast('清除失败: ' + e.message, 'error');
+    }
   }
 
   /* ---------- 雅思综合词库 ----------
@@ -145,72 +180,6 @@
       'Unit 4 假期旅行': [['learn','学习'],['Chinese','语文'],['sing','唱歌'],['dance','跳舞'],['eat','吃'],['good','好的'],['take','拍照'],['climb','爬'],['have','有'],['buy','买'],['present','礼物'],['row','划(船)'],['boat','船'],['see','看见'],['elephant','大象'],['how','怎么;如何'],['leave','离开'],['get','到达']],
       'Unit 5 职业复习': [['factory','工厂'],['worker','工人'],['postman','邮递员'],['businessman','商人'],['police officer','警察'],['fisherman','渔民'],['scientist','科学家'],['pilot','飞行员'],['coach','教练'],['country','国家'],['head teacher','校长']],
       'Unit 6 故事与情感': [['angry','生气的'],['afraid','害怕的'],['sad','难过的'],['worried','担心的'],['happy','高兴的'],['see a doctor','看病'],['wear','穿'],['more','更多的'],['deep','深的'],['breath','呼吸'],['count','数数'],['chase','追赶'],['mouse','老鼠'],['bad','坏的'],['ill','有病;不舒服']]
-    }
-  };
-
-  /* 初中英语词库(人教版新目标 7-9年级) */
-  var MIDDLE_VOCAB = {
-    '7上': {
-      'Starter Unit 1 打招呼': [['greet','招呼;问候'],['conversation','谈话;交谈'],['spell','用字母拼;拼写'],['each other','互相;彼此'],['start','开始;着手']],
-      'Starter Unit 2 物品识别': [['bottle','瓶子'],['eraser','橡皮'],['key','钥匙'],['thing','东西;事情'],['need','需要']],
-      'Starter Unit 3 颜色': [['color','颜色'],['yellow','黄色'],['red','红色'],['green','绿色'],['blue','蓝色'],['black','黑色'],['white','白色'],['brown','棕色'],['purple','紫色']],
-      'Unit 1 新朋友': [['make friends','交朋友'],['get to know','认识;了解'],['full name','全名'],['last name','姓'],['classmate','同班同学']],
-      'Unit 2 家庭': [['mean','意思是;打算'],['husband','丈夫'],['grandparent','祖父(母);外祖父(母)'],['together','在一起;共同'],['spend','花(时间、钱)']],
-      'Unit 3 校园': [['hall','大厅;礼堂'],['dining hall','餐厅'],['building','建筑物;楼房'],['across','过;穿过'],['centre','中心;中央']],
-      'Unit 4 我的最爱': [['favourite','特别喜爱的'],['subject','学科;科目'],['biology','生物学'],['geography','地理(学)'],['history','历史']],
-      'Unit 5 有趣的一天': [['wake up','醒来;唤醒'],['o\'clock','...点钟'],['half','一半'],['past','晚于;过'],['quarter','一刻钟']],
-      'Unit 6 一天': [['exercise','锻炼;练习'],['activity','活动'],['homework','家庭作业'],['dinner','晚餐;正餐'],['housework','家务劳动']],
-      'Unit 7 生日快乐': [['celebrate','庆祝;庆贺'],['something','某事;某物'],['kite','风筝'],['candle','蜡烛'],['wish','愿望;希望']]
-    },
-    '7下': {
-      'Unit 1 动物朋友': [['fox','狐狸'],['giraffe','长颈鹿'],['eagle','鹰'],['wolf','狼'],['penguin','企鹅'],['care for','照顾;照料'],['sandwich','三明治'],['snake','蛇']],
-      'Unit 2 日常作息': [['daily','每日的;日常的'],['routine','常规;惯例'],['while','在...期间'],['usually','通常地'],['prepare','准备']],
-      'Unit 3 保持健康': [['fit','健康的'],['jog','慢跑'],['skateboard','滑板'],['barely','几乎不'],['once','一次']],
-      'Unit 4 健康饮食': [['bean','豆;豆荚'],['tofu','豆腐'],['onion','洋葱'],['pepper','甜椒;辣椒'],['mushroom','蘑菇'],['dumpling','饺子']],
-      'Unit 5 旧物': [['yard','院子'],['yard sale','庭院拍卖会'],['sweet','甜的'],['memory','回忆;记忆'],['cent','分(货币单位)']],
-      'Unit 6 天气': [['dry','干燥的'],['wet','潮湿的'],['temperature','温度'],['degree','度;度数'],['could','能;可以']],
-      'Unit 7 有趣的地方': [['square','广场'],['meter','米;公尺'],['kilometer','千米;公里'],['population','人口'],['guide','导游;向导']],
-      'Unit 8 讲故事': [['once upon a time','从前'],['stepmother','继母'],['prince','王子'],['fairy','仙子;小精灵'],['magic','有魔力的']]
-    },
-    '8上': {
-      'Unit 1 你去哪儿度假': [['anyone','任何人'],['anywhere','在任何地方'],['wonderful','精彩的'],['few','不多;很少'],['most','最多;大多数']],
-      'Unit 2 你多久锻炼一次': [['housework','家务劳动'],['hardly','几乎不'],['ever','在任何时候'],['once','一次'],['twice','两次']],
-      'Unit 3 我比我妹妹更外向': [['outgoing','外向的'],['better','更好的;较好地'],['loudly','大声地'],['quietly','轻声地'],['hard-working','工作努力的']],
-      'Unit 4 最好的电影院': [['theater','戏院;剧场'],['comfortable','使人舒服的;舒适的'],['seat','座位;坐处'],['screen','银幕;屏幕'],['close','接近']],
-      'Unit 5 你想看游戏节目吗': [['sitcom','情景喜剧'],['news','新闻;新闻节目'],['soap opera','肥皂剧'],['educational','教育的;有教育意义的'],['plan','打算;计划']],
-      'Unit 6 我打算学习计算机科学': [['computer programmer','计算机程序设计员'],['cook','厨师'],['doctor','医生'],['engineer','工程师'],['violinist','小提琴手']],
-      'Unit 7 人们将来会有机器人吗': [['paper','纸;纸张'],['pollution','污染;污染物'],['prediction','预言;预测'],['future','将来;未来'],['environment','环境']],
-      'Unit 8 你怎么做香蕉奶昔': [['shake','摇动;抖动'],['blender','搅拌机'],['peel','剥皮;去皮'],['pour','倒出;倾倒'],['yogurt','酸奶']],
-      'Unit 9 你能来参加我的派对吗': [['prepare','使做好准备;把...准备好'],['prepare for','为...做准备'],['available','有空的;可获得的'],['catch','及时赶上;接住'],['invitation','邀请;请柬']],
-      'Unit 10 如果你去参加派对，你会玩得很开心': [['meeting','会议;集会'],['video','录像带;录像'],['organize','组织;筹备'],['potato chips','炸土豆片'],['chocolate','巧克力']]
-    },
-    '8下': {
-      'Unit 1 怎么了': [['stomachache','胃痛;腹痛'],['foot','脚;足'],['neck','颈;脖子'],['stomach','胃;腹部'],['fever','发烧']],
-      'Unit 2 我来打扫城市公园': [['cheer','欢呼;喝彩'],['cheer up','(使)变得更高兴;振奋起来'],['give out','分发;散发'],['clean up','打扫(或清除)干净'],['come up with','想出;提出']],
-      'Unit 3 你能打扫你的房间吗': [['rubbish','垃圾;废物'],['fold','折叠;对折'],['sweep','扫;打扫'],['floor','地板'],['mess','杂乱;不整洁']],
-      'Unit 4 你为什么不做对话': [['allow','允许;准许'],['wrong','有毛病;错误的'],['midnight','午夜;子夜'],['guess','猜测;估计'],['deal','协议;交易']],
-      'Unit 5 暴风雨来临时你在做什么': [['rainstorm','暴风雨'],['alarm','闹钟'],['begin','开始'],['heavily','在很大程度上;大量地'],['suddenly','突然;忽然']],
-      'Unit 6 愚公移山': [['shoot','射击;发射'],['stone','石头'],['weak','虚弱的;无力的'],['god','神;上帝'],['remind','提醒;使想起']],
-      'Unit 7 世界上最高的山是什么': [['square','平方;正方形'],['meter','米;公尺'],['deep','深的'],['desert','沙漠'],['population','人口']],
-      'Unit 8 你读过金银岛吗': [['treasure','珠宝;财富'],['island','岛'],['classic','经典作品;名著'],['page','(书或纸张的)页'],['hurry','匆忙;赶快']],
-      'Unit 9 你去过博物馆吗': [['amusement','娱乐;游戏'],['amusement park','游乐园'],['somewhere','在某处;到某处'],['camera','照相机;摄影机'],['invention','发明;发明物']],
-      'Unit 10 我有过这个自行车三年了': [['yard','院子'],['yard sale','庭院拍卖会'],['sweet','甜的'],['memory','回忆;记忆'],['cent','分(货币单位)']]
-    },
-    '9全': {
-      'Unit 1 如何成为一名成功的学习者': [['textbook','教科书;课本'],['conversation','谈话;交谈'],['aloud','大声地;出声地'],['sentence','句子'],['patient','有耐心的']],
-      'Unit 2 我认为月亮饼很美味': [['stranger','陌生人'],['relative','亲属;亲戚'],['pound','磅(重量单位)'],['garden','花园;菜园'],['admire','欣赏;仰慕']],
-      'Unit 3 洗手间在哪里': [['stamp','邮票;印章'],['bookstore','书店'],['beside','在旁边;在附近'],['postcard','明信片'],['pardon','原谅;请再说一遍']],
-      'Unit 4 我曾经害怕黑暗': [['humorous','有幽默感的;滑稽有趣的'],['silent','不说话的;沉默的'],['helpful','有用的;有帮助的'],['from time to time','时常;有时'],['score','得分;进球']],
-      'Unit 5 你知道茶是被谁发明的吗': [['national','国家的;民族的'],['trade','贸易;交易'],['pleasure','高兴;愉快'],['leaf','叶;叶子'],['discovery','发现']],
-      'Unit 6 你什么时候发明的电话': [['style','样式;款式'],['project','项目;工程'],['pleasure','高兴;愉快'],['daily','每日的;日常的'],['website','网站']],
-      'Unit 7 青少年应该被允许选择自己的衣服': [['smoke','吸烟;抽烟'],['pierce','扎;刺破'],['license','证;证件'],['safety','安全;安全性'],['earring','耳环']],
-      'Unit 8 它一定属于卡拉': [['whose','谁的'],['truck','卡车;货车'],['rabbit','兔;野兔'],['attend','出席;参加'],['valuable','贵重的;很有用的']],
-      'Unit 9 我喜欢我能跟着跳舞的音乐': [['prefer','更喜爱;偏爱'],['lyrics','歌词'],['Australian','澳大利亚的'],['electronic','电子的'],['suppose','推断;料想']],
-      'Unit 10 你 supposed 在下雨时敲门': [['custom','风俗;习俗'],['bow','鞠躬'],['kiss','亲吻;接吻'],['greet','和...打招呼;迎接'],['value','重视;珍视']],
-      'Unit 11 悲伤的电影让我哭泣': [['friendship','友谊;友情'],['king','国王;君主'],['power','力量;权力'],['prime','首要的;基本的'],['minister','大臣;部长']],
-      'Unit 12 生活充满了意外': [['unexpected','出乎意料的'],['backpack','背包;旅行包'],['oversleep','睡过头;睡得过久'],['give...a lift','捎...一程'],['miss','错过;未得到']],
-      'Unit 13 我们正在努力拯救地球': [['litter','垃圾;废弃物'],['bottom','底部;最下部'],['fisherman','渔民;钓鱼的人'],['coal','煤;煤块'],['advantage','优点;有利条件']],
-      'Unit 14 我记得在七年级遇见你们所有人': [['standard','标准;水平'],['row','一排;一列'],['keyboard','键盘'],['instruction','指示;命令'],['double','加倍;是...的两倍']]
     }
   };
 
@@ -739,7 +708,20 @@
     });
   })();
 
-  /* ---------- 极简学习算法 ---------- *
+  // 将内部词库数据暴露到 window，供词库学习模块和外部代码统一访问
+  if (!window.PRIMARY_VOCAB) window.PRIMARY_VOCAB = GRADE_VOCAB;
+  if (!window.PRIMARY_LABEL_MAP) {
+    window.PRIMARY_LABEL_MAP = {
+      '3上': '三年级上册', '3下': '三年级下册',
+      '4上': '四年级上册', '4下': '四年级下册',
+      '5上': '五年级上册', '5下': '五年级下册',
+      '6上': '六年级上册', '6下': '六年级下册'
+    };
+  }
+  if (!window.IELTS_VOCAB) window.IELTS_VOCAB = IELTS_VOCAB;
+  if (!window.IELTS_EXTRA_VOCAB) window.IELTS_EXTRA_VOCAB = IELTS_EXTRA_VOCAB;
+
+  /* ---------- 极简学习算法 ----------
    * 设计目标:不再让用户记复杂评分,只做三件事:
    *   q=1 不认识 → 立即在本次队列尾部再加一次
    *   q=2 跳过   → 卡片维持原 due,下次还在
@@ -772,18 +754,91 @@
   }
 
   /* ---------- Rendering ---------- */
-  var decksList = document.getElementById('decksList');
-  var flashcard = document.getElementById('flashcard');
-  var flashcardWrap = document.getElementById('flashcardWrap');
-  var cardFront = document.getElementById('cardFront');
-  var cardBack = document.getElementById('cardBack');
-  var cardDeckName = document.getElementById('cardDeckName');
-  var progressFill = document.getElementById('studyProgressFill');
-  var progressLabel = document.getElementById('studyProgressLabel');
-  var goalRing = document.getElementById('goalRing');
-  var goalDone = document.getElementById('goalDone');
-  var goalTarget = document.getElementById('goalTarget');
+  // DOM 元素缓存 - 频繁使用的元素在此处一次性查询
+  var $ = function (id) { return document.getElementById(id); };
+  var decksList = $('decksList');
+  var flashcard = $('flashcard');
+  var flashcardWrap = $('flashcardWrap');
+  var cardFront = $('cardFront');
+  var cardBack = $('cardBack');
+  var cardDeckName = $('cardDeckName');
+  var progressFill = $('studyProgressFill');
+  var progressLabel = $('studyProgressLabel');
+  var goalRing = $('goalRing');
+  var goalDone = $('goalDone');
+  var goalTargetEl = $('goalTarget');
   var ratingRow = document.querySelector('.rating-row');
+
+  // 统计面板元素
+  var statTotal = $('stat-total');
+  var statDue = $('stat-due');
+  var statStreak = $('stat-streak');
+  var statMastery = $('stat-mastery');
+  var statMastered = $('stat-mastered');
+
+  // 编辑器元素
+  var bulkInput = $('bulkInput');
+  var bulkDeck = $('bulkDeck');
+  var bulkAddBtn = $('bulkAddBtn');
+  var singleFront = $('singleFront');
+  var singleBack = $('singleBack');
+  var singleDeck = $('singleDeck');
+  var singleAddBtn = $('singleAddBtn');
+  var previewEl = $('preview');
+
+  // 雅思词库元素
+  var ieltsList = $('ieltsList');
+  var ieltsDeck = $('ieltsDeck');
+  var ieltsTag = $('ieltsTag');
+  var ieltsFilter = $('ieltsFilter');
+  var ieltsSearch = $('ieltsSearch');
+  var ieltsSummary = $('ieltsSummary');
+  var ieltsImportAll = $('ieltsImportAll');
+  var ieltsImport20 = $('ieltsImport20');
+  var ieltsDaily = $('ieltsDaily');
+
+  // 小学词库元素
+  var gradeList = $('gradeList');
+  var gradePick = $('gradePick');
+  var unitPick = $('unitPick');
+  var gradeDeck = $('gradeDeck');
+  var gradeSearch = $('gradeSearch');
+  var gradeSummary = $('gradeSummary');
+  var gradeImportAll = $('gradeImportAll');
+  var gradeImportCustom = $('gradeImportCustom');
+
+  // 初中词库元素
+  var middleGrid = $('middleGrid');
+  var middlePick = $('middlePick');
+  var middleUnitPick = $('middleUnitPick');
+  var middleDeck = $('middleDeck');
+  var middleSearch = $('middleSearch');
+  var middleSummary = $('middleSummary');
+  var middleImportAll = $('middleImportAll');
+  var middleImportCustom = $('middleImportCustom');
+
+  // 初中旧版词库元素
+  var oldMiddleGrid = $('oldMiddleGrid');
+  var oldMiddlePick = $('oldMiddlePick');
+  var oldMiddleUnitPick = $('oldMiddleUnitPick');
+  var oldMiddleDeck = $('oldMiddleDeck');
+  var oldMiddleSearch = $('oldMiddleSearch');
+  var oldMiddleSummary = $('oldMiddleSummary');
+  var oldMiddleImportAll = $('oldMiddleImportAll');
+  var oldMiddleImportCustom = $('oldMiddleImportCustom');
+
+  // 高中词库元素
+  var highSchoolGrid = $('highSchoolGrid');
+  var highSchoolPick = $('highSchoolPick');
+  var highSchoolUnitPick = $('highSchoolUnitPick');
+  var highSchoolDeck = $('highSchoolDeck');
+  var highSchoolSearch = $('highSchoolSearch');
+  var highSchoolSummary = $('highSchoolSummary');
+  var highSchoolImportAll = $('highSchoolImportAll');
+  var highSchoolImportCustom = $('highSchoolImportCustom');
+
+  // 图表元素
+  var chartEl = $('chart-mastery');
 
   function setRatingReady(ready) {
     if (!ratingRow) return;
@@ -916,8 +971,8 @@
         // 绑按钮事件
         var btnI = document.getElementById('emptyGoIelts');
         var btnG = document.getElementById('emptyGoGrade');
-        if (btnI) btnI.onclick = function () { gotoTab('ielts'); };
-        if (btnG) btnG.onclick = function () { gotoTab('grade'); };
+        if (btnI) btnI.addEventListener('click', function () { gotoTab('ielts'); });
+        if (btnG) btnG.addEventListener('click', function () { gotoTab('grade'); });
       } else if (deck && studyQueue.length === 0 && deck.cards.length > 0) {
         // 有卡但今日已学完(都被 lastReview 推迟到明天)
         var fc3 = document.querySelector('.flashcard');
@@ -933,7 +988,7 @@
         cardDeckName.textContent = deck.name;
         progressLabel.textContent = deck.cards.length + ' / ' + deck.cards.length;
         var btnA = document.getElementById('emptyGoAdd');
-        if (btnA) btnA.onclick = function () { gotoTab('ielts'); };
+        if (btnA) btnA.addEventListener('click', function () { gotoTab('ielts'); });
       } else {
         cardFront.textContent = '📭 暂无待复习卡片';
         cardBack.textContent = deck ? '本卡组今日复习完成,休息一下' : '请选择一个卡组';
@@ -974,7 +1029,7 @@
     goalRing.setAttribute('stroke-dashoffset', circ * (1 - gpct));
     goalRing.setAttribute('stroke', gpct >= 1 ? accent3 : accent);
     goalDone.textContent = state.goalDone;
-    goalTarget.textContent = state.goalTarget;
+    goalTargetEl.textContent = state.goalTarget;
   }
 
   flashcard.addEventListener('click', function () {
@@ -993,7 +1048,7 @@
     if (!currentCard) return;
     if (!isFlipped) {
       flashcard.click();
-      showToast('先看答案,再按回忆程度评分', 'info');
+      SBUtils.showToast('先看答案,再按回忆程度评分', 'info');
       return;
     }
     applyRate(currentCard, q);
@@ -1006,14 +1061,14 @@
     if (q === 3) {
       state.goalDone = (state.goalDone || 0) + 1;
       flashcardWrap.classList.add('glow');
-      showToast('✓ 已记住 · ' + currentCard.interval + ' 天后复习', 'success');
+      SBUtils.showToast('✓ 已记住 · ' + currentCard.interval + ' 天后复习', 'success');
     } else if (q === 1) {
       studyQueue.push(currentCard);
       totalForSession = Math.max(totalForSession, doneThisSession + studyQueue.length);
       flashcardWrap.classList.add('shake');
-      showToast('↻ 已放到本组末尾再练', 'warn');
+      SBUtils.showToast('↻ 已放到本组末尾再练', 'warn');
     } else {
-      showToast('⏭ 已跳过,下次还在', 'info');
+      SBUtils.showToast('⏭ 已跳过,下次还在', 'info');
     }
     // 累计 mastery 历史
     if (!state.history) state.history = [];
@@ -1040,9 +1095,65 @@
     updateTopStats();
     setTimeout(showNext, 400);
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.rate-btn'), function (b) {
-    b.addEventListener('click', function () { rate(+b.dataset.rate); });
-  });
+  // 桥接：HTML onclick="rateCard(true/false)"
+  // 学会了 = 标记掌握并跳过；没学会 = 放回队列末尾再练
+  window.rateCard = function(learned) {
+    if (!currentCard) return;
+    if (!isFlipped) {
+      flashcard.click();
+      SBUtils.showToast('请先点击卡片翻面查看答案', 'info');
+      return;
+    }
+
+    // 调用间隔算法更新 due，确保卡片真正被调度
+    applyRate(currentCard, learned ? 3 : 1);
+    currentCard.reviewedCount = (currentCard.reviewedCount || 0) + 1;
+
+    // 记录每日学习（只要看过就计数）
+    var k = todayKey();
+    state.dailyLog = state.dailyLog || {};
+    state.dailyLog[k] = (state.dailyLog[k] || 0) + 1;
+
+    if (learned) {
+      currentCard.mastered = true;
+      currentCard.learnCount = (currentCard.learnCount || 0) + 1;
+      state.goalDone = (state.goalDone || 0) + 1;
+      SBUtils.showToast('已掌握 · 跳过', 'success');
+    } else {
+      currentCard.wrongCount = (currentCard.wrongCount || 0) + 1;
+      studyQueue.push(currentCard);
+      totalForSession = Math.max(totalForSession, doneThisSession + studyQueue.length);
+      SBUtils.showToast('已放到末尾再练', 'warn');
+    }
+
+    // streak
+    if (state.lastDay !== k) {
+      var y = new Date(); y.setDate(y.getDate() - 1);
+      if (state.lastDay === y.toISOString().slice(0, 10)) state.streak = (state.streak || 0) + 1;
+      else state.streak = 1;
+      state.lastDay = k;
+    }
+
+    // mastery 历史
+    if (!state.history) state.history = [];
+    var last = state.history[state.history.length - 1];
+    if (last && last.day === k) {
+      last.mastery = Math.max(0, Math.min(1, last.mastery + (learned ? 0.015 : -0.005)));
+      last.count = (last.count || 0) + 1;
+    } else {
+      state.history.push({ day: k, mastery: learned ? 0.6 : 0.4, count: 1 });
+      if (state.history.length > 60) state.history.shift();
+    }
+
+    saveState();
+    doneThisSession++;
+    updateProgress();
+    updateStats();
+    renderDecks();
+    renderChart();
+    updateTopStats();
+    setTimeout(showNext, 300);
+  };
 
   /* ---------- Stats ---------- */
   function updateStats() {
@@ -1056,11 +1167,12 @@
         if (c.rep >= 3 && c.ef >= 2.3) mastered++;
       });
     });
-    document.getElementById('stat-total').textContent = total;
-    document.getElementById('stat-due').textContent = due;
-    document.getElementById('stat-streak').textContent = state.streak || 0;
+    if (statTotal) statTotal.textContent = total;
+    if (statDue) statDue.textContent = due;
+    if (statStreak) statStreak.textContent = state.streak || 0;
     var mastery = total ? Math.round((mastered / total) * 100) : 0;
-    document.getElementById('stat-mastery').textContent = mastery + '%';
+    if (statMastery) statMastery.textContent = mastery + '%';
+    if (statMastered) statMastered.textContent = mastered;
 
     var tom = 0, week = 0;
     state.decks.forEach(function (d) {
@@ -1069,10 +1181,14 @@
         if (c.due > now() && c.due <= weekCutoff) week++;
       });
     });
-    document.getElementById('due-today').textContent = due;
-    document.getElementById('due-tomorrow').textContent = tom;
-    document.getElementById('due-week').textContent = week;
-    document.getElementById('due-mastered').textContent = mastered;
+    var _dt = document.getElementById('due-today');
+    if (_dt) _dt.textContent = due;
+    var _dtm = document.getElementById('due-tomorrow');
+    if (_dtm) _dtm.textContent = tom;
+    var _dw = document.getElementById('due-week');
+    if (_dw) _dw.textContent = week;
+    var _dm = document.getElementById('due-mastered');
+    if (_dm) _dm.textContent = mastered;
   }
 
   /* ---------- Editor: tabs ---------- */
@@ -1140,13 +1256,14 @@
     });
   }
 
-  document.getElementById('bulkAddBtn').addEventListener('click', function () {
-    var raw = document.getElementById('bulkInput').value.trim();
-    if (!raw) { showToast('⚠️ 请先输入内容', 'warn'); document.getElementById('bulkInput').focus(); return; }
+  if (bulkAddBtn) bulkAddBtn.addEventListener('click', function () {
+    var raw = bulkInput.value.trim();
+    if (!raw) { SBUtils.showToast('⚠️ 请先输入内容', 'warn'); bulkInput.focus(); return; }
     var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
     var count = 0;
-    var deckId = document.getElementById('bulkDeck').value;
+    var deckId = bulkDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
+    if (!deck) { SBUtils.showToast('请先选择卡组', 'warn'); return; }
     lines.forEach(function (ln) {
       var parts = ln.split('|').map(function (s) { return s.trim(); });
       if (parts.length >= 2 && parts[0] && parts[1]) {
@@ -1154,36 +1271,37 @@
         count++;
       }
     });
-    document.getElementById('preview').textContent = '✓ 成功导入 ' + count + ' 张卡片到「' + deck.name + '」';
-    document.getElementById('bulkInput').value = '';
+    if (previewEl) previewEl.textContent = '✓ 成功导入 ' + count + ' 张卡片到「' + deck.name + '」';
+    bulkInput.value = '';
     saveState();
     renderDecks();
     updateStats();
     renderChart();
     refreshStudy();                    // ★ 刷新主显示区,卡片立即出现
     if (activeDeckId === deck.id) {
-      showToast('✓ 已加入 ' + count + ' 张 · 回到顶部开始复习', 'success');
+      SBUtils.showToast('✓ 已加入 ' + count + ' 张 · 回到顶部开始复习', 'success');
     } else {
       activeDeckId = deck.id;
       renderDecks();
       refreshStudy();
-      showToast('✓ 已切换到「' + deck.name + '」并加入 ' + count + ' 张', 'success');
+      SBUtils.showToast('✓ 已切换到「' + deck.name + '」并加入 ' + count + ' 张', 'success');
     }
   });
-  document.getElementById('singleAddBtn').addEventListener('click', function () {
-    var f = document.getElementById('singleFront').value.trim();
-    var b = document.getElementById('singleBack').value.trim();
-    if (!f || !b) { showToast('⚠️ 请填写完整的问题和答案', 'warn'); return; }
-    var deckId = document.getElementById('singleDeck').value;
+  if (singleAddBtn) singleAddBtn.addEventListener('click', function () {
+    var f = singleFront.value.trim();
+    var b = singleBack.value.trim();
+    if (!f || !b) { SBUtils.showToast('⚠️ 请填写完整的问题和答案', 'warn'); return; }
+    var deckId = singleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
+    if (!deck) { SBUtils.showToast('请先选择卡组', 'warn'); return; }
     deck.cards.push({ id: nid(), front: f, back: b, ef: 2.5, rep: 0, interval: 0, due: now(), added: now(), lastReview: null, skip: false });
     saveState();
-    document.getElementById('singleFront').value = '';
-    document.getElementById('singleBack').value = '';
+    singleFront.value = '';
+    singleBack.value = '';
     renderDecks();
     updateStats();
     refreshStudy();                    // ★ 刷新主显示区
-    showToast('✓ 卡片已添加到「' + deck.name + '」', 'success');
+    SBUtils.showToast('✓ 卡片已添加到「' + deck.name + '」', 'success');
   });
 
   /* ---------- 雅思词库 ---------- */
@@ -1219,15 +1337,14 @@
     if (el) el.innerHTML = html;
   }
   function renderIelts(keyword, tag, filter) {
-    var list = document.getElementById('ieltsList');
-    if (!list) return;
-    var deckId = document.getElementById('ieltsDeck').value;
+    if (!ieltsList) return;
+    var deckId = ieltsDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
-    list.innerHTML = '<div class="vocab-grid"></div>';
-    var grid = list.firstChild;
+    ieltsList.innerHTML = '<div class="vocab-grid"></div>';
+    var grid = ieltsList.firstChild;
     var kw = (keyword || '').toLowerCase();
-    var tagVal = tag !== undefined ? tag : (document.getElementById('ieltsTag') ? document.getElementById('ieltsTag').value : '');
-    var filterVal = filter !== undefined ? filter : (document.getElementById('ieltsFilter') ? document.getElementById('ieltsFilter').value : '');
+    var tagVal = tag !== undefined ? tag : (ieltsTag ? ieltsTag.value : '');
+    var filterVal = filter !== undefined ? filter : (ieltsFilter ? ieltsFilter.value : '');
     var matches = 0;
     var addedCount = 0;
     IELTS_VOCAB.forEach(function (pair, idx) {
@@ -1244,39 +1361,39 @@
       grid.appendChild(renderVocabCard(pair, idx, { deck: deck, action: 'ielts-add', typeLabel: '雅思', checkable: false }));
     });
     if (matches === 0) {
-      list.innerHTML = '<div class="vocab-empty">没有匹配「' + esc(keyword) + '」的单词</div>';
+      ieltsList.innerHTML = '<div class="vocab-empty">没有匹配「' + esc(keyword) + '」的单词</div>';
     }
     setVocabSummary('ieltsSummary', '<span>显示 <b>' + matches + '</b> / ' + IELTS_VOCAB.length + ' 个词 · 当前卡组已加入 <b>' + addedCount + '</b> 个</span><span>建议先导入 20 个试背,熟悉后再全量导入</span>');
-    list.querySelectorAll('[data-ielts-add]').forEach(function (b) {
+    ieltsList.querySelectorAll('[data-ielts-add]').forEach(function (b) {
       b.addEventListener('click', function () {
         var idx = +b.dataset.ieltsAdd;
         var pair = IELTS_VOCAB[idx];
-        var deckId = document.getElementById('ieltsDeck').value;
+        var deckId = ieltsDeck.value;
         var deck = state.decks.find(function (d) { return d.id === deckId; });
         if (!deck) return;
         // 防重:同 front 不重复加
         if (deck.cards.some(function (c) { return c.front.toLowerCase() === pair[0].toLowerCase(); })) {
-          showToast('「' + pair[0] + '」已在该卡组中', 'warn');
+          SBUtils.showToast('「' + pair[0] + '」已在该卡组中', 'warn');
           return;
         }
         deck.cards.push({ id: nid(), front: pair[0], back: pair[1], ef: 2.5, rep: 0, interval: 0, due: now(), added: now(), lastReview: null, skip: false, _src: 'vocab' });
         saveState();
         renderDecks();
         updateStats();
-        renderIelts(document.getElementById('ieltsSearch').value.trim().toLowerCase());
+        renderIelts(ieltsSearch.value.trim().toLowerCase());
         // ★ 关键:同步切换到该 deck 并刷新主显示区
         var wasActive = (activeDeckId === deck.id);
         activeDeckId = deck.id;
         renderDecks();
         refreshStudy();
-        showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
+        SBUtils.showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
       });
     });
   }
   function importIeltsBatch(n) {
-    var deckId = document.getElementById('ieltsDeck').value;
+    var deckId = ieltsDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
-    if (!deck) { showToast('⚠️ 请先选择一个卡组', 'warn'); return; }
+    if (!deck) { SBUtils.showToast('⚠️ 请先选择一个卡组', 'warn'); return; }
     var added = 0;
     var list = IELTS_VOCAB.slice(0, n).map(function (p) { return [p[0], p[1]]; });
     list.forEach(function (pair) {
@@ -1294,10 +1411,10 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    showToast('✓ 成功导入 ' + added + ' 张到「' + deck.name + '」· ' + (wasActive ? '已立即进入复习' : '已切换卡组'), 'success');
+    SBUtils.showToast('✓ 成功导入 ' + added + ' 张到「' + deck.name + '」· ' + (wasActive ? '已立即进入复习' : '已切换卡组'), 'success');
   }
-  document.getElementById('ieltsImportAll').addEventListener('click', function () { importIeltsBatch(IELTS_VOCAB.length); });
-  document.getElementById('ieltsImport20').addEventListener('click', function () { importIeltsBatch(20); });
+  if (ieltsImportAll) ieltsImportAll.addEventListener('click', function () { importIeltsBatch(IELTS_VOCAB.length); });
+  if (ieltsImport20) ieltsImport20.addEventListener('click', function () { importIeltsBatch(20); });
 
   /* ---------- 小学词库(人教版PEP 3-6年级) ---------- */
   // gradeLabel: 将 key('3上'等)转为中文显示名
@@ -1308,8 +1425,8 @@
     '6上': '六年级上', '6下': '六年级下'
   };
   function gradeLabel(key) { return GRADE_LABEL_MAP[key] || key; }
-  // gradeList: 返回指定册所有词的扁平数组
-  function gradeList(grade) {
+  // getGradeWords: 返回指定册所有词的扁平数组
+  function getGradeWords(grade) {
     var units = GRADE_VOCAB[grade];
     if (!units) return [];
     var result = [];
@@ -1334,30 +1451,28 @@
   }
   // fillUnitPick: 根据当前年级填充 unitPick 下拉
   function fillUnitPick(grade) {
-    var sel = document.getElementById('unitPick');
-    if (!sel) return;
+    if (!unitPick) return;
     var names = gradeUnitNames(grade);
-    sel.innerHTML = '<option value="">全部单元</option>';
+    unitPick.innerHTML = '<option value="">全部单元</option>';
     names.forEach(function (name) {
       var opt = document.createElement('option');
       opt.value = name;
       opt.textContent = name;
-      sel.appendChild(opt);
+      unitPick.appendChild(opt);
     });
   }
 
   function renderGrade(keyword) {
-    var list = document.getElementById('gradeList');
-    if (!list) return;
-    var grade = document.getElementById('gradePick').value;
-    var unit = document.getElementById('unitPick').value;
-    var deckId = document.getElementById('gradeDeck').value;
+    if (!gradeList) return;
+    var grade = gradePick.value;
+    var unit = unitPick.value;
+    var deckId = gradeDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     // 根据是否选了单元来决定数据源
-    var data = unit ? gradeUnitList(grade, unit) : gradeList(grade);
+    var data = unit ? gradeUnitList(grade, unit) : getGradeWords(grade);
     var kw = (keyword || '').toLowerCase();
-    list.innerHTML = '<div class="vocab-grid"></div>';
-    var grid = list.firstChild;
+    gradeList.innerHTML = '<div class="vocab-grid"></div>';
+    var grid = gradeList.firstChild;
     var matches = 0;
     var addedCount = 0;
     var gLabel = gradeLabel(grade);
@@ -1369,53 +1484,53 @@
       grid.appendChild(renderVocabCard(pair, idx, { deck: deck, action: 'grade-add', typeLabel: label, checkable: true }));
     });
     if (matches === 0) {
-      list.innerHTML = '<div class="vocab-empty">没有匹配「' + esc(keyword) + '」的单词</div>';
+      gradeList.innerHTML = '<div class="vocab-empty">没有匹配「' + esc(keyword) + '」的单词</div>';
     }
     var summaryText = unit
       ? (gLabel + ' · ' + unit + ' 显示 <b>' + matches + '</b> 个词 · 当前卡组已加入 <b>' + addedCount + '</b> 个')
       : (gLabel + ' · 全部单元 显示 <b>' + matches + '</b> 个词 · 当前卡组已加入 <b>' + addedCount + '</b> 个');
     setVocabSummary('gradeSummary', '<span>' + summaryText + '</span><span>可勾选后批量加入</span>');
-    list.querySelectorAll('[data-grade-add]').forEach(function (b) {
+    gradeList.querySelectorAll('[data-grade-add]').forEach(function (b) {
       b.addEventListener('click', function () {
         var idx = +b.dataset.gradeAdd;
         var pair = data[idx];
-        var deckId = document.getElementById('gradeDeck').value;
+        var deckId = gradeDeck.value;
         var deck = state.decks.find(function (d) { return d.id === deckId; });
         if (!deck) return;
         if (deck.cards.some(function (c) { return c.front.toLowerCase() === pair[0].toLowerCase(); })) {
-          showToast('「' + pair[0] + '」已在该卡组中', 'warn');
+          SBUtils.showToast('「' + pair[0] + '」已在该卡组中', 'warn');
           return;
         }
         deck.cards.push({ id: nid(), front: pair[0], back: pair[1], added: now(), due: now(), lastReview: null, skip: false, _src: 'grade' });
         saveState();
         renderDecks(); updateStats();
-        renderGrade(document.getElementById('gradeSearch').value.trim().toLowerCase());
+        renderGrade(gradeSearch.value.trim().toLowerCase());
         // ★ 切换 + 刷新
         var wasActive = (activeDeckId === deck.id);
         activeDeckId = deck.id;
         renderDecks();
         refreshStudy();
-        showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
+        SBUtils.showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
       });
     });
   }
 
-  document.getElementById('gradePick').addEventListener('change', function () {
+  if (gradePick) gradePick.addEventListener('change', function () {
     var grade = this.value;
     fillUnitPick(grade);
-    renderGrade(document.getElementById('gradeSearch').value.trim().toLowerCase());
+    renderGrade(gradeSearch.value.trim().toLowerCase());
   });
-  document.getElementById('unitPick').addEventListener('change', function () {
-    renderGrade(document.getElementById('gradeSearch').value.trim().toLowerCase());
+  if (unitPick) unitPick.addEventListener('change', function () {
+    renderGrade(gradeSearch.value.trim().toLowerCase());
   });
-  document.getElementById('gradeSearch').addEventListener('input', function () { renderGrade(this.value.trim().toLowerCase()); });
-  document.getElementById('gradeImportAll').addEventListener('click', function () {
-    var grade = document.getElementById('gradePick').value;
-    var unit = document.getElementById('unitPick').value;
-    var deckId = document.getElementById('gradeDeck').value;
+  if (gradeSearch) gradeSearch.addEventListener('input', function () { renderGrade(this.value.trim().toLowerCase()); });
+  if (gradeImportAll) gradeImportAll.addEventListener('click', function () {
+    var grade = gradePick.value;
+    var unit = unitPick.value;
+    var deckId = gradeDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
-    var data = unit ? gradeUnitList(grade, unit) : gradeList(grade);
+    var data = unit ? gradeUnitList(grade, unit) : getGradeWords(grade);
     var added = 0;
     data.forEach(function (pair) {
       if (deck.cards.some(function (c) { return c.front.toLowerCase() === pair[0].toLowerCase(); })) return;
@@ -1428,20 +1543,20 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderGrade(document.getElementById('gradeSearch').value.trim().toLowerCase());
+    renderGrade(gradeSearch.value.trim().toLowerCase());
     var gLabel = gradeLabel(grade);
     var scopeText = unit ? (gLabel + ' · ' + unit) : (gLabel + ' · 全部单元');
-    showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
+    SBUtils.showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
   });
-  document.getElementById('gradeImportCustom').addEventListener('click', function () {
-    var grade = document.getElementById('gradePick').value;
-    var unit = document.getElementById('unitPick').value;
-    var deckId = document.getElementById('gradeDeck').value;
+  if (gradeImportCustom) gradeImportCustom.addEventListener('click', function () {
+    var grade = gradePick.value;
+    var unit = unitPick.value;
+    var deckId = gradeDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var checked = document.querySelectorAll('#gradeList input[type=checkbox]:checked');
-    if (!checked.length) { showToast('请先勾选要加入的单词', 'warn'); return; }
-    var data = unit ? gradeUnitList(grade, unit) : gradeList(grade);
+    if (!checked.length) { SBUtils.showToast('请先勾选要加入的单词', 'warn'); return; }
+    var data = unit ? gradeUnitList(grade, unit) : getGradeWords(grade);
     var added = 0;
     checked.forEach(function (cb) {
       var idx = +cb.dataset.gradePick;
@@ -1457,8 +1572,8 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderGrade(document.getElementById('gradeSearch').value.trim().toLowerCase());
-    showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
+    renderGrade(gradeSearch.value.trim().toLowerCase());
+    SBUtils.showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
   });
 
   /* ---------- 初中词库(人教版新目标 7-9年级) ---------- */
@@ -1485,7 +1600,7 @@
     return Object.keys(units);
   }
   function fillMiddleUnitPick(grade) {
-    var sel = document.getElementById('middleUnitPick');
+    var sel = middleUnitPick;
     if (!sel) return;
     var names = middleUnitNames(grade);
     sel.innerHTML = '<option value="">全部单元</option>';
@@ -1497,11 +1612,11 @@
     });
   }
   function renderMiddle(keyword) {
-    var list = document.getElementById('middleGrid');
+    var list = middleGrid;
     if (!list) return;
-    var grade = document.getElementById('middlePick').value;
-    var unit = document.getElementById('middleUnitPick').value;
-    var deckId = document.getElementById('middleDeck').value;
+    var grade = middlePick.value;
+    var unit = middleUnitPick.value;
+    var deckId = middleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     var data = unit ? middleUnitList(grade, unit) : middleList(grade);
     var kw = (keyword || '').toLowerCase();
@@ -1527,38 +1642,38 @@
       b.addEventListener('click', function () {
         var idx = +b.dataset.middleAdd;
         var pair = data[idx];
-        var deckId = document.getElementById('middleDeck').value;
+        var deckId = middleDeck.value;
         var deck = state.decks.find(function (d) { return d.id === deckId; });
         if (!deck) return;
         if (deck.cards.some(function (c) { return c.front.toLowerCase() === pair[0].toLowerCase(); })) {
-          showToast('「' + pair[0] + '」已在该卡组中', 'warn');
+          SBUtils.showToast('「' + pair[0] + '」已在该卡组中', 'warn');
           return;
         }
         deck.cards.push({ id: nid(), front: pair[0], back: pair[1], added: now(), due: now(), lastReview: null, skip: false, _src: 'vocab' });
         saveState();
         renderDecks(); updateStats();
-        renderMiddle(document.getElementById('middleSearch').value.trim().toLowerCase());
+        renderMiddle(middleSearch.value.trim().toLowerCase());
         var wasActive = (activeDeckId === deck.id);
         activeDeckId = deck.id;
         renderDecks();
         refreshStudy();
-        showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
+        SBUtils.showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
       });
     });
   }
-  document.getElementById('middlePick').addEventListener('change', function () {
+  if (middlePick) middlePick.addEventListener('change', function () {
     var grade = this.value;
     fillMiddleUnitPick(grade);
-    renderMiddle(document.getElementById('middleSearch').value.trim().toLowerCase());
+    renderMiddle(middleSearch.value.trim().toLowerCase());
   });
-  document.getElementById('middleUnitPick').addEventListener('change', function () {
-    renderMiddle(document.getElementById('middleSearch').value.trim().toLowerCase());
+  if (middleUnitPick) middleUnitPick.addEventListener('change', function () {
+    renderMiddle(middleSearch.value.trim().toLowerCase());
   });
-  document.getElementById('middleSearch').addEventListener('input', function () { renderMiddle(this.value.trim().toLowerCase()); });
-  document.getElementById('middleImportAll').addEventListener('click', function () {
-    var grade = document.getElementById('middlePick').value;
-    var unit = document.getElementById('middleUnitPick').value;
-    var deckId = document.getElementById('middleDeck').value;
+  if (middleSearch) middleSearch.addEventListener('input', function () { renderMiddle(this.value.trim().toLowerCase()); });
+  if (middleImportAll) middleImportAll.addEventListener('click', function () {
+    var grade = middlePick.value;
+    var unit = middleUnitPick.value;
+    var deckId = middleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var data = unit ? middleUnitList(grade, unit) : middleList(grade);
@@ -1573,19 +1688,19 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderMiddle(document.getElementById('middleSearch').value.trim().toLowerCase());
+    renderMiddle(middleSearch.value.trim().toLowerCase());
     var mLabel = middleLabel(grade);
     var scopeText = unit ? (mLabel + ' · ' + unit) : (mLabel + ' · 全部单元');
-    showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
+    SBUtils.showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
   });
-  document.getElementById('middleImportCustom').addEventListener('click', function () {
-    var grade = document.getElementById('middlePick').value;
-    var unit = document.getElementById('middleUnitPick').value;
-    var deckId = document.getElementById('middleDeck').value;
+  if (middleImportCustom) middleImportCustom.addEventListener('click', function () {
+    var grade = middlePick.value;
+    var unit = middleUnitPick.value;
+    var deckId = middleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var checked = document.querySelectorAll('#middleGrid input[type=checkbox]:checked');
-    if (!checked.length) { showToast('请先勾选要加入的单词', 'warn'); return; }
+    if (!checked.length) { SBUtils.showToast('请先勾选要加入的单词', 'warn'); return; }
     var data = unit ? middleUnitList(grade, unit) : middleList(grade);
     var added = 0;
     checked.forEach(function (cb) {
@@ -1601,8 +1716,8 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderMiddle(document.getElementById('middleSearch').value.trim().toLowerCase());
-    showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
+    renderMiddle(middleSearch.value.trim().toLowerCase());
+    SBUtils.showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
   });
 
   /* ---------- 初中旧版词库(人教版2012) ---------- */
@@ -1629,7 +1744,7 @@
     return Object.keys(units);
   }
   function fillOldMiddleUnitPick(grade) {
-    var sel = document.getElementById('oldMiddleUnitPick');
+    var sel = oldMiddleUnitPick;
     if (!sel) return;
     var names = oldMiddleUnitNames(grade);
     sel.innerHTML = '<option value="">全部单元</option>';
@@ -1641,11 +1756,11 @@
     });
   }
   function renderOldMiddle(keyword) {
-    var list = document.getElementById('oldMiddleGrid');
+    var list = oldMiddleGrid;
     if (!list) return;
-    var grade = document.getElementById('oldMiddlePick').value;
-    var unit = document.getElementById('oldMiddleUnitPick').value;
-    var deckId = document.getElementById('oldMiddleDeck').value;
+    var grade = oldMiddlePick.value;
+    var unit = oldMiddleUnitPick.value;
+    var deckId = oldMiddleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     var data = unit ? oldMiddleUnitList(grade, unit) : oldMiddleList(grade);
     var kw = (keyword || '').toLowerCase();
@@ -1671,38 +1786,38 @@
       b.addEventListener('click', function () {
         var idx = +b.dataset.oldmiddleAdd;
         var pair = data[idx];
-        var deckId = document.getElementById('oldMiddleDeck').value;
+        var deckId = oldMiddleDeck.value;
         var deck = state.decks.find(function (d) { return d.id === deckId; });
         if (!deck) return;
         if (deck.cards.some(function (c) { return c.front.toLowerCase() === pair[0].toLowerCase(); })) {
-          showToast('「' + pair[0] + '」已在该卡组中', 'warn');
+          SBUtils.showToast('「' + pair[0] + '」已在该卡组中', 'warn');
           return;
         }
         deck.cards.push({ id: nid(), front: pair[0], back: pair[1], added: now(), due: now(), lastReview: null, skip: false, _src: 'vocab' });
         saveState();
         renderDecks(); updateStats();
-        renderOldMiddle(document.getElementById('oldMiddleSearch').value.trim().toLowerCase());
+        renderOldMiddle(oldMiddleSearch.value.trim().toLowerCase());
         var wasActive = (activeDeckId === deck.id);
         activeDeckId = deck.id;
         renderDecks();
         refreshStudy();
-        showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
+        SBUtils.showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
       });
     });
   }
-  document.getElementById('oldMiddlePick').addEventListener('change', function () {
+  if (oldMiddlePick) oldMiddlePick.addEventListener('change', function () {
     var grade = this.value;
     fillOldMiddleUnitPick(grade);
-    renderOldMiddle(document.getElementById('oldMiddleSearch').value.trim().toLowerCase());
+    renderOldMiddle(oldMiddleSearch.value.trim().toLowerCase());
   });
-  document.getElementById('oldMiddleUnitPick').addEventListener('change', function () {
-    renderOldMiddle(document.getElementById('oldMiddleSearch').value.trim().toLowerCase());
+  if (oldMiddleUnitPick) oldMiddleUnitPick.addEventListener('change', function () {
+    renderOldMiddle(oldMiddleSearch.value.trim().toLowerCase());
   });
-  document.getElementById('oldMiddleSearch').addEventListener('input', function () { renderOldMiddle(this.value.trim().toLowerCase()); });
-  document.getElementById('oldMiddleImportAll').addEventListener('click', function () {
-    var grade = document.getElementById('oldMiddlePick').value;
-    var unit = document.getElementById('oldMiddleUnitPick').value;
-    var deckId = document.getElementById('oldMiddleDeck').value;
+  if (oldMiddleSearch) oldMiddleSearch.addEventListener('input', function () { renderOldMiddle(this.value.trim().toLowerCase()); });
+  if (oldMiddleImportAll) oldMiddleImportAll.addEventListener('click', function () {
+    var grade = oldMiddlePick.value;
+    var unit = oldMiddleUnitPick.value;
+    var deckId = oldMiddleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var data = unit ? oldMiddleUnitList(grade, unit) : oldMiddleList(grade);
@@ -1717,19 +1832,19 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderOldMiddle(document.getElementById('oldMiddleSearch').value.trim().toLowerCase());
+    renderOldMiddle(oldMiddleSearch.value.trim().toLowerCase());
     var mLabel = oldMiddleLabel(grade);
     var scopeText = unit ? (mLabel + ' · ' + unit) : (mLabel + ' · 全部单元');
-    showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
+    SBUtils.showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
   });
-  document.getElementById('oldMiddleImportCustom').addEventListener('click', function () {
-    var grade = document.getElementById('oldMiddlePick').value;
-    var unit = document.getElementById('oldMiddleUnitPick').value;
-    var deckId = document.getElementById('oldMiddleDeck').value;
+  if (oldMiddleImportCustom) oldMiddleImportCustom.addEventListener('click', function () {
+    var grade = oldMiddlePick.value;
+    var unit = oldMiddleUnitPick.value;
+    var deckId = oldMiddleDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var checked = document.querySelectorAll('#oldMiddleGrid input[type=checkbox]:checked');
-    if (!checked.length) { showToast('请先勾选要加入的单词', 'warn'); return; }
+    if (!checked.length) { SBUtils.showToast('请先勾选要加入的单词', 'warn'); return; }
     var data = unit ? oldMiddleUnitList(grade, unit) : oldMiddleList(grade);
     var added = 0;
     checked.forEach(function (cb) {
@@ -1745,8 +1860,8 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderOldMiddle(document.getElementById('oldMiddleSearch').value.trim().toLowerCase());
-    showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
+    renderOldMiddle(oldMiddleSearch.value.trim().toLowerCase());
+    SBUtils.showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
   });
 
   /* ---------- 高中词库(人教版) ---------- */
@@ -1773,7 +1888,7 @@
     return Object.keys(units);
   }
   function fillHighSchoolUnitPick(grade) {
-    var sel = document.getElementById('highSchoolUnitPick');
+    var sel = highSchoolUnitPick;
     if (!sel) return;
     var names = highSchoolUnitNames(grade);
     sel.innerHTML = '<option value="">全部单元</option>';
@@ -1785,11 +1900,11 @@
     });
   }
   function renderHighSchool(keyword) {
-    var list = document.getElementById('highSchoolGrid');
+    var list = highSchoolGrid;
     if (!list) return;
-    var grade = document.getElementById('highSchoolPick').value;
-    var unit = document.getElementById('highSchoolUnitPick').value;
-    var deckId = document.getElementById('highSchoolDeck').value;
+    var grade = highSchoolPick.value;
+    var unit = highSchoolUnitPick.value;
+    var deckId = highSchoolDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     var data = unit ? highSchoolUnitList(grade, unit) : highSchoolList(grade);
     var kw = (keyword || '').toLowerCase();
@@ -1815,38 +1930,38 @@
       b.addEventListener('click', function () {
         var idx = +b.dataset.highschoolAdd;
         var pair = data[idx];
-        var deckId = document.getElementById('highSchoolDeck').value;
+        var deckId = highSchoolDeck.value;
         var deck = state.decks.find(function (d) { return d.id === deckId; });
         if (!deck) return;
         if (deck.cards.some(function (c) { return c.front.toLowerCase() === pair[0].toLowerCase(); })) {
-          showToast('「' + pair[0] + '」已在该卡组中', 'warn');
+          SBUtils.showToast('「' + pair[0] + '」已在该卡组中', 'warn');
           return;
         }
         deck.cards.push({ id: nid(), front: pair[0], back: pair[1], added: now(), due: now(), lastReview: null, skip: false, _src: 'vocab' });
         saveState();
         renderDecks(); updateStats();
-        renderHighSchool(document.getElementById('highSchoolSearch').value.trim().toLowerCase());
+        renderHighSchool(highSchoolSearch.value.trim().toLowerCase());
         var wasActive = (activeDeckId === deck.id);
         activeDeckId = deck.id;
         renderDecks();
         refreshStudy();
-        showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
+        SBUtils.showToast(wasActive ? '✓ 已加入「' + pair[0] + '」· 上方自动开始' : '✓ 已切换到「' + deck.name + '」并加入「' + pair[0] + '」', 'success');
       });
     });
   }
-  document.getElementById('highSchoolPick').addEventListener('change', function () {
+  if (highSchoolPick) highSchoolPick.addEventListener('change', function () {
     var grade = this.value;
     fillHighSchoolUnitPick(grade);
-    renderHighSchool(document.getElementById('highSchoolSearch').value.trim().toLowerCase());
+    renderHighSchool(highSchoolSearch.value.trim().toLowerCase());
   });
-  document.getElementById('highSchoolUnitPick').addEventListener('change', function () {
-    renderHighSchool(document.getElementById('highSchoolSearch').value.trim().toLowerCase());
+  if (highSchoolUnitPick) highSchoolUnitPick.addEventListener('change', function () {
+    renderHighSchool(highSchoolSearch.value.trim().toLowerCase());
   });
-  document.getElementById('highSchoolSearch').addEventListener('input', function () { renderHighSchool(this.value.trim().toLowerCase()); });
-  document.getElementById('highSchoolImportAll').addEventListener('click', function () {
-    var grade = document.getElementById('highSchoolPick').value;
-    var unit = document.getElementById('highSchoolUnitPick').value;
-    var deckId = document.getElementById('highSchoolDeck').value;
+  if (highSchoolSearch) highSchoolSearch.addEventListener('input', function () { renderHighSchool(this.value.trim().toLowerCase()); });
+  if (highSchoolImportAll) highSchoolImportAll.addEventListener('click', function () {
+    var grade = highSchoolPick.value;
+    var unit = highSchoolUnitPick.value;
+    var deckId = highSchoolDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var data = unit ? highSchoolUnitList(grade, unit) : highSchoolList(grade);
@@ -1861,19 +1976,19 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderHighSchool(document.getElementById('highSchoolSearch').value.trim().toLowerCase());
+    renderHighSchool(highSchoolSearch.value.trim().toLowerCase());
     var mLabel = highSchoolLabel(grade);
     var scopeText = unit ? (mLabel + ' · ' + unit) : (mLabel + ' · 全部单元');
-    showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
+    SBUtils.showToast('✓ 已加入 ' + added + ' 个' + scopeText + '单词到「' + deck.name + '」· ' + (wasActive ? '立即可学' : '已切换卡组'), 'success');
   });
-  document.getElementById('highSchoolImportCustom').addEventListener('click', function () {
-    var grade = document.getElementById('highSchoolPick').value;
-    var unit = document.getElementById('highSchoolUnitPick').value;
-    var deckId = document.getElementById('highSchoolDeck').value;
+  if (highSchoolImportCustom) highSchoolImportCustom.addEventListener('click', function () {
+    var grade = highSchoolPick.value;
+    var unit = highSchoolUnitPick.value;
+    var deckId = highSchoolDeck.value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
     if (!deck) return;
     var checked = document.querySelectorAll('#highSchoolGrid input[type=checkbox]:checked');
-    if (!checked.length) { showToast('请先勾选要加入的单词', 'warn'); return; }
+    if (!checked.length) { SBUtils.showToast('请先勾选要加入的单词', 'warn'); return; }
     var data = unit ? highSchoolUnitList(grade, unit) : highSchoolList(grade);
     var added = 0;
     checked.forEach(function (cb) {
@@ -1889,8 +2004,8 @@
     activeDeckId = deck.id;
     renderDecks();
     refreshStudy();
-    renderHighSchool(document.getElementById('highSchoolSearch').value.trim().toLowerCase());
-    showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
+    renderHighSchool(highSchoolSearch.value.trim().toLowerCase());
+    SBUtils.showToast('✓ 已加入勾选的 ' + added + ' 个单词到「' + deck.name + '」', 'success');
   });
 
   /* ---------- Chart ---------- */
@@ -1898,11 +2013,11 @@
     return typeof window.echarts !== 'undefined' && window.echarts && typeof window.echarts.init === 'function';
   }
   function setChartFallback(text) {
-    var el = document.getElementById('chart-mastery');
+    var el = chartEl;
     if (!el) return;
     el.innerHTML = '<div style="min-height:260px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);background:rgba(15,14,23,0.04);border-radius:18px;padding:18px;">' + text + '</div>';
   }
-  var chartEl = document.getElementById('chart-mastery');
+  var chartEl = chartEl;
   var chart = hasEcharts() && chartEl ? window.echarts.init(chartEl, null, { renderer: 'svg' }) : null;
   function renderChart() {
     var hist = (state.history && state.history.length) ? state.history : [];
@@ -1963,7 +2078,117 @@
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 
+  /* ---------- 事件绑定 ---------- */
+  function bindEvents() {
+    // Collapsible toggles (算法说明 / 图表)
+    var algoToggle = document.getElementById('algoToggle');
+    var algoBody = document.getElementById('algoBody');
+    var algoArrow = document.getElementById('algoArrow');
+    if (algoToggle && algoBody && algoArrow) {
+      algoToggle.addEventListener('click', function () {
+        algoBody.classList.toggle('open');
+        algoArrow.classList.toggle('open');
+      });
+    }
+    var chartToggle = document.getElementById('chartToggle');
+    var chartBody = document.getElementById('chartBody');
+    var chartArrow = document.getElementById('chartArrow');
+    if (chartToggle && chartBody && chartArrow) {
+      chartToggle.addEventListener('click', function () {
+        chartBody.classList.toggle('open');
+        chartArrow.classList.toggle('open');
+      });
+    }
+
+    // 闪卡评分按钮 (从 HTML 内联 onclick 迁移)
+    var rateHardBtn = document.getElementById('rateHardBtn');
+    var rateEasyBtn = document.getElementById('rateEasyBtn');
+    if (rateHardBtn) rateHardBtn.addEventListener('click', function () { if (window.rateCard) window.rateCard(false); });
+    if (rateEasyBtn) rateEasyBtn.addEventListener('click', function () { if (window.rateCard) window.rateCard(true); });
+
+    // 测试面板:拼写检查/提示
+    var spellCheckBtn = document.getElementById('spellCheckBtn');
+    var spellHintBtn = document.getElementById('spellHintBtn');
+    var quizNextBtn = document.getElementById('quizNextBtn');
+    if (spellCheckBtn) spellCheckBtn.addEventListener('click', function () { if (typeof checkSpell === 'function') checkSpell(); });
+    if (spellHintBtn) spellHintBtn.addEventListener('click', function () { if (typeof showSpellHint === 'function') showSpellHint(); });
+    if (quizNextBtn) quizNextBtn.addEventListener('click', function () { if (typeof finishQuiz === 'function') finishQuiz(); });
+
+    // 拼写输入框回车提交
+    var spellInput = document.getElementById('spellInput');
+    if (spellInput) {
+      spellInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && typeof checkSpell === 'function') checkSpell();
+      });
+    }
+
+    // 模式切换 tab (闪卡模式 / 词库学习)
+    document.querySelectorAll('.mode-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.mode-tab').forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        var mode = tab.getAttribute('data-mode');
+        var flashcardMode = document.getElementById('flashcardMode');
+        var vocabMode = document.getElementById('vocabMode');
+        if (flashcardMode) flashcardMode.style.display = mode === 'flashcard' ? '' : 'none';
+        if (vocabMode) vocabMode.style.display = mode === 'vocab' ? '' : 'none';
+        // 记住当前模式和滚动位置
+        try { localStorage.setItem('sb_flashcard_mode', mode); } catch(e) {}
+        if (mode === 'vocab' && typeof window.renderVocab === 'function') {
+          window.renderVocab();
+        }
+      });
+    });
+
+    // 收起/展开单词列表 (事件委托,通过 data-toggle-vocab 属性)
+    document.querySelectorAll('[data-toggle-vocab]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var listId = btn.getAttribute('data-toggle-vocab');
+        toggleVocab(listId, btn);
+      });
+    });
+
+    // 词库学习:浏览模式按钮
+    var vocabPrevBtn = document.getElementById('vocabPrevBtn');
+    var vocabNextBtn = document.getElementById('vocabNextBtn');
+    var vocabMarkBtn = document.getElementById('vocabMarkBtn');
+    if (vocabPrevBtn) vocabPrevBtn.addEventListener('click', function () { if (window.vocabPrev) window.vocabPrev(); });
+    if (vocabNextBtn) vocabNextBtn.addEventListener('click', function () { if (window.vocabNext) window.vocabNext(); });
+    if (vocabMarkBtn) vocabMarkBtn.addEventListener('click', function () { if (window.vocabMark) window.vocabMark(); });
+
+    // 词库学习:拼写模式按钮
+    var vocabSpellHintBtn = document.getElementById('vocabSpellHintBtn');
+    var vocabSpellCheckBtn = document.getElementById('vocabSpellCheckBtn');
+    var vocabSpellNextBtn = document.getElementById('vocabSpellNextBtn');
+    if (vocabSpellHintBtn) vocabSpellHintBtn.addEventListener('click', function () { if (window.vocabSpellHint) window.vocabSpellHint(); });
+    if (vocabSpellCheckBtn) vocabSpellCheckBtn.addEventListener('click', function () { if (window.vocabCheckSpell) window.vocabCheckSpell(); });
+    if (vocabSpellNextBtn) vocabSpellNextBtn.addEventListener('click', function () { if (window.vocabNextSpell) window.vocabNextSpell(); });
+
+    // 词库学习:拼写输入回车提交
+    var vocabSpellInput = document.getElementById('vocabSpellInput');
+    if (vocabSpellInput) {
+      vocabSpellInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && window.vocabCheckSpell) window.vocabCheckSpell();
+      });
+    }
+
+    // 测验模式:选项点击 (事件委托,因为是动态生成的)
+    var vocabQuizOpts = document.getElementById('vocabQuizOpts');
+    if (vocabQuizOpts) {
+      vocabQuizOpts.addEventListener('click', function (e) {
+        var btn = e.target.closest('.quiz-opt');
+        if (!btn) return;
+        var word = btn.dataset.word;
+        if (word && window.vocabPickQuiz) {
+          window.vocabPickQuiz(btn, word);
+        }
+      });
+    }
+  }
+
   /* ---------- Init ---------- */
+  // 0) 绑定所有事件
+  bindEvents();
   // 1) 数据兜底:保证至少有一个卡组
   if (!state.decks || state.decks.length === 0) {
     state.decks = [{ id: 'default', name: '🎒 学习卡组', cards: [] }];
@@ -2005,7 +2230,7 @@
     var queueLen = studyQueue.length;
     if (queueLen > 0) {
       setTimeout(function () {
-        showToast('🌅 早安 · 你昨天学了 ' + yN + ' 个 · 今天还有 ' + queueLen + ' 张要续(已自动排到最前)', 'info');
+        SBUtils.showToast('🌅 早安 · 你昨天学了 ' + yN + ' 个 · 今天还有 ' + queueLen + ' 张要续(已自动排到最前)', 'info');
       }, 800);
     }
   })();
@@ -2025,10 +2250,10 @@
   }
 
   /* 每日推荐 20 词 */
-  document.getElementById('ieltsDaily').addEventListener('click', function () {
+  if (ieltsDaily) ieltsDaily.addEventListener('click', function () {
     var deckId = document.getElementById('ieltsDeck').value;
     var deck = state.decks.find(function (d) { return d.id === deckId; });
-    if (!deck) { showToast('请先选择一个卡组', 'warn'); return; }
+    if (!deck) { SBUtils.showToast('请先选择一个卡组', 'warn'); return; }
     // 用日期做种子
     var today = new Date(); var seed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
     function seededRandom(s) { var x = Math.sin(s) * 10000; return x - Math.floor(x); }
@@ -2052,7 +2277,7 @@
     });
     saveState(); renderDecks(); updateStats(); renderIelts();
     activeDeckId = deck.id; renderDecks(); refreshStudy();
-    showToast('今日推荐 ' + added + ' 词已加入「' + deck.name + '」', 'success');
+    SBUtils.showToast('今日推荐 ' + added + ' 词已加入「' + deck.name + '」', 'success');
   });
 
   /* "今日已学"统计 + 顶栏小标 */
@@ -2109,41 +2334,28 @@
     });
     saveState();
     buildQueue(); showNext(); renderDecks(); refreshDeckSelect(); renderChart(); updateProgress();
-    showToast('✓ 已重置「' + d.name + '」进度');
+    SBUtils.showToast('✓ 已重置「' + d.name + '」进度');
   });
 
-  /* 清除全部词库卡片 */
+  /* 清除全部卡片 */
   var clearAllBtn = document.getElementById('clearAllBtn');
   if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', async function () {
-      var ok = await RBModal.confirmAsync({
-        title: '确定要清除全部词库导入的卡片吗?',
-        desc: '这会删除所有从词库(雅思/小学/初中/高中)导入的卡片,自定义卡片不受影响。',
-        confirmText: '清除',
-        danger: true
-      });
-      if (!ok) return;
+    clearAllBtn.addEventListener('click', function () {
+      if (!confirm('确定要清空所有卡片的全部内容吗?\n此操作不可恢复。')) return;
       var removed = 0;
       state.decks.forEach(function (deck) {
-        var before = deck.cards.length;
-        deck.cards = deck.cards.filter(function (c) {
-          return !c._src || ['ielts','grade','middle','oldMiddle','highSchool'].indexOf(c._src) === -1;
-        });
-        removed += before - deck.cards.length;
+        removed += deck.cards.length;
+        deck.cards = [];
       });
       saveState();
       buildQueue(); showNext(); renderDecks(); refreshDeckSelect(); renderChart(); updateProgress();
-      showToast('✓ 已清除 ' + removed + ' 张词库卡片');
+      SBUtils.showToast('已清空 ' + removed + ' 张卡片');
     });
   }
 
   /* 全局错误兜底 */
-  var errToast = document.getElementById('errToast');
   function showError(msg) {
-    if (!errToast) return;
-    errToast.textContent = '⚠ ' + msg;
-    errToast.classList.add('show');
-    setTimeout(function () { errToast.classList.remove('show'); }, 4500);
+    SBUtils.showToast('⚠ ' + msg, 'error');
   }
   window.addEventListener('error', function (e) {
     console.error('Recalleum:', e.error || e.message);
@@ -2152,5 +2364,709 @@
   window.addEventListener('unhandledrejection', function (e) {
     console.error('Recalleum promise:', e.reason);
     showError('后台操作失败');
+  });
+
+  /* ---------- 共享词库导入 ---------- */
+  function addCard(word, back, deckName, level) {
+    var deck = state.decks.find(function (d) { return d.name === deckName; });
+    if (!deck) {
+      deck = { id: nid(), name: deckName, cards: [] };
+      state.decks.push(deck);
+    }
+    if (deck.cards.some(function (c) { return c.front.toLowerCase() === word.toLowerCase(); })) {
+      return null;
+    }
+    deck.cards.push({ id: nid(), front: word, back: back, ef: 2.5, rep: 0, interval: 0, due: now(), added: now(), lastReview: null, skip: false, _src: level });
+    saveState();
+    return true;
+  }
+
+  window.importVocab = function(level) {
+    if (!window.VOCAB || !VOCAB[level]) {
+      SBUtils.showToast('词库数据未加载，请刷新页面', 'warn');
+      return;
+    }
+    var deckName = {
+      middle: '中考核心词汇',
+      high: '高考核心词汇',
+      cet4: '四级核心词汇',
+      cet6: '六级核心词汇'
+    }[level];
+
+    var list = VOCAB[level];
+    var added = 0, dup = 0;
+    list.forEach(function(item) {
+      var word = item[0], meaning = item[1], phonetic = item[2] || '';
+      var back = meaning + (phonetic ? '\n' + phonetic : '');
+      var c = addCard(word, back, deckName, level);
+      if (c) added++; else dup++;
+    });
+
+    if (added > 0) {
+      renderDecks();
+      updateStats();
+      refreshStudy();
+      SBUtils.showToast('已导入 ' + added + ' 张 ' + deckName + ' 卡片' + (dup > 0 ? '（跳过' + dup + '个重复）' : ''), 'success');
+    } else {
+      SBUtils.showToast('该词库已全部导入（' + dup + '个重复）', 'warn');
+    }
+  };
+
+  /* ==================== 词库学习模式 ==================== */
+  var vocabState = {
+    lib: null,
+    sub: 'browse',
+    idx: 0,
+    learned: new Set(),
+    quizScore: 0, quizTotal: 0, quizStreak: 0,
+    spellScore: 0, spellTotal: 0, spellStreak: 0,
+    quizAnswered: false,
+    spellAnswered: false,
+    spellHintUsed: false,
+    _spellAnswer: ''
+  };
+
+  /* 从闪卡 state.decks 或预设词库读取卡片，转为 [front, back, ''] 格式 */
+  function getVocabLib() {
+    var gradeFilter = null, unitFilter = null;
+    var gradeSel = document.getElementById('vocabGradePick');
+    var unitSel = document.getElementById('vocabUnitPick');
+    if (gradeSel) gradeFilter = gradeSel.value || null;
+    if (unitSel) unitFilter = unitSel.value || null;
+
+    function flatten(obj) {
+      if (!obj) return [];
+      var all = [];
+      Object.keys(obj).forEach(function(g) {
+        if (gradeFilter && g !== gradeFilter) return;
+        var units = obj[g];
+        Object.keys(units).forEach(function(u) {
+          if (unitFilter && u !== unitFilter) return;
+          units[u].forEach(function(w) { all.push([w[0], w[1], '']); });
+        });
+      });
+      return all;
+    }
+
+    // 预设词库展平辅助函数
+    function flattenPrimary() { return flatten(window.PRIMARY_VOCAB); }
+    function flattenMiddle() { return flatten(window.MIDDLE_VOCAB); }
+    function flattenOldMiddle() { return flatten(window.OLD_MIDDLE_VOCAB); }
+    function flattenHighSchool() { return flatten(window.HIGH_SCHOOL_VOCAB); }
+    function flattenIelts() {
+      var all = [];
+      if (window.IELTS_VOCAB) IELTS_VOCAB.forEach(function(w) { all.push([w[0], w[1], '']); });
+      if (window.IELTS_EXTRA_VOCAB) IELTS_EXTRA_VOCAB.forEach(function(w) { all.push([w[0], w[1], '']); });
+      return all;
+    }
+
+    if (vocabState.lib === '__all__') {
+      var all = [];
+      state.decks.forEach(function(d) {
+        if (d.cards && d.cards.length) d.cards.forEach(function(c) { all.push([c.front, c.back, '']); });
+      });
+      return all;
+    }
+    if (vocabState.lib && vocabState.lib.indexOf('deck:') === 0) {
+      var deckId = vocabState.lib.slice(5);
+      for (var i = 0; i < state.decks.length; i++) {
+        if (state.decks[i].id === deckId) {
+          return state.decks[i].cards.map(function(c) { return [c.front, c.back, '']; });
+        }
+      }
+      return [];
+    }
+    if (vocabState.lib === 'preset:ielts') return flattenIelts();
+    if (vocabState.lib === 'preset:primary') return flattenPrimary();
+    if (vocabState.lib === 'preset:middle') return flattenMiddle();
+    if (vocabState.lib === 'preset:oldmiddle') return flattenOldMiddle();
+    if (vocabState.lib === 'preset:highschool') return flattenHighSchool();
+    return [];
+  }
+
+  /* 动态生成卡组选择按钮（闪卡deck + 预设词库） */
+  function renderVocabDeckBar() {
+    var bar = document.getElementById('vocabDeckBar');
+    if (!bar) return;
+    bar.innerHTML = '';
+
+    // 预设词库配置
+    var presets = [
+      { key: 'preset:ielts', name: '\uD83D\uDCD7 雅思核心', check: function() { return window.IELTS_VOCAB && IELTS_VOCAB.length > 0; } },
+      { key: 'preset:primary', name: '\uD83C\uDF92 小学英语', check: function() { return window.PRIMARY_VOCAB && Object.keys(PRIMARY_VOCAB).length > 0; } },
+      { key: 'preset:middle', name: '\uD83D\uDCD8 初中英语(新版)', check: function() { return window.MIDDLE_VOCAB && MIDDLE_VOCAB['7上']; } },
+      { key: 'preset:oldmiddle', name: '\uD83D\uDCD9 初中英语(旧版)', check: function() { return window.OLD_MIDDLE_VOCAB && OLD_MIDDLE_VOCAB['7上']; } },
+      { key: 'preset:highschool', name: '\uD83D\uDCD5 高中英语', check: function() { return window.HIGH_SCHOOL_VOCAB && Object.keys(HIGH_SCHOOL_VOCAB).length > 0; } }
+    ];
+
+    // 闪卡deck区
+    var hasDeckCards = false;
+    state.decks.forEach(function(d) {
+      if (d.cards && d.cards.length) hasDeckCards = true;
+    });
+
+    if (hasDeckCards) {
+      var allBtn = document.createElement('button');
+      allBtn.className = 'vocab-lib-btn' + (vocabState.lib === '__all__' ? ' active' : '');
+      allBtn.textContent = '\uD83D\uDCC2 全部卡片';
+      allBtn.addEventListener('click', function() { window.switchVocabLib('__all__'); });
+      bar.appendChild(allBtn);
+      state.decks.forEach(function(d) {
+        if (!d.cards || !d.cards.length) return;
+        var btn = document.createElement('button');
+        btn.className = 'vocab-lib-btn' + (vocabState.lib === 'deck:' + d.id ? ' active' : '');
+        btn.textContent = d.name + ' (' + d.cards.length + ')';
+        btn.addEventListener('click', function() { window.switchVocabLib('deck:' + d.id); });
+        bar.appendChild(btn);
+      });
+    }
+
+    // 预设词库区
+    presets.forEach(function(p) {
+      if (!p.check()) return;
+      var btn = document.createElement('button');
+      btn.className = 'vocab-lib-btn' + (vocabState.lib === p.key ? ' active' : '');
+      btn.textContent = p.name;
+      btn.addEventListener('click', function() { window.switchVocabLib(p.key); });
+      bar.appendChild(btn);
+    });
+
+    if (bar.children.length === 0) {
+      bar.innerHTML = '<span style="font-size:13px;color:var(--muted);">暂无词库</span>';
+    }
+  }
+
+  /* 渲染册/单元下拉框 */
+  function renderVocabGradeUnit() {
+    var gradeSel = document.getElementById('vocabGradePick');
+    var unitSel = document.getElementById('vocabUnitPick');
+    var gradeRow = document.getElementById('vocabGradeRow');
+    if (!gradeSel || !unitSel || !gradeRow) return;
+
+    // 只对预设词库显示册/单元选择
+    var isPreset = vocabState.lib && vocabState.lib.indexOf('preset:') === 0;
+    gradeRow.style.display = isPreset ? 'flex' : 'none';
+    gradeSel.innerHTML = '<option value="">全部</option>';
+    unitSel.innerHTML = '<option value="">全部单元</option>';
+
+    if (!isPreset) return;
+
+    var type = vocabState.lib.replace('preset:', '');
+    var grades, labelMap;
+
+    if (type === 'middle') {
+      grades = window.MIDDLE_VOCAB ? Object.keys(MIDDLE_VOCAB) : [];
+      labelMap = window.MIDDLE_LABEL_MAP;
+    } else if (type === 'oldmiddle') {
+      grades = window.OLD_MIDDLE_VOCAB ? Object.keys(OLD_MIDDLE_VOCAB) : [];
+      labelMap = window.OLD_MIDDLE_LABEL_MAP;
+    } else if (type === 'highschool') {
+      grades = window.HIGH_SCHOOL_VOCAB ? Object.keys(HIGH_SCHOOL_VOCAB) : [];
+      labelMap = window.HIGH_SCHOOL_LABEL_MAP;
+    } else if (type === 'primary') {
+      grades = window.PRIMARY_VOCAB ? Object.keys(PRIMARY_VOCAB) : [];
+      labelMap = window.PRIMARY_LABEL_MAP;
+    } else {
+      // 雅思没有册/单元结构
+      gradeRow.style.display = 'none';
+      return;
+    }
+
+    grades.forEach(function(g) {
+      var opt = document.createElement('option');
+      opt.value = g;
+      opt.textContent = labelMap ? (labelMap[g] || g) : g;
+      gradeSel.appendChild(opt);
+    });
+  }
+
+  function fillVocabUnitPick(grade) {
+    var unitSel = document.getElementById('vocabUnitPick');
+    if (!unitSel) return;
+    unitSel.innerHTML = '<option value="">全部单元</option>';
+    if (!grade) return;
+
+    var type = vocabState.lib.replace('preset:', '');
+    var units;
+    if (type === 'middle') units = window.MIDDLE_VOCAB ? MIDDLE_VOCAB[grade] : null;
+    else if (type === 'oldmiddle') units = window.OLD_MIDDLE_VOCAB ? OLD_MIDDLE_VOCAB[grade] : null;
+    else if (type === 'highschool') units = window.HIGH_SCHOOL_VOCAB ? HIGH_SCHOOL_VOCAB[grade] : null;
+    else if (type === 'primary') units = window.PRIMARY_VOCAB ? PRIMARY_VOCAB[grade] : null;
+
+    if (!units) return;
+    Object.keys(units).forEach(function(u) {
+      var opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = u;
+      unitSel.appendChild(opt);
+    });
+  }
+
+  /* --- 每日计数 --- */
+  /* --- 每日目标（每天重置） --- */
+  var VOCAB_DAILY_KEY = 'vb_daily_goal';
+
+  function vocabGetDailyData() {
+    try {
+      var raw = localStorage.getItem(VOCAB_DAILY_KEY);
+      if (raw) {
+        var data = JSON.parse(raw);
+        // 兼容旧格式：如果是纯数字（旧的单日计数），转换为新格式
+        if (typeof data === 'number') {
+          return { date: SBUtils.dateKey(), count: data, goal: 20 };
+        }
+        return data;
+      }
+    } catch(e) {}
+    return { date: SBUtils.dateKey(), count: 0, goal: 20 };
+  }
+
+  function vocabSaveDailyData(data) {
+    try { localStorage.setItem(VOCAB_DAILY_KEY, JSON.stringify(data)); } catch(e) {}
+  }
+
+  function vocabCheckDailyReset() {
+    var data = vocabGetDailyData();
+    var today = SBUtils.dateKey();
+    if (data.date !== today) {
+      // 新的一天，重置计数，保留目标
+      data.date = today;
+      data.count = 0;
+      vocabSaveDailyData(data);
+    }
+    return data;
+  }
+
+  function vocabGetTodayCount() {
+    var data = vocabCheckDailyReset();
+    return data.count;
+  }
+
+  function vocabGetTodayGoal() {
+    var data = vocabCheckDailyReset();
+    return data.goal;
+  }
+
+  function vocabAddTodayCount(n) {
+    var data = vocabCheckDailyReset();
+    data.count += n;
+    vocabSaveDailyData(data);
+    vocabUpdateTodayCount();
+  }
+
+  function vocabUpdateTodayCount() {
+    var data = vocabCheckDailyReset();
+    var el = document.getElementById('vocabTodayCount');
+    if (el) el.textContent = data.count;
+    var goalEl = document.getElementById('vocabGoalTarget');
+    if (goalEl) goalEl.textContent = data.goal;
+  }
+
+  /* --- 进度存储（与单词本共享格式） --- */
+  function getLearnedKey(lib) { return 'vb_learned_' + lib; }
+  function getCorrectKey(lib) { return 'vb_correct_' + lib; }
+  function getTotalKey(lib) { return 'vb_total_' + lib; }
+  function getStreakKey() { return 'vb_streak'; }
+  function getLastDateKey() { return 'vb_lastdate'; }
+
+  function loadVocabProgress() {
+    try {
+      var raw = localStorage.getItem(getLearnedKey(vocabState.lib));
+      vocabState.learned = new Set(raw ? JSON.parse(raw) : []);
+    } catch(e) { vocabState.learned = new Set(); }
+    vocabState.quizScore = parseInt(localStorage.getItem(getCorrectKey(vocabState.lib)) || '0', 10);
+    vocabState.quizTotal = 0;
+    vocabState.spellScore = 0;
+    vocabState.spellTotal = 0;
+    vocabState.quizStreak = 0;
+    vocabState.spellStreak = 0;
+    try {
+      var idx = localStorage.getItem('vb_currentIndex_' + vocabState.lib);
+      if (idx) vocabState.idx = parseInt(idx, 10);
+    } catch(e) {}
+  }
+
+  function saveVocabProgress() {
+    try {
+      localStorage.setItem(getLearnedKey(vocabState.lib), JSON.stringify(Array.from(vocabState.learned)));
+    } catch(e) {}
+    try {
+      localStorage.setItem('vb_currentIndex_' + vocabState.lib, String(vocabState.idx));
+    } catch(e) {}
+  }
+
+  function recordAnswer(lib, isCorrect) {
+    try {
+      var tk = getTotalKey(lib), ck = getCorrectKey(lib);
+      localStorage.setItem(tk, String(parseInt(localStorage.getItem(tk) || '0', 10) + 1));
+      if (isCorrect) localStorage.setItem(ck, String(parseInt(localStorage.getItem(ck) || '0', 10) + 1));
+      var today = new Date().toDateString();
+      var last = localStorage.getItem(getLastDateKey());
+      if (last !== today) {
+        var yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        if (last === yesterday.toDateString()) {
+          localStorage.setItem(getStreakKey(), String(parseInt(localStorage.getItem(getStreakKey()) || '0', 10) + 1));
+        } else {
+          localStorage.setItem(getStreakKey(), '1');
+        }
+        localStorage.setItem(getLastDateKey(), today);
+      }
+    } catch(e) {}
+  }
+
+  window.loadVocabProgress = loadVocabProgress;
+  window.saveVocabProgress = saveVocabProgress;
+
+  window.switchVocabLib = function(lib) {
+    vocabState.lib = lib;
+    vocabState.idx = 0;
+    vocabState.learned = new Set();
+    vocabState.quizScore = 0; vocabState.quizTotal = 0; vocabState.quizStreak = 0;
+    vocabState.spellScore = 0; vocabState.spellTotal = 0; vocabState.spellStreak = 0;
+    loadVocabProgress();
+    renderVocabDeckBar();
+    renderVocabGradeUnit();
+    window.renderVocab();
+  };
+
+  window.switchVocabSub = function(sub) {
+    vocabState.sub = sub;
+    ['vocabBrowse','vocabQuiz','vocabSpell'].forEach(function(id) {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById(sub === 'browse' ? 'vocabBrowse' : sub === 'quiz' ? 'vocabQuiz' : 'vocabSpell').style.display = 'block';
+    document.querySelectorAll('.vocab-sub').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-sub') === sub);
+    });
+    if (sub === 'quiz') { vocabState.quizScore = 0; vocabState.quizTotal = 0; vocabState.quizStreak = 0; window.vocabNextQuiz(); }
+    if (sub === 'spell') { vocabState.spellScore = 0; vocabState.spellTotal = 0; vocabState.spellStreak = 0; window.vocabNextSpell(); }
+    if (sub === 'browse') window.renderVocab();
+  };
+
+  function updateVocabStats() {
+    var el;
+    el = document.getElementById('vocabLearned');
+    if (el) el.textContent = vocabState.learned.size;
+    var correct = parseInt(localStorage.getItem(getCorrectKey(vocabState.lib)) || '0', 10);
+    var total = parseInt(localStorage.getItem(getTotalKey(vocabState.lib)) || '0', 10);
+    var acc = total > 0 ? Math.round(correct / total * 100) : 0;
+    el = document.getElementById('vocabAccuracy');
+    if (el) el.textContent = acc + '%';
+    el = document.getElementById('vocabStreak');
+    if (el) el.textContent = localStorage.getItem(getStreakKey()) || '0';
+  }
+
+  window.renderVocab = function() {
+    var lib = getVocabLib();
+    if (!lib.length) return;
+    if (vocabState.idx >= lib.length) vocabState.idx = 0;
+    if (vocabState.idx < 0) vocabState.idx = lib.length - 1;
+    var item = lib[vocabState.idx];
+    var frontEl = document.getElementById('vocabFront');
+    var backEl = document.getElementById('vocabBack');
+    var phoneticEl = document.getElementById('vocabPhonetic');
+    var phoneticBackEl = document.getElementById('vocabPhoneticBack');
+    if (frontEl) frontEl.textContent = item[0];
+    if (backEl) backEl.textContent = item[1];
+    if (phoneticEl) phoneticEl.textContent = item[2] || '';
+    if (phoneticBackEl) phoneticBackEl.textContent = item[2] || '';
+    var card = document.getElementById('vocabCard');
+    if (card) card.classList.remove('flipped');
+    var progEl = document.getElementById('vocabProgress');
+    if (progEl) progEl.textContent = (vocabState.idx + 1) + ' / ' + lib.length;
+    vocabState.learned.add(item[0]);
+    saveVocabProgress();
+    updateVocabStats();
+  };
+
+  window.vocabFlip = function() {
+    var card = document.getElementById('vocabCard');
+    if (card) card.classList.toggle('flipped');
+  };
+
+  window.vocabPrev = function() {
+    var lib = getVocabLib();
+    if (!lib.length) return;
+    vocabState.idx = (vocabState.idx - 1 + lib.length) % lib.length;
+    window.renderVocab();
+  };
+
+  window.vocabNext = function() {
+    var lib = getVocabLib();
+    if (!lib.length) return;
+    vocabState.learned.add(lib[vocabState.idx][0]);
+    saveVocabProgress();
+    vocabAddTodayCount(1);
+    vocabState.idx = (vocabState.idx + 1) % lib.length;
+    window.renderVocab();
+  };
+
+  window.vocabMark = function() {
+    var lib = getVocabLib();
+    if (!lib.length) return;
+    vocabState.learned.add(lib[vocabState.idx][0]);
+    saveVocabProgress();
+    vocabAddTodayCount(1);
+    SBUtils.showToast('已标记学会，下一个');
+    // 自动跳转到下一个单词
+    vocabState.idx = (vocabState.idx + 1) % lib.length;
+    window.renderVocab();
+  };
+
+  /* --- 测验模式 --- */
+  var vocabQuizCurrent = null;
+
+  window.vocabNextQuiz = function() {
+    var lib = getVocabLib();
+    if (lib.length < 4) { SBUtils.showToast('词库太小，无法出题', 'warn'); return; }
+    vocabState.quizAnswered = false;
+    vocabQuizCurrent = lib[Math.floor(Math.random() * lib.length)];
+    var wordEl = document.getElementById('vocabQuizWord');
+    var phoneticEl = document.getElementById('vocabQuizPhonetic');
+    if (wordEl) wordEl.textContent = vocabQuizCurrent[0];
+    if (phoneticEl) phoneticEl.textContent = vocabQuizCurrent[2] || '';
+    var others = lib.filter(function(w) { return w[0] !== vocabQuizCurrent[0]; });
+    for (var i = others.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = others[i]; others[i] = others[j]; others[j] = tmp;
+    }
+    var wrong = others.slice(0, 3);
+    var options = [vocabQuizCurrent].concat(wrong);
+    for (var i = options.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = options[i]; options[i] = options[j]; options[j] = tmp;
+    }
+    var html = '';
+    options.forEach(function(opt, idx) {
+      html += '<button class="quiz-opt" data-idx="' + idx + '" data-word="' + esc(opt[0]) + '">' + esc(opt[1]) + '</button>';
+    });
+    var optsEl = document.getElementById('vocabQuizOpts');
+    if (optsEl) optsEl.innerHTML = html;
+    var resEl = document.getElementById('vocabQuizResult');
+    if (resEl) { resEl.textContent = ''; resEl.className = ''; }
+    // 隐藏"下一题"按钮
+    var nextBtn = document.getElementById('vocabQuizNextBtn');
+    if (nextBtn) nextBtn.style.display = 'none';
+    updateQuizScoreBar();
+  };
+
+  function updateQuizScoreBar() {
+    var el;
+    el = document.getElementById('vocabQuizScoreNum'); if (el) el.textContent = vocabState.quizScore;
+    el = document.getElementById('vocabQuizTotalNum'); if (el) el.textContent = vocabState.quizTotal;
+    el = document.getElementById('vocabQuizStreak'); if (el) el.textContent = vocabState.quizStreak;
+  }
+
+  window.vocabPickQuiz = function(btn, pickedWord) {
+    if (vocabState.quizAnswered) return;
+    vocabState.quizAnswered = true;
+    var correct = (pickedWord === vocabQuizCurrent[0]);
+    document.querySelectorAll('#vocabQuizOpts .quiz-opt').forEach(function(b) {
+      b.style.pointerEvents = 'none';
+      if (b.textContent === vocabQuizCurrent[1]) b.classList.add('correct');
+      if (b === btn && !correct) b.classList.add('wrong');
+    });
+    var resEl = document.getElementById('vocabQuizResult');
+    if (correct) {
+      vocabState.quizScore++;
+      vocabState.quizStreak++;
+      if (resEl) { resEl.textContent = '✓ 回答正确！'; resEl.className = 'quiz-result ok'; }
+    } else {
+      vocabState.quizStreak = 0;
+      if (resEl) { resEl.textContent = '✗ 回答错误，正确答案是：' + vocabQuizCurrent[1]; resEl.className = 'quiz-result err'; }
+    }
+    vocabState.quizTotal++;
+    recordAnswer(vocabState.lib, correct);
+    vocabAddTodayCount(1);
+    updateQuizScoreBar();
+    updateVocabStats();
+    if (correct) {
+      // 答对：500ms 后自动跳转下一题
+      setTimeout(function() { window.vocabNextQuiz(); }, 500);
+    } else {
+      // 答错：显示"下一题"按钮让用户手动点击
+      var nextBtn = document.getElementById('vocabQuizNextBtn');
+      if (nextBtn) nextBtn.style.display = '';
+    }
+  };
+
+  /* --- 拼写模式 --- */
+  window.vocabNextSpell = function() {
+    var lib = getVocabLib();
+    if (!lib.length) return;
+    vocabState.spellAnswered = false;
+    vocabState.spellHintUsed = false;
+    var item = lib[Math.floor(Math.random() * lib.length)];
+    var qEl = document.getElementById('vocabSpellQ');
+    if (qEl) qEl.textContent = item[1];
+    var inp = document.getElementById('vocabSpellInput');
+    if (inp) { inp.value = ''; inp.disabled = false; inp.style.borderColor = ''; inp.className = 'spell-input'; }
+    var resEl = document.getElementById('vocabSpellResult');
+    if (resEl) { resEl.textContent = ''; resEl.className = ''; }
+    var nextBtn = document.getElementById('vocabSpellNextBtn');
+    if (nextBtn) nextBtn.disabled = true;
+    vocabState._spellAnswer = item[0].toLowerCase();
+    updateSpellScoreBar();
+    setTimeout(function() { if (inp) inp.focus(); }, 100);
+  };
+
+  function updateSpellScoreBar() {
+    var el;
+    el = document.getElementById('vocabSpellScoreNum'); if (el) el.textContent = vocabState.spellScore;
+    el = document.getElementById('vocabSpellTotalNum'); if (el) el.textContent = vocabState.spellTotal;
+    el = document.getElementById('vocabSpellStreak'); if (el) el.textContent = vocabState.spellStreak;
+  }
+
+  window.vocabCheckSpell = function() {
+    if (vocabState.spellAnswered) return;
+    var input = document.getElementById('vocabSpellInput');
+    if (!input) return;
+    var val = input.value.trim().toLowerCase();
+    var correct = (val === vocabState._spellAnswer);
+    vocabState.spellAnswered = true;
+    vocabState.spellTotal++;
+    input.disabled = true;
+    var nextBtn = document.getElementById('vocabSpellNextBtn');
+    if (nextBtn) nextBtn.disabled = false;
+    var resEl = document.getElementById('vocabSpellResult');
+    if (correct) {
+      vocabState.spellScore++;
+      vocabState.spellStreak++;
+      if (input.classList) input.classList.add('correct');
+      else input.style.borderColor = '#22c55e';
+      if (resEl) { resEl.textContent = '正确！' + (vocabState.spellHintUsed ? '（使用了提示）' : ''); resEl.className = 'quiz-result ok'; }
+    } else {
+      vocabState.spellStreak = 0;
+      if (input.classList) input.classList.add('wrong');
+      else input.style.borderColor = '#ef4444';
+      if (resEl) { resEl.textContent = '错误。正确答案是 ' + vocabState._spellAnswer; resEl.className = 'quiz-result err'; }
+    }
+    recordAnswer(vocabState.lib, correct);
+    vocabAddTodayCount(1);
+    updateSpellScoreBar();
+    updateVocabStats();
+    // 拼写正确且没用提示，自动进入下一题
+    if (correct && !vocabState.spellHintUsed) {
+      setTimeout(window.vocabNextSpell, 1200);
+    }
+  };
+
+  window.vocabSpellHint = function() {
+    if (vocabState.spellAnswered) return;
+    var input = document.getElementById('vocabSpellInput');
+    if (!input) return;
+    var answer = vocabState._spellAnswer;
+    if (input.value.length < answer.length) {
+      input.value = answer.slice(0, input.value.length + 1);
+      vocabState.spellHintUsed = true;
+      // 如果提示已填完整单词，自动检查
+      if (input.value.length >= answer.length) {
+        window.vocabCheckSpell();
+      }
+    }
+  };
+
+
+  // 词库学习事件绑定
+  document.querySelectorAll('.vocab-sub').forEach(function(btn) {
+    btn.addEventListener('click', function() { window.switchVocabSub(this.getAttribute('data-sub')); });
+  });
+  var _vc = document.getElementById('vocabCard');
+  if (_vc) { _vc.addEventListener('click', window.vocabFlip); }
+  var _vsi = document.getElementById('vocabSpellInput');
+  if (_vsi) {
+    _vsi.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') window.vocabCheckSpell();
+    });
+  }
+  // 测验模式"下一题"按钮
+  var _vqnb = document.getElementById('vocabQuizNextBtn');
+  if (_vqnb) {
+    _vqnb.addEventListener('click', function() { window.vocabNextQuiz(); });
+  }
+  // 初始化词库学习：默认选第一个可用的预设词库或闪卡deck
+  vocabState.lib = null;
+  if (window.IELTS_VOCAB && IELTS_VOCAB.length) vocabState.lib = 'preset:ielts';
+  else if (window.MIDDLE_VOCAB && MIDDLE_VOCAB['7上']) vocabState.lib = 'preset:middle';
+  else if (window.PRIMARY_VOCAB && Object.keys(PRIMARY_VOCAB).length) vocabState.lib = 'preset:primary';
+  else if (window.HIGH_SCHOOL_VOCAB && Object.keys(HIGH_SCHOOL_VOCAB).length) vocabState.lib = 'preset:highschool';
+  else if (window.OLD_MIDDLE_VOCAB && OLD_MIDDLE_VOCAB['7上']) vocabState.lib = 'preset:oldmiddle';
+  else {
+    for (var _di = 0; _di < state.decks.length; _di++) {
+      if (state.decks[_di].cards && state.decks[_di].cards.length) {
+        vocabState.lib = '__all__'; break;
+      }
+    }
+  }
+  renderVocabDeckBar();
+  renderVocabGradeUnit();
+  var _vgp = document.getElementById('vocabGradePick');
+  var _vup = document.getElementById('vocabUnitPick');
+  if (_vgp) {
+    _vgp.addEventListener('change', function() {
+      fillVocabUnitPick(this.value);
+      vocabState.idx = 0;
+      window.renderVocab();
+    });
+  }
+  if (_vup) {
+    _vup.addEventListener('change', function() {
+      vocabState.idx = 0;
+      window.renderVocab();
+    });
+  }
+  if (vocabState.lib) {
+    loadVocabProgress();
+    window.renderVocab();
+  }
+  vocabUpdateTodayCount();
+
+  // 恢复上次模式（闪卡/词库学习）
+  try {
+    var savedMode = localStorage.getItem('sb_flashcard_mode');
+    if (savedMode && savedMode === 'vocab') {
+      var tabs = document.querySelectorAll('.mode-tab');
+      tabs.forEach(function(t) { t.classList.toggle('active', t.getAttribute('data-mode') === 'vocab'); });
+      var fm = document.getElementById('flashcardMode');
+      var vm = document.getElementById('vocabMode');
+      if (fm) fm.style.display = 'none';
+      if (vm) vm.style.display = '';
+    }
+  } catch(e) {}
+
+  // 恢复滚动位置（等页面完全加载+布局稳定后再恢复，多次尝试）
+  var _rsTimer = null, _rsAttempts = 0;
+  function restoreScroll() {
+    try {
+      var y = localStorage.getItem('sb_flashcard_scrollY');
+      if (!y) return;
+      y = parseInt(y, 10);
+      if (y > 0) {
+        window.scrollTo({ top: y, behavior: 'auto' });
+      }
+      _rsAttempts++;
+      // 如果滚动还没到位且没超次数，继续试
+      if (Math.abs(window.scrollY - y) > 5 && _rsAttempts < 30) {
+        _rsTimer = setTimeout(restoreScroll, 100);
+        return;
+      }
+      localStorage.removeItem('sb_flashcard_scrollY');
+    } catch(e) {}
+  }
+  // 等所有资源（图片/CSS/字体）加载完再开始恢复
+  if (document.readyState === 'complete') {
+    restoreScroll();
+  } else {
+    window.addEventListener('load', function() { restoreScroll(); });
+  }
+
+  // 保存滚动位置（只在离开前保存，不监听 scroll 事件避免覆盖）
+  function saveScrollY() {
+    try { localStorage.setItem('sb_flashcard_scrollY', String(window.scrollY)); } catch(e) {}
+  }
+  window.addEventListener('beforeunload', saveScrollY);
+  window.addEventListener('pagehide', saveScrollY);
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') saveScrollY();
   });
 })();

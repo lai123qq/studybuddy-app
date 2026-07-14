@@ -47,7 +47,7 @@
   }
 
   /* ── App container ── */
-  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 20px 100px; }
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 16px 100px; }
 
   /* ── Top bar (hidden from user, but needed for JS .nav .brand) ── */
   .nav { display: none; }
@@ -62,14 +62,16 @@
     border-bottom: 1px solid var(--rule);
     margin-bottom: 16px;
   }
-  .app-header .back-link {
+  .app-header .back-btn {
     display: inline-flex; align-items: center; gap: 4px;
-    color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500;
-    padding: 8px 0; border: none; background: none; cursor: pointer;
-    font-family: inherit;
+    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 10px 14px; border-radius: 10px; min-height: 44px;
+    background: transparent; cursor: pointer; font-family: inherit;
+    margin-bottom: 8px; transition: background 0.2s; border: none;
   }
-  .app-header .back-link svg { width: 20px; height: 20px; }
-  .app-header .back-link:active { opacity: 0.6; }
+  .app-header .back-btn:hover { background: rgba(100,116,139,0.08); }
+  .app-header .back-btn:active { opacity: 0.6; }
+  .app-header .back-btn svg { width: 20px; height: 20px; }
   .app-header .header-title {
     position: absolute; left: 50%; transform: translateX(-50%);
     font-size: 16px; font-weight: 700; color: var(--ink);
@@ -78,8 +80,8 @@
 
   /* ── Stats strip (2x2 grid, card style) ── */
   .stats {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-    margin-bottom: 20px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+    margin-bottom: 16px;
   }
   .stat-pill {
     background: var(--bg2); border: 1px solid var(--rule); border-radius: 14px;
@@ -96,28 +98,28 @@
   .section-label {
     font-size: 12px; font-weight: 700; color: var(--accent);
     text-transform: uppercase; letter-spacing: 0.08em;
-    margin-bottom: 10px; margin-top: 8px;
+    margin-bottom: 16px; margin-top: 8px;
   }
 
   /* ── Flashcard study area ── */
   .study-grid { display: flex; flex-direction: column; gap: 16px; }
 
-  .flashcard-wrap { display: flex; flex-direction: column; gap: 14px; }
+  .flashcard-wrap { display: flex; flex-direction: column; gap: 16px; }
   .flashcard {
-    perspective: 1200px;
+    perspective: 1000px;
     height: 220px;
     cursor: pointer;
     position: relative;
   }
   .flashcard-inner {
     position: relative; width: 100%; height: 100%;
-    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transition: transform 0.4s ease;
     transform-style: preserve-3d; -webkit-transform-style: preserve-3d;
   }
   .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); -webkit-transform: rotateY(180deg); }
   .face {
     position: absolute; inset: 0;
-    background: var(--bg2); border: 1px solid var(--rule); border-radius: 14px;
+    background: var(--bg2); border: 1px solid var(--rule); border-radius: 20px;
     padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
     backface-visibility: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -132,29 +134,30 @@
 
   /* Study progress */
   .study-progress { display: flex; align-items: center; gap: 10px; }
-  .study-progress .bar { flex: 1; height: 5px; background: var(--rule); border-radius: 3px; overflow: hidden; }
-  .study-progress .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.5s cubic-bezier(0.4, 0.2, 0.2, 1); }
+  .study-progress .bar { flex: 1; height: 6px; background: var(--rule); border-radius: 999px; overflow: hidden; }
+  .study-progress .fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 999px; transition: width 0.5s cubic-bezier(0.4, 0.2, 0.2, 1); }
   .study-progress .label { font-size: 11px; color: var(--muted); font-family: 'JetMono', monospace; }
 
   /* Rating buttons */
-  .rating-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rating-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .rate-btn {
+    min-height: 56px;
     padding: 14px 8px; border-radius: 14px; border: 1.5px solid var(--rule);
-    background: var(--bg2); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600;
+    background: var(--bg2); cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600;
     transition: all 0.2s; text-align: center;
   }
   .rate-btn .next { font-size: 10px; color: var(--muted); font-weight: 500; display: block; margin-top: 2px; }
-  .rate-btn:active { transform: scale(0.96); }
-  .rate-btn.hard { color: var(--accent2); border-color: rgba(244,63,94,0.3); }
-  .rate-btn.hard:active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
-  .rate-btn.good { color: #d97706; border-color: rgba(217,119,6,0.3); }
-  .rate-btn.good:active { background: #d97706; color: #fff; border-color: #d97706; }
-  .rate-btn.easy { color: var(--accent); border-color: rgba(160,126,232,0.3); }
-  .rate-btn.easy:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .rate-btn:active { transform: scale(0.95); }
+  .rate-btn.hard { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+  .rate-btn.hard:active { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .rate-btn.good { color: #64748b; border-color: rgba(100,116,139,0.3); }
+  .rate-btn.good:active { background: #64748b; color: #fff; border-color: #64748b; }
+  .rate-btn.easy { color: #22c55e; border-color: rgba(34,197,94,0.3); }
+  .rate-btn.easy:active { background: #22c55e; color: #fff; border-color: #22c55e; }
   .rate-btn.perfect { color: var(--accent3); border-color: rgba(16,185,129,0.3); }
   .rate-btn.perfect:active { background: var(--accent3); color: #fff; border-color: var(--accent3); }
   .rating-row.locked .rate-btn { opacity: 0.4; cursor: not-allowed; transform: none; filter: grayscale(0.2); }
-  .rating-row.locked .rate-btn:active { background: var(--bg2); color: inherit; }
+  .rating-row.locked .rate-btn:active { background: var(--bg2); color: inherit; transform: none; }
 
   /* Shake & glow */
   .flashcard-wrap.shake { animation: shake 0.4s; }
@@ -167,7 +170,7 @@
 
   /* ── Side panel -> mobile card ── */
   .side-panel {
-    background: var(--bg2); border: 1px solid var(--rule); border-radius: 14px;
+    background: var(--bg2); border: 1px solid var(--rule); border-radius: 20px;
     padding: 18px; display: flex; flex-direction: column; gap: 16px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
@@ -323,7 +326,7 @@
   .quote {
     background: var(--soft); border: 1px solid rgba(160,126,232,0.12); border-radius: 14px;
     padding: 24px 20px; text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
   .quote blockquote { margin: 0; font-size: 15px; font-weight: 500; line-height: 1.5; }
   .quote blockquote em { color: var(--accent); font-style: normal; }
@@ -364,7 +367,7 @@
   }
 
   /* Section spacing */
-  .page-section { margin-bottom: 24px; }
+  .page-section { margin-bottom: 16px; }
 
   /* Hide desktop-only elements */
   .hero, footer { display: none; }
@@ -394,7 +397,45 @@
   body.theme-chinese input, body.theme-chinese select, body.theme-chinese textarea { background: #faf6f0 !important; color: #3d3d3d !important; }
   body.theme-chinese button, body.theme-chinese .btn { background: #e8ddd0 !important; color: #2c1810 !important; border-color: #d4c8b8 !important; }
   /* ====== 主题：彩色 ====== */
-  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }</style>
+  body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
+  /* 测试面板 */
+  .quiz-panel { display: none; background: var(--bg2); border: 1px solid var(--rule); border-radius: 16px; padding: 24px; }
+  .quiz-panel h4 { margin: 0 0 16px; font-size: 15px; }
+  .quiz-question { font-size: 18px; font-weight: 600; color: var(--accent); margin-bottom: 16px; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .quiz-opt { padding: 14px; border-radius: 12px; border: 2px solid var(--rule); background: var(--bg);
+    color: var(--ink); font-size: 15px; cursor: pointer; transition: all 0.2s; text-align: left; }
+  .quiz-opt:hover { border-color: var(--accent); }
+  .quiz-opt.correct { background: #dcfce7; border-color: #22c55e; color: #166534; }
+  .quiz-opt.wrong { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .quiz-opt:disabled { opacity: 0.7; cursor: not-allowed; }
+  .quiz-result { padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
+  .quiz-result.ok { background: #dcfce7; color: #166534; }
+  .quiz-result.err { background: #fee2e2; color: #991b1b; }
+  .spell-panel { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--rule); }
+  .spell-input { width: 100%; padding: 14px 16px; border: 2px solid var(--rule); border-radius: 12px;
+    font-size: 16px; background: var(--bg); color: var(--ink); margin-bottom: 10px; }
+  .spell-input:focus { outline: none; border-color: var(--accent); }
+  .spell-input.correct { border-color: #22c55e; background: #f0fdf4; }
+  .spell-input.wrong { border-color: #ef4444; background: #fef2f2; }
+  .spell-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* 学习统计 */
+  .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row span { color: var(--muted); }
+  .stat-row b { font-weight: 700; font-size: 15px; }
+
+  /* Mode tabs */
+  .mode-tabs { display: flex; gap: 0; background: var(--bg2); border-radius: 12px; padding: 4px; margin: 12px 16px; border: 1px solid var(--rule); }
+  .mode-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .mode-tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(160,126,232,0.3); }
+  .vocab-lib-btn { padding: 8px 14px; border-radius: 10px; border: 2px solid var(--rule); background: var(--bg); color: var(--ink); font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500; }
+  .vocab-lib-btn.active { border-color: var(--accent); background: rgba(160,126,232,0.08); color: var(--accent); }
+  .vocab-sub-tabs { display: flex; gap: 0; background: var(--bg); border-radius: 10px; padding: 3px; border: 1px solid var(--rule); }
+  .vocab-sub { flex: 1; padding: 8px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .vocab-sub.active { background: var(--accent); color: #fff; }</style>
+<script src="../_shared/js/utils.js"></script>
+<script src="../_shared/js/vocab-data.js"></script>
 </head>
 <body>
 
@@ -405,12 +446,19 @@
 
 <div class="app">
   <header class="app-header">
-    <a class="back-link" href="../index-v2.html">
+    <a class="back-btn" href="../index-v2.html" onclick="try{localStorage.setItem('sb_flashcard_scrollY',String(window.scrollY))}catch(e){}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       返回
     </a>
     <span class="header-title">闪卡<span class="dot">·</span>记忆</span>
   </header>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="flashcard">🃏 闪卡模式</button>
+    <button class="mode-tab" data-mode="vocab">📖 词库学习</button>
+  </div>
+
+  <div id="flashcardMode">
 
   <!-- Stats -->
   <div class="stats">
@@ -443,11 +491,32 @@
             </div>
           </div>
         </div>
-        <div class="rating-row">
-          <button class="rate-btn hard" data-rate="1">❌ 不认识<span class="next">本组末尾再练</span></button>
-          <button class="rate-btn good" data-rate="2">⏭ 跳过<span class="next">下次还在</span></button>
-          <button class="rate-btn easy" data-rate="3">✅ 认识<span class="next">明天复习</span></button>
+        <div class="rating-row" id="learnBtns">
+          <button class="rate-btn hard" id="rateHardBtn">✕ 没学会<span class="next">末尾再练</span></button>
+          <button class="rate-btn easy" id="rateEasyBtn">✓ 学会了<span class="next">标记掌握</span></button>
         </div>
+      </div>
+
+      <!-- 测试面板 -->
+      <div class="quiz-panel" id="quizPanel">
+        <h4>📝 选择题测试</h4>
+        <div class="quiz-question" id="quizQuestion"></div>
+        <div class="quiz-options" id="quizOptions"></div>
+        <div class="quiz-result" id="quizResult"></div>
+        
+        <div class="spell-panel" id="spellPanel">
+          <h4>✏️ 拼写测试</h4>
+          <div class="quiz-question" id="spellPrompt"></div>
+          <input type="text" class="spell-input" id="spellInput" placeholder="输入英文单词，按回车提交">
+          <div class="spell-actions">
+            <button class="btn primary" id="spellCheckBtn">检查</button>
+            <button class="btn" id="spellHintBtn">💡 提示</button>
+          </div>
+          <div class="quiz-result" id="spellResult"></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;display:none;" id="spellHint">已使用提示</div>
+        </div>
+        
+        <button class="btn primary" id="quizNextBtn" style="display:none;margin-top:16px;">继续</button>
       </div>
 
       <div class="side-panel">
@@ -468,12 +537,11 @@
         <div class="decks" id="decksList">
           <!-- decks injected -->
         </div>
-        <h3>📊 复习预测</h3>
+        <h3>📊 学习统计</h3>
         <div>
-          <div class="due-row"><span class="label">今日到期</span><span class="value accent" id="due-today">0</span></div>
-          <div class="due-row"><span class="label">明日到期</span><span class="value" id="due-tomorrow">0</span></div>
-          <div class="due-row"><span class="label">7 日内</span><span class="value" id="due-week">0</span></div>
-          <div class="due-row"><span class="label">已掌握</span><span class="value warn" id="due-mastered">0</span></div>
+          <div class="stat-row"><span>总卡片</span><b id="stat-total">0</b></div>
+          <div class="stat-row"><span>已掌握</span><b id="stat-mastered">0</b></div>
+          <div class="stat-row"><span>掌握率</span><b id="stat-mastery">0%</b></div>
         </div>
       </div>
     </div>
@@ -483,18 +551,18 @@
   <div class="page-section" id="algorithm">
     <div class="algo-card">
       <button class="algo-toggle" id="algoToggle">
-        <span>🧠 SM-2 间隔重复算法</span>
+        <span>🧠 学+测模式</span>
         <span class="arrow" id="algoArrow">▸</span>
       </button>
       <div class="algo-body" id="algoBody">
         <p class="algo-text">
-          每张卡片有 4 个隐藏状态：<strong>难度系数(EF)</strong>、<strong>重复次数</strong>、<strong>复习间隔</strong>、<strong>下次复习时间</strong>。你每次评分，系统会重新计算这些值，把卡片精确地推到"快要忘记"的临界点复习。
+          本系统采用<strong>"学完即测"</strong>模式：每张卡片学习后，必须通过<strong>选择题</strong>和<strong>拼写测试</strong>两轮考核，才算真正掌握。卡片掌握后会移出学习队列，未通过则排到队列末尾再次学习。
         </p>
         <div class="formula">
-          <div class="step"><span class="badge">1</span><div class="desc"><b>计算难度系数</b>EF' = EF + (0.1 − (5 − q) × (0.08 + (5 − q) × 0.02))</div></div>
-          <div class="step"><span class="badge">2</span><div class="desc"><b>边界保护</b>若 EF' &lt; 1.3,取 1.3;若 q &lt; 3,重置重复次数为 0</div></div>
-          <div class="step"><span class="badge">3</span><div class="desc"><b>更新间隔</b>rep=1→1天, rep=2→6天, rep≥3→上一间隔 × EF'</div></div>
-          <div class="step"><span class="badge">4</span><div class="desc"><b>调度下次</b>now + interval(天) = 下次复习时间</div></div>
+          <div class="step"><span class="badge">1</span><div class="desc"><b>学习卡片</b>点击卡片查看答案，选择"学会了"进入测试</div></div>
+          <div class="step"><span class="badge">2</span><div class="desc"><b>选择测试</b>从同卡组卡片中选出正确答案</div></div>
+          <div class="step"><span class="badge">3</span><div class="desc"><b>拼写测试</b>根据中文释义拼写出英文单词</div></div>
+          <div class="step"><span class="badge">4</span><div class="desc"><b>掌握判定</b>两关全部通过，卡片标记为已掌握</div></div>
         </div>
       </div>
     </div>
@@ -511,7 +579,6 @@
       <div class="tab-row">
         <button class="tab active" data-tab="ielts">📚 雅思</button>
         <button class="tab" data-tab="bulk">📦 批量</button>
-        <button class="tab" data-tab="single">➕ 单卡</button>
         <button class="tab" data-tab="grade">🎒 小学</button>
         <button class="tab" data-tab="middle">📚 初中</button>
         <button class="tab" data-tab="oldmiddle">📖 旧初中</button>
@@ -562,8 +629,7 @@
         </div>
         <div class="vocab-summary" id="ieltsSummary"></div>
         <div class="vocab-actions">
-          <button class="btn btn-ghost" onclick="toggleVocab('ieltsList', this)">收起单词</button>
-          <button class="btn btn-ghost" style="color:var(--accent2);border-color:var(--accent2);" onclick="clearVocabCards('ielts')">清除已导入</button>
+          <button class="btn btn-ghost" data-toggle-vocab="ieltsList">收起单词</button>
         </div>
         <div id="ieltsList" class="vocab-list"></div>
       </div>
@@ -591,8 +657,7 @@
         </div>
         <div class="vocab-summary" id="gradeSummary"></div>
         <div class="vocab-actions">
-          <button class="btn btn-ghost" onclick="toggleVocab('gradeList', this)">收起单词</button>
-          <button class="btn btn-ghost" style="color:var(--accent2);border-color:var(--accent2);" onclick="clearVocabCards('grade')">清除已导入</button>
+          <button class="btn btn-ghost" data-toggle-vocab="gradeList">收起单词</button>
         </div>
         <div id="gradeList" class="vocab-list"></div>
       </div>
@@ -619,8 +684,7 @@
           <button class="btn btn-ghost" id="middleImportCustom">勾选导入</button>
         </div>
         <div class="vocab-actions">
-          <button class="btn btn-ghost" onclick="toggleVocab('middleGrid', this)">收起单词</button>
-          <button class="btn btn-ghost" style="color:var(--accent2);border-color:var(--accent2);" onclick="clearVocabCards('middle')">清除已导入卡片</button>
+          <button class="btn btn-ghost" data-toggle-vocab="middleGrid">收起单词</button>
         </div>
         <div class="vocab-grid" id="middleGrid"></div>
       </div>
@@ -647,8 +711,7 @@
           <button class="btn btn-ghost" id="oldMiddleImportCustom">勾选导入</button>
         </div>
         <div class="vocab-actions">
-          <button class="btn btn-ghost" onclick="toggleVocab('oldMiddleGrid', this)">收起单词</button>
-          <button class="btn btn-ghost" style="color:var(--accent2);border-color:var(--accent2);" onclick="clearVocabCards('oldMiddle')">清除已导入卡片</button>
+          <button class="btn btn-ghost" data-toggle-vocab="oldMiddleGrid">收起单词</button>
         </div>
         <div class="vocab-grid" id="oldMiddleGrid"></div>
       </div>
@@ -677,8 +740,7 @@
           <button class="btn btn-ghost" id="highSchoolImportCustom">勾选导入</button>
         </div>
         <div class="vocab-actions">
-          <button class="btn btn-ghost" onclick="toggleVocab('highSchoolGrid', this)">收起单词</button>
-          <button class="btn btn-ghost" style="color:var(--accent2);border-color:var(--accent2);" onclick="clearVocabCards('highSchool')">清除已导入卡片</button>
+          <button class="btn btn-ghost" data-toggle-vocab="highSchoolGrid">收起单词</button>
         </div>
         <div class="vocab-grid" id="highSchoolGrid"></div>
       </div>
@@ -708,79 +770,115 @@
     <cite>—— Cepeda et al., 2006</cite>
   </div>
 
-</div><!-- /.app -->
+  </div><!-- /flashcardMode -->
 
-<script>
-// 收起/展开单词列表
-function toggleVocab(listId, btn) {
-  var el = document.getElementById(listId);
-  if (!el) return;
-  var isCollapsed = el.classList.toggle('collapsed');
-  btn.textContent = isCollapsed ? '展开单词' : '收起单词';
-}
-// 清除已导入卡片
-function clearVocabCards(type) {
-  if (!confirm('确定要清除该词库已导入的卡片吗？')) return;
-  try {
-    var raw = localStorage.getItem('recalleum_v3');
-    if (!raw) return;
-    var data = JSON.parse(raw);
-    var deck = data.decks || [];
-    var defaultDeck = deck.find(function(d) { return d.id === 'default'; });
-    if (!defaultDeck || !defaultDeck.cards) return;
-    var before = defaultDeck.cards.length;
-    defaultDeck.cards = defaultDeck.cards.filter(function(c) {
-      if (type === 'ielts') return !c._src || c._src !== 'ielts';
-      if (type === 'grade') return !c._src || c._src !== 'grade';
-      if (type === 'middle') return !c._src || c._src !== 'middle';
-      if (type === 'oldMiddle') return !c._src || c._src !== 'oldMiddle';
-      if (type === 'highSchool') return !c._src || c._src !== 'highSchool';
-      return true;
-    });
-    var removed = before - defaultDeck.cards.length;
-    localStorage.setItem('recalleum_v3', JSON.stringify(data));
-    showToast('已清除 ' + removed + ' 张卡片');
-    location.reload();
-  } catch (e) {
-    showToast('清除失败: ' + e.message);
-  }
-}
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  if (t) { t.textContent = msg; t.style.display = 'block'; setTimeout(function() { t.style.display = 'none'; }, 2000); }
-}
+  <!-- 词库学习模式 -->
+  <div id="vocabMode" style="display:none">
 
-// Collapsible toggles
-document.addEventListener('DOMContentLoaded', function() {
-  var algoToggle = document.getElementById('algoToggle');
-  var algoBody = document.getElementById('algoBody');
-  var algoArrow = document.getElementById('algoArrow');
-  if (algoToggle) {
-    algoToggle.addEventListener('click', function() {
-      algoBody.classList.toggle('open');
-      algoArrow.classList.toggle('open');
-    });
-  }
-  var chartToggle = document.getElementById('chartToggle');
-  var chartBody = document.getElementById('chartBody');
-  var chartArrow = document.getElementById('chartArrow');
-  if (chartToggle) {
-    chartToggle.addEventListener('click', function() {
-      chartBody.classList.toggle('open');
-      chartArrow.classList.toggle('open');
-    });
-  }
-});
-</script>
-<div class="toast" id="toast"></div>
-<div class="err-toast" id="errToast"></div>
+    <!-- 每日目标 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-radius:12px;padding:12px 14px;border:1px solid var(--rule);margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <span style="font-size:13px;color:var(--muted);font-weight:500;">每日目标</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;font-weight:700;color:#0f172a;"><b id="vocabTodayCount" style="color:var(--accent);">0</b> / <span id="vocabGoalTarget">20</span></span>
+        <span style="font-size:13px;color:var(--muted);">词</span>
+      </div>
+    </div>
+
+    <!-- 卡组选择（从闪卡数据动态生成） -->
+    <div style="padding:0 0 12px;">
+      <div id="vocabDeckBar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+      <div id="vocabGradeRow" style="display:flex;gap:8px;margin-bottom:12px;">
+        <select id="vocabGradePick" style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--bg2);font-size:13px;font-family:inherit;color:var(--ink);">
+          <option value="">全部</option>
+        </select>
+        <select id="vocabUnitPick" style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--bg2);font-size:13px;font-family:inherit;color:var(--ink);">
+          <option value="">全部单元</option>
+        </select>
+      </div>
+      <!-- 子模式切换 -->
+      <div class="vocab-sub-tabs">
+        <button class="vocab-sub active" data-sub="browse">浏览</button>
+        <button class="vocab-sub" data-sub="quiz">测验</button>
+        <button class="vocab-sub" data-sub="spell">拼写</button>
+      </div>
+    </div>
+
+    <!-- 浏览模式 -->
+    <div id="vocabBrowse">
+      <div class="flashcard" id="vocabCard" style="cursor:pointer;min-height:200px;">
+        <div class="flashcard-inner">
+          <div class="face front">
+            <div class="face-label">单词</div>
+            <div class="face-text" id="vocabFront" style="white-space:pre-line;">选择词库开始</div>
+            <div class="face-hint"><span id="vocabPhonetic"></span><span>点击翻转 →</span></div>
+          </div>
+          <div class="face back">
+            <div class="face-label">释义</div>
+            <div class="face-text" id="vocabBack">—</div>
+            <div class="face-hint"><span id="vocabPhoneticBack"></span><span>点击翻回</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+        <button class="btn" id="vocabPrevBtn">← 上一个</button>
+        <button class="btn btn-primary" id="vocabMarkBtn">✅ 学会了</button>
+        <button class="btn" id="vocabNextBtn">下一个 →</button>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted);" id="vocabProgress">0 / 0</div>
+    </div>
+
+    <!-- 测验模式 -->
+    <div id="vocabQuiz" style="display:none">
+      <div class="score-bar" style="background:var(--bg2);border-radius:12px;padding:12px 14px;border:1px solid var(--rule);box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;">
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--accent);" id="vocabQuizScoreNum">0</div><div style="font-size:11px;color:var(--muted);">得分</div></div>
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#0f172a;" id="vocabQuizTotalNum">0</div><div style="font-size:11px;color:var(--muted);">题目</div></div>
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#0f172a;" id="vocabQuizStreak">0</div><div style="font-size:11px;color:var(--muted);">连对</div></div>
+      </div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:20px;font-weight:700;color:var(--ink);" id="vocabQuizWord"></div>
+        <div style="font-size:14px;color:var(--muted);font-family:'JetMono',monospace;" id="vocabQuizPhonetic"></div>
+      </div>
+      <div class="quiz-options" id="vocabQuizOpts" style="margin-bottom:16px;"></div>
+      <div class="quiz-result" id="vocabQuizResult"></div>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn btn-primary" id="vocabQuizNextBtn" style="display:none;">下一题</button>
+      </div>
+    </div>
+
+    <!-- 拼写模式 -->
+    <div id="vocabSpell" style="display:none">
+      <div class="score-bar" style="background:var(--bg2);border-radius:12px;padding:12px 14px;border:1px solid var(--rule);box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;">
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--accent);" id="vocabSpellScoreNum">0</div><div style="font-size:11px;color:var(--muted);">得分</div></div>
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#0f172a;" id="vocabSpellTotalNum">0</div><div style="font-size:11px;color:var(--muted);">题目</div></div>
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#0f172a;" id="vocabSpellStreak">0</div><div style="font-size:11px;color:var(--muted);">连对</div></div>
+      </div>
+      <div style="background:var(--bg2);border-radius:14px;padding:20px;border:1px solid var(--rule);box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;">
+        <div style="font-size:16px;color:var(--muted);text-align:center;margin-bottom:12px;">请根据释义拼写单词：<br><b id="vocabSpellQ" style="color:var(--ink);font-size:18px;"></b></div>
+        <input type="text" class="spell-input" id="vocabSpellInput" placeholder="输入英文单词" autocomplete="off" autocorrect="off" autocapitalize="off" style="font-size:16px;">
+        <div class="quiz-result" id="vocabSpellResult" style="margin-top:10px;"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="btn" id="vocabSpellHintBtn">提示</button>
+        <button class="btn btn-primary" id="vocabSpellCheckBtn">检查</button>
+        <button class="btn btn-primary" id="vocabSpellNextBtn" disabled>下一题</button>
+      </div>
+    </div>
+
+    <!-- 词库统计 -->
+    <div style="margin-top:20px;padding:16px;background:var(--bg2);border-radius:14px;border:1px solid var(--rule);box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;">
+        <div><div style="font-size:20px;font-weight:700;color:var(--accent);" id="vocabLearned">0</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">已学习</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:var(--accent);" id="vocabAccuracy">0%</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">正确率</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:var(--accent);" id="vocabStreak">0</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">连续天数</div></div>
+      </div>
+    </div>
+  </div><!-- /vocabMode -->
+
+  </div><!-- /.app -->
+
 <script src="../_shared/js/modal.js" defer></script>
 <script src="assets/middle_vocab.js" defer></script>
 <script src="assets/high_vocab.js" defer></script>
 <script src="assets/app.js" defer></script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
-</script>
 </body>
 </html>

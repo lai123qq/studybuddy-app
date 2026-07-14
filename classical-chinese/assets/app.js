@@ -22,28 +22,19 @@
         },
 
         loadState: function() {
-            try {
-                var saved = localStorage.getItem('classical_chinese_state');
-                if (saved) {
-                    var state = JSON.parse(saved);
-                    this.learnedPoems = state.learnedPoems || [];
-                    this.recitedPoems = state.recitedPoems || [];
-                }
-            } catch (e) {
-                console.error('加载状态失败：', e);
+            var state = SBUtils.storageGet('classical_chinese_state', null);
+            if (state) {
+                this.learnedPoems = state.learnedPoems || [];
+                this.recitedPoems = state.recitedPoems || [];
             }
         },
 
         saveState: function() {
-            try {
-                var state = {
-                    learnedPoems: this.learnedPoems,
-                    recitedPoems: this.recitedPoems
-                };
-                localStorage.setItem('classical_chinese_state', JSON.stringify(state));
-            } catch (e) {
-                console.error('保存状态失败：', e);
-            }
+            var state = {
+                learnedPoems: this.learnedPoems,
+                recitedPoems: this.recitedPoems
+            };
+            SBUtils.storageSet('classical_chinese_state', state);
         },
 
         markLearned: function(poemId) {

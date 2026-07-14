@@ -37,7 +37,7 @@
   /* Input area */
   .input-wrap { position: relative; margin-bottom: 12px; }
   .input-area { display: flex; gap: 8px; }
-  .todo-input { flex: 1; padding: 14px 50px 14px 16px; border-radius: 14px; border: 1px solid #e2e8f0;
+  .todo-input { flex: 1; padding: 14px 16px; border-radius: 14px; border: 1px solid #e2e8f0;
     background: #ffffff; color: #1e293b; font-size: 15px; font-family: inherit; outline: none;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
@@ -49,52 +49,6 @@
     box-shadow: 0 2px 8px rgba(52,211,153,0.3);
   }
   .btn-add:hover { box-shadow: 0 4px 12px rgba(52,211,153,0.4); transform: translateY(-1px); }
-
-  /* Time picker inside input */
-  .time-picker-btn { position: absolute; right: 90px; top: 50%; transform: translateY(-50%);
-    width: 32px; height: 32px; border-radius: 8px; border: none;
-    background: #f1f5f9; color: #64748b; font-size: 16px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; z-index: 2;
-  }
-  .time-picker-btn:hover { background: rgba(52,211,153,0.15); color: #34d399; }
-  .time-picker-btn.has-time { background: rgba(244,114,182,0.12); color: #f472b6; }
-  .time-picker-popover { position: absolute; right: 90px; top: calc(100% + 6px);
-    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 12px; display: none; z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-  }
-  .time-picker-popover.show { display: block; }
-  .time-picker-popover .pop-title { font-size: 12px; color: #64748b; margin-bottom: 8px; }
-  .time-picker-popover input[type="time"] {
-    padding: 10px 12px; border-radius: 8px;
-    border: 1px solid #e2e8f0; background: #f8f9fc;
-    color: #1e293b; font-size: 16px; font-family: inherit; outline: none;
-    width: 140px; height: 40px;
-    -webkit-appearance: none; appearance: none;
-  }
-  .time-picker-popover input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: none; cursor: pointer;
-  }
-  .time-picker-popover .pop-actions { display: flex; gap: 6px; margin-top: 10px; }
-  .time-picker-popover .pop-btn { padding: 6px 12px; border-radius: 8px; border: none;
-    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .time-picker-popover .pop-btn.confirm { background: linear-gradient(135deg, #34d399, #38bdf8); color: #ffffff; }
-  .time-picker-popover .pop-btn.clear { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
-
-  /* Time mode tabs */
-  .time-mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
-  .time-mode-tab { flex: 1; padding: 6px 0; border-radius: 8px; border: 1px solid #e2e8f0;
-    background: #f8f9fc; color: #64748b; font-size: 12px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: center;
-  }
-  .time-mode-tab.active { background: rgba(52,211,153,0.15); color: #34d399; border-color: rgba(52,211,153,0.3); }
-  .time-inputs-row { display: flex; align-items: center; gap: 8px; }
-  .time-inputs-row .sep { color: #64748b; font-size: 14px; }
-  .selected-time-display { position: absolute; right: 90px; top: 50%; transform: translateY(-50%);
-    font-size: 12px; color: #f472b6; background: rgba(244,114,182,0.1);
-    padding: 3px 8px; border-radius: 6px; pointer-events: none; display: none;
-  }
-  .selected-time-display.show { display: block; }
 
   /* Action buttons */
   .action-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -129,9 +83,7 @@
 
   .todo-text { flex: 1; min-width: 0; }
   .todo-text .text-main { font-size: 15px; color: #1e293b; word-break: break-all; }
-  .todo-text .text-time { font-size: 12px; color: #f472b6; margin-top: 2px; }
   .todo-item.completed .todo-text .text-main { text-decoration: line-through; color: #86efac; }
-  .todo-item.completed .todo-text .text-time { opacity: 0.5; }
   .todo-delete { width: 28px; height: 28px; border-radius: 50%; border: none;
     background: rgba(228,88,88,0.08); color: #e45858; font-size: 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.6; transition: opacity 0.2s;
@@ -218,16 +170,13 @@
     .head .date { font-size: 12px; }
     .progress-bar { margin-bottom: 16px; }
     .progress-text { font-size: 11px; margin-bottom: 16px; }
-    .todo-input { padding: 12px 44px 12px 14px; font-size: 16px; border-radius: 12px; }
+    .todo-input { padding: 12px 14px; font-size: 16px; border-radius: 12px; }
     .btn-add { padding: 12px 16px; font-size: 14px; border-radius: 12px; min-height: 44px; }
-    .time-picker-btn { width: 28px; height: 28px; right: 78px; font-size: 14px; }
-    .time-picker-popover { right: 60px; }
     .action-bar { gap: 6px; margin-bottom: 12px; }
     .btn-action { padding: 6px 10px; font-size: 11px; border-radius: 8px; min-height: 36px; }
     .todo-list { gap: 6px; margin-bottom: 16px; }
     .todo-item { padding: 12px 12px; border-radius: 12px; gap: 10px; }
     .todo-text .text-main { font-size: 14px; }
-    .todo-text .text-time { font-size: 11px; }
     .checkbox { width: 20px; height: 20px; font-size: 11px; }
     .todo-delete { width: 26px; height: 26px; font-size: 14px; }
     .template-section { margin-top: 20px; padding-top: 20px; }
@@ -251,13 +200,14 @@
   }
   .back-btn {
     display: inline-flex; align-items: center; gap: 4px;
-    color: #64748b; text-decoration: none; font-size: 14px;
-    margin-bottom: 8px; cursor: pointer; font-family: inherit;
-    border: none; background: none; padding: 10px 12px;
-    min-height: 44px; border-radius: 10px;
-    transition: background 0.2s; margin-top: 0px; }
-  .back-btn:hover { background: rgba(52,211,153,0.08); }
+    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 10px 14px; border-radius: 10px; min-height: 44px;
+    background: transparent; cursor: pointer; font-family: inherit;
+    margin-bottom: 8px; transition: background 0.2s; border: none;
+  }
+  .back-btn:hover { background: rgba(100,116,139,0.08); }
   .back-btn:active { opacity: 0.6; }
+  .back-btn svg { width: 20px; height: 20px; }
 
   /* ===== 四象限分类 ===== */
   /* 象限选择器 */
@@ -371,6 +321,7 @@
   /* ====== 主题：彩色 ====== */
   body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
 </style>
+<script src="../_shared/js/utils.js"></script>
 <script defer src="../_shared/js/page-enter.js?v=20260710f"></script>
 </head>
 <body>
@@ -393,7 +344,6 @@
     <h4>📝 添加待办</h4>
     <ol>
       <li>在输入框中输入待办事项内容</li>
-      <li>如需设定时间，点击右侧 ⏰ 按钮选择具体时间</li>
       <li>点击"添加"按钮或按回车键完成添加</li>
     </ol>
     <h4>✅ 完成待办</h4>
@@ -428,27 +378,6 @@
     <div class="input-area">
       <input type="text" class="todo-input" id="todoInput" placeholder="添加今天的待办事项...">
       <button class="btn-add" id="addBtn">添加</button>
-    </div>
-    <button class="time-picker-btn" id="timePickerBtn" title="选择时间">⏰</button>
-    <div class="selected-time-display" id="selectedTimeDisplay"></div>
-    <div class="time-picker-popover" id="timePickerPopover">
-      <div class="pop-title">选择时间（可选）</div>
-      <div class="time-mode-tabs" id="timeModeTabs">
-        <button class="time-mode-tab active" data-mode="single">单点时间</button>
-        <button class="time-mode-tab" data-mode="range">时间段</button>
-      </div>
-      <div class="time-inputs-row" id="singleTimeInput">
-        <input type="time" id="popoverTimeInput">
-      </div>
-      <div class="time-inputs-row" id="rangeTimeInput" style="display:none;">
-        <input type="time" id="popoverTimeStart">
-        <span class="sep">-</span>
-        <input type="time" id="popoverTimeEnd">
-      </div>
-      <div class="pop-actions">
-        <button class="pop-btn confirm" id="popoverConfirm">确定</button>
-        <button class="pop-btn clear" id="popoverClear">清除</button>
-      </div>
     </div>
   </div>
 
@@ -517,10 +446,6 @@
   </div>
 </div>
 
-<script defer src="assets/app.js"></script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
-</script>
+<script defer src="assets/app.js?v=20260711"></script>
 </body>
 </html>

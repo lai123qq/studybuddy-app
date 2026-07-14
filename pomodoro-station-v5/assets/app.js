@@ -59,12 +59,12 @@
   /* ========== State ========== */
   var KEY = 'focusflow_v5';
   var state = loadState();
-  function loadState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
-  function saveState() { localStorage.setItem(KEY, JSON.stringify(state)); }
+  function loadState() { return SBUtils.storageGet(KEY, {}); }
+  function saveState() { SBUtils.storageSet(KEY, state); }
   // 旧版数据兼容
   if (!state.tasks) {
     try {
-      var old = JSON.parse(localStorage.getItem('focusflow_v4') || '{}');
+      var old = SBUtils.storageGet('focusflow_v4', {});
       if (old && old.tasks) state = old;
     } catch (e) {}
   }
@@ -83,12 +83,8 @@
   saveState();
 
   /* ========== Toast / Confetti / Beep ========== */
-  var toast = document.getElementById('toast');
   function showToast(text) {
-    toast.textContent = text;
-    toast.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(function () { toast.classList.remove('show'); }, 2400);
+    SBUtils.showToast(text);
   }
   var confettiEl = document.getElementById('confetti');
   function confetti() {
@@ -944,7 +940,7 @@
       }]
     });
   }
-  window.addEventListener('resize', function () { chart.resize(); });
+  window.addEventListener('resize', function () { if (chart) chart.resize(); });
 
   /* ============================================================
    * 7) White-noise Sound Capsule · v5 D: 6 场景 + 音量持久化 + info 动效
@@ -1517,7 +1513,7 @@
       confirmText: '全部清空', danger: true
     });
     if (!ok2) return;
-    localStorage.removeItem(KEY);
+    SBUtils.storageRemove(KEY);
     location.reload();
   });
   bindClick('feat-sync', function () {
@@ -1678,12 +1674,8 @@
   });
 
   /* 错误兜底 */
-  var errToast = document.getElementById('errToast');
   function showError(msg) {
-    if (!errToast) return;
-    errToast.textContent = '⚠ ' + msg;
-    errToast.classList.add('show');
-    setTimeout(function () { errToast.classList.remove('show'); }, 4500);
+    SBUtils.showToast('⚠ ' + msg, 'error', 4500);
   }
   window.addEventListener('error', function (e) {
     console.error('FocusFlow:', e.error || e.message);

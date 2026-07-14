@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#f8f9fc">
 <title>FocusFlow · 番茄钟</title>
+<script src="../_shared/js/utils.js"></script>
 <script defer src="./_shared/js/modal.js"></script>
 <style>
   /* ============== Theme tokens ============== */
@@ -45,21 +46,25 @@
   .app-header {
     position: sticky; top: 0; z-index: 50;
     height: var(--header-h);
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center;
     padding: 0 16px;
     background: var(--bg);
     border-bottom: 1px solid var(--rule);
+    max-width: 480px; margin: 0 auto;
   }
-  .app-header .back-link {
+  /* 手机友好的返回键 */
+  .back-btn {
     display: inline-flex; align-items: center; gap: 4px;
-    color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500;
-    padding: 8px 0; border: none; background: none; cursor: pointer;
-    font-family: inherit;
+    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 10px 14px; border-radius: 10px; min-height: 44px;
+    background: transparent; cursor: pointer; font-family: inherit;
+    margin-bottom: 8px; transition: background 0.2s; border: none;
   }
-  .app-header .back-link svg { width: 20px; height: 20px; }
-  .app-header .back-link:active { opacity: 0.6; }
+  .back-btn:hover { background: rgba(100,116,139,0.08); }
+  .back-btn:active { opacity: 0.6; }
+  .back-btn svg { width: 20px; height: 20px; }
   .app-header .header-title {
-    position: absolute; left: 50%; transform: translateX(-50%);
+    flex: 1; text-align: center;
     font-size: 16px; font-weight: 700; color: var(--ink);
   }
   .app-header .header-title .dot { color: var(--accent); }
@@ -68,6 +73,7 @@
     background: var(--bg-card); border: 1px solid var(--rule);
     display: inline-flex; align-items: center; justify-content: center;
     cursor: pointer; transition: transform 0.2s;
+    flex-shrink: 0;
   }
   .app-header .settings-btn:active { transform: scale(0.92); }
   .app-header .settings-btn svg { width: 18px; height: 18px; }
@@ -666,33 +672,7 @@
     color: var(--ink); box-shadow: 0 1px 0 var(--rule);
   }
 
-  /* Toast */
-  .toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
-    background: var(--ink); color: #fff;
-    padding: 10px 20px; border-radius: 100px;
-    font-size: 13px; font-weight: 500;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.2);
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
-    z-index: 200;
-    max-width: 90%;
-    text-align: center;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .err-toast {
-    position: fixed; left: 50%; top: 70px; transform: translateX(-50%);
-    background: #d4471f; color: #fff;
-    padding: 10px 16px; border-radius: 8px;
-    font-size: 12px;
-    box-shadow: 0 6px 20px rgba(212, 71, 31, 0.4);
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.25s;
-    z-index: 250;
-    max-width: 90%;
-    text-align: center;
-  }
-  .err-toast.show { opacity: 1; }
+  /* Toast - 使用 SBUtils.showToast，保留类名供自定义覆盖 */
 
   /* Confetti */
   .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 150; }
@@ -704,9 +684,6 @@
   @keyframes confettiFall {
     to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
   }
-
-  /* 隐藏桌面端遗留的返回按钮 */
-  .back-btn { display: none; }
 
   /* 隐藏桌面端 nav links（已有 .app-header 替代） */
   .nav { display: none; }
@@ -730,12 +707,6 @@
 
 <!-- App 顶部栏 -->
 <header class="app-header">
-  <a class="back-link" href="../index-v2.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6"></polyline>
-    </svg>
-    返回
-  </a>
   <div class="header-title">FocusFlow <span class="dot">·</span></div>
   <button class="settings-btn" id="settingsBtn" aria-label="设置">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -776,6 +747,12 @@
 </header>
 
 <main class="container">
+  <a class="back-btn" href="../index-v2.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    返回
+  </a>
   <!-- 智能建议 -->
   <div class="insight-banner" id="insightBanner">
     <span class="lead">智能建议</span>
@@ -1033,13 +1010,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-<div class="err-toast" id="errToast"></div>
 <div class="confetti" id="confetti"></div>
-<script defer src="assets/app.js?v=20260710c"></script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
-</script>
+<script defer src="assets/app.js?v=20260711"></script>
 </body>
 </html>

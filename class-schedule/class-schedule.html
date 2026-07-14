@@ -29,8 +29,16 @@
   .head { text-align: center; margin-bottom: 12px; position: relative; margin-top: 20px; }
   .head h1 { font-size: 26px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.5px; }
   .head .week-info { font-size: 13px; color: #64748b; margin: 0; }
-  .back { position: absolute; top: 16px; left: 0; color: #64748b; text-decoration: none; font-size: 13px; padding: 10px 12px; min-height: 44px; border-radius: 10px; display: inline-flex; align-items: center; transition: background 0.2s; }
-  .back:hover { color: #1e293b; background: rgba(251,191,36,0.08); }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 10px 14px; border-radius: 10px; min-height: 44px;
+    background: transparent; cursor: pointer; font-family: inherit;
+    margin-bottom: 8px; transition: background 0.2s; border: none;
+  }
+  .back-btn:hover { background: rgba(100,116,139,0.08); }
+  .back-btn:active { opacity: 0.6; }
+  .back-btn svg { width: 20px; height: 20px; }
 
   /* Toolbar */
   .toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
@@ -40,6 +48,8 @@
     cursor: pointer; transition: all 0.2s; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
   }
+  .btn.clear-btn { background: transparent; border: none; color: #94a3b8; font-size: 12px; font-weight: 500; padding: 8px 12px; box-shadow: none; }
+  .btn.clear-btn:hover { color: #ef4444; background: rgba(239,68,68,0.06); }
   .btn:hover { background: #f1f5f9; }
   .btn.primary { background: #fbbf24; color: #1e293b; border-color: #fbbf24; }
   .btn.primary:hover { background: #fcd34d; }
@@ -202,6 +212,7 @@
   body.theme-dark .head, body.theme-dark .header, body.theme-dark .app-header, body.theme-dark h1, body.theme-dark h2, body.theme-dark h3 { color: #f8fafc !important; }
   body.theme-dark input, body.theme-dark select, body.theme-dark textarea { background: #1e293b !important; color: #e2e8f0 !important; }
   body.theme-dark button, body.theme-dark .btn { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(124,107,255,0.3) !important; }
+  body.theme-dark .btn.clear-btn { background: transparent !important; color: #64748b !important; border: none !important; box-shadow: none !important; }
   /* ====== 主题：中国风 ====== */
   body.theme-chinese { background: #f5f0e8 !important; color: #3d3d3d !important; }
   body.theme-chinese *, body.theme-chinese *::before, body.theme-chinese *::after { border-color: #e8ddd0; }
@@ -211,11 +222,12 @@
   /* ====== 主题：彩色 ====== */
   body.theme-colorful { background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%) !important; }
 </style>
+<script src="../_shared/js/utils.js"></script>
 <script defer src="../_shared/js/page-enter.js"></script>
 </head>
 <body>
 <div class="app">
-  <a href="../index-v2.html" class="back">&#8592; 返回</a>
+  <a href="../index-v2.html" class="back-btn">&#8592; 返回</a>
 
   <div class="head">
     <h1>ClassMate</h1>
@@ -228,7 +240,7 @@
     <button class="btn" id="editTimeBtn">设置时间</button>
     <button class="btn" id="editPeriodBtn">设置节数</button>
     <button class="btn" id="editDaysBtn">设置星期</button>
-    <button class="btn danger" id="clearAllBtn">清空</button>
+    <button class="btn clear-btn" id="clearAllBtn">清空</button>
   </div>
 
   <!-- 周课表：周一到周六 -->
@@ -331,10 +343,6 @@
   </div>
 </div>
 
-<script defer src="assets/app.js?v=20260710"></script>
-<script>
-// 主题继承
-(function(){try{var t=localStorage.getItem('studybuddy_theme')||'light';if(t==='dark')document.body.classList.add('theme-dark');else if(t==='chinese')document.body.classList.add('theme-chinese');else if(t==='colorful')document.body.classList.add('theme-colorful');}catch(e){}})();
-</script>
+<script defer src="assets/app.js?v=20260711"></script>
 </body>
 </html>
