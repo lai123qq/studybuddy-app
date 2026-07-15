@@ -860,9 +860,9 @@ try {
       var resolved = resolveHref(href);
       sessionStorage.setItem('__sb_nav', '1');
       try { sessionStorage.setItem('sb_scroll', String(window.scrollY)); } catch(e) {}
-      document.body.style.transition = 'opacity 0.08s';
-      document.body.style.opacity = '0.6';
-      setTimeout(function() { location.assign(resolved); }, 80);
+      document.body.style.transition = 'opacity 0.12s';
+      document.body.style.opacity = '0';
+      setTimeout(function() { location.assign(resolved); }, 120);
     });
     card.addEventListener('touchstart', function () {
       if (navigator.vibrate) try { navigator.vibrate(8); } catch (e) {}
@@ -963,8 +963,8 @@ try {
     if(!sItem.link)return;
     e.preventDefault();
     try{sessionStorage.setItem('sb_scroll',String(window.scrollY));}catch(x){}
-    document.body.style.transition='opacity 0.08s';document.body.style.opacity='0.6';
-    setTimeout(function(){location.href=sItem.link;},80);
+    document.body.style.transition='opacity 0.12s';document.body.style.opacity='0';
+    setTimeout(function(){location.href=sItem.link;},120);
   };
 
   // 空状态引导
