@@ -842,6 +842,16 @@ try {
     }
     return href;
   }
+  // 悬停/触摸预加载
+  var _pf = {};
+  document.addEventListener('mouseover', function(e) {
+    var c = e.target.closest('.app-card');
+    if (!c) return;
+    var h = c.dataset.href || c.getAttribute('href');
+    if (!h || _pf[h]) return; _pf[h] = 1;
+    var l = document.createElement('link'); l.rel = 'prefetch'; l.href = resolveHref(h);
+    document.head.appendChild(l);
+  });
   document.querySelectorAll('.app-card').forEach(function (card) {
     card.addEventListener('click', function (e) {
       e.preventDefault();
