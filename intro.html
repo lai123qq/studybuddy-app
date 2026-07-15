@@ -539,8 +539,9 @@ footer p { color: var(--muted); font-size: 0.85rem; }
     var href = a.getAttribute('href');
     if (!href || href.startsWith('#') || href.startsWith('http') || a.target === '_blank') return;
     e.preventDefault();
-    document.body.style.transition = 'opacity 0.12s ease';
+    document.body.style.transition = 'opacity 0.12s, transform 0.12s';
     document.body.style.opacity = '0';
+    document.body.style.transform = 'scale(0.98)';
     setTimeout(function() { location.href = href; }, 120);
   });
 
