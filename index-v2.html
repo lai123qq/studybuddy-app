@@ -449,8 +449,12 @@
   }
 </style>
 <script>
-// 禁用浏览器默认滚动恢复，由自己控制
 try { history.scrollRestoration = 'manual'; } catch(e) {}
+// 如果有保存的滚动位置，先隐藏 body 防止闪烁
+try {
+  var _savedScroll = parseInt(sessionStorage.getItem('sb_scroll') || '0');
+  if (_savedScroll > 0) document.write('<style>body{opacity:0;transition:none}</style>');
+} catch(e) {}
 </script>
 </head>
 <body>
@@ -845,7 +849,10 @@ try { history.scrollRestoration = 'manual'; } catch(e) {}
       if (!href) return;
       var resolved = resolveHref(href);
       sessionStorage.setItem('__sb_nav', '1');
-      location.assign(resolved);
+      try { sessionStorage.setItem('sb_scroll', String(window.scrollY)); } catch(e) {}
+      document.body.style.transition = 'opacity 0.12s';
+      document.body.style.opacity = '0';
+      setTimeout(function() { location.assign(resolved); }, 120);
     });
     card.addEventListener('touchstart', function () {
       if (navigator.vibrate) try { navigator.vibrate(8); } catch (e) {}
@@ -871,7 +878,7 @@ try { history.scrollRestoration = 'manual'; } catch(e) {}
   try{var tt=sj('taskflow_'+today,[]);if(Array.isArray(tt)){todo.todayTotal=tt.length;tt.forEach(function(t){if(t.completed||t.done)todo.todayDone++;});tt.filter(function(t){return t.completed||t.done;}).slice(-3).forEach(function(t){acts.push({icon:'✅',bg:'rgba(44,182,125,0.12)',title:'完成待办: '+(t.text||t.title||'任务'),meta:t.category||t.tag||'',time:today});});}for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('taskflow_')===0){var it=sj(k,[]);if(Array.isArray(it)){todo.allTotal+=it.length;it.forEach(function(t){if(t.completed||t.done)todo.allDone++;});}}} }catch(e){console.error('dash todo',e);}
   // 闪卡
   var flash={totalCards:0,learnedCards:0,streak:0,todayDone:0,todayGoal:0};
-  try{var rv=sj('recalleum_v3',null);if(rv&&rv.decks){rv.decks.forEach(function(dk){if(dk.cards){flash.totalCards+=dk.cards.length;dk.cards.forEach(function(c){if(c.rep>0||c.interval>0)flash.learnedCards++;});}});flash.streak=rv.streak||0;flash.todayGoal=rv.goalTarget||0;var tk=new Date().toISOString().slice(0,10);flash.todayDone=(rv.dailyLog&&rv.dailyLog[tk])||0;try{var vd=sj('vb_daily_goal',{});if(vd&&vd.date===tk)flash.todayDone+=(vd.count||0);}catch(e2){}}catch(e){console.error('dash flash',e);}
+  try{var rv=sj('recalleum_v3',null);if(rv&&rv.decks){rv.decks.forEach(function(dk){if(dk.cards){flash.totalCards+=dk.cards.length;dk.cards.forEach(function(c){if(c.rep>0||c.interval>0)flash.learnedCards++;});}});flash.streak=rv.streak||0;flash.todayGoal=rv.goalTarget||0;var tk=new Date().toISOString().slice(0,10);flash.todayDone=(rv.dailyLog&&rv.dailyLog[tk])||0;try{var vd=sj('vb_daily_goal',{});if(vd&&vd.date===tk)flash.todayDone+=(vd.count||0);}catch(e2){}}}catch(e){console.error('dash flash',e);}
   // 考试倒计时
   var exam={exams:[],mocks:[]};
   try{var ep=sj('pinpoint_v3',{});if(Array.isArray(ep.exams)){exam.exams=ep.exams.slice(0,5).map(function(e){var rm=0;if(e.date){var todayUTC=new Date(Date.UTC(today.split('-')[0], today.split('-')[1]-1, today.split('-')[2]));var df=new Date(e.date).getTime()-todayUTC.getTime();rm=Math.ceil(df/86400000);}return{name:e.name||e.exam||'考试',days:rm};});exam.exams.forEach(function(e){if(e.days>=0)acts.push({icon:'🎓',bg:'rgba(228,88,88,0.12)',title:(e.days===0?'今天考试':e.days+'天后: '+e.name),meta:'倒计时',time:today});});}if(Array.isArray(ep.mocks)){exam.mocks=ep.mocks.slice(-3).map(function(m){return{name:m.exam||m.name||'模考',score:m.score||0};});}}catch(e){console.error('dash exam',e);}
@@ -942,13 +949,20 @@ try { history.scrollRestoration = 'manual'; } catch(e) {}
   // 随机选一条（不总是同一条）
   var sItem=suggestions[Math.floor(Math.random()*suggestions.length)];
   document.getElementById('aiSuggestText').textContent=sItem.text;
-  document.getElementById('aiSuggest').onclick=function(){if(sItem.link)window.location.href=sItem.link;};
+  document.getElementById('aiSuggest').onclick=function(e){
+    if(!sItem.link)return;
+    e.preventDefault();
+    try{sessionStorage.setItem('sb_scroll',String(window.scrollY));}catch(x){}
+    document.body.style.transition='opacity 0.12s';document.body.style.opacity='0';
+    setTimeout(function(){location.href=sItem.link;},120);
+  };
 
   // 空状态引导
   var welcomeBanner=document.getElementById('welcomeBanner');
   if(welcomeBanner)welcomeBanner.style.display=totalUsed===0?'block':'none';
 
   // 成就
+  var totalLearned = flash.todayDone || 0;
   var totalFA=0;Object.keys(pomo.weekly).forEach(function(k){totalFA+=(pomo.weekly[k]||0);});
   var badges=[{n:'初次启程',d:'首次记录学习',e:'🚀',ok:hasAny},{n:'专注新星',d:'累计专注1h',e:'⭐',ok:totalFA>=60},{n:'番茄新手',d:'完成1个番茄',e:'🍅',ok:pomo.sessionCount>=1},{n:'习惯起步',d:'连续打卡3天',e:'🔥',ok:habit.longestStreak>=3},{n:'任务达人',d:'待办完成率80%',e:'✅',ok:todo.allTotal>=5&&(todo.allDone/todo.allTotal)>=0.8},{n:'备考先锋',d:'添加1个考试',e:'🎓',ok:exam.exams.length>=1},{n:'记忆学者',d:'学10张闪卡',e:'📚',ok:flash.learnedCards>=10},{n:'词汇新星',d:'学50个单词',e:'📖',ok:totalLearned>=50},{n:'数学新秀',d:'答对20题',e:'🧮',ok:math.correct>=20}];
   var achEl=document.getElementById('dashAchieve');
@@ -956,22 +970,28 @@ try { history.scrollRestoration = 'manual'; } catch(e) {}
 })();
 // 保存/恢复滚动位置
 (function() {
-  // 点击任何链接跳转前保存滚动位置
-  document.addEventListener('click', function(e) {
-    var a = e.target.closest('a');
-    if (a && a.href) {
-      try { sessionStorage.setItem('sb_scroll', String(window.scrollY)); } catch(e) {}
-    }
-  }, true);
-  // pagehide 兜底
+  // pagehide 兜底保存
   window.addEventListener('pagehide', function() {
     try { sessionStorage.setItem('sb_scroll', String(window.scrollY)); } catch(e) {}
   });
-  // DOM 渲染完后恢复滚动位置（无隐藏，直接跳）
-  try {
-    var s = parseInt(sessionStorage.getItem('sb_scroll') || '0');
-    if (s > 0) window.scrollTo(0, s);
-  } catch(e) {}
+  // 恢复滚动位置
+  var s = parseInt(sessionStorage.getItem('sb_scroll') || '0');
+  if (s > 0) {
+    var _tries = 0;
+    function _restore() {
+      window.scrollTo(0, s);
+      _tries++;
+      if (Math.abs(window.scrollY - s) > 10 && _tries < 20) {
+        requestAnimationFrame(_restore);
+        return;
+      }
+      sessionStorage.removeItem('sb_scroll');
+      document.body.style.opacity = '1';
+    }
+    requestAnimationFrame(_restore);
+  }
+  // 安全兜底：确保 body 一定可见
+  setTimeout(function() { document.body.style.opacity = '1'; }, 300);
 })();
 </script>
 </body>

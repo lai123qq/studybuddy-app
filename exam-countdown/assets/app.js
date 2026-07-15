@@ -404,13 +404,27 @@
   document.getElementById('genPlanBtn').addEventListener('click', generatePlans);
 
   /* ---------- 4. Mock history chart ---------- */
-  var mockChart = echarts.init(document.getElementById('chart-mock'), null, { renderer: 'svg' });
+  var mockChart = null;
   var mockBig = document.getElementById('mockBig');
   var mockBigSub = document.getElementById('mockBigSub');
   var mockDesc = document.getElementById('mockDesc');
   var mockTitle = document.getElementById('mockTitle');
 
+  function initChart() {
+    mockChart = echarts.init(document.getElementById('chart-mock'), null, { renderer: 'svg' });
+  }
+
   function renderMock() {
+    if (!mockChart) {
+      if (!window.echarts) {
+        var s = document.createElement('script');
+        s.src = '_shared/js/echarts.min.js';
+        s.onload = function() { initChart(); renderMock(); };
+        document.head.appendChild(s);
+        return;
+      }
+      initChart();
+    }
     if (!state.mocks.length) {
       mockTitle.textContent = activeExam ? activeExam.name + ' · 我的模考记录' : '我的模考记录';
       mockDesc.textContent = '还没记录过模考,点击下方"录入模考分数"即可生成走势曲线。';
@@ -479,8 +493,9 @@
       }]
     });
   }
-  renderMock();
-  window.addEventListener('resize', function () { mockChart.resize(); });
+  // renderMock 首次不调用，等录入模考时再按需加载 echarts
+  // renderMock();
+  window.addEventListener('resize', function () { if (mockChart) mockChart.resize(); });
 
   document.getElementById('logMockBtn').addEventListener('click', async function () {
     var examName = activeExam ? activeExam.name : (state.exams[0] ? state.exams[0].name : '');
